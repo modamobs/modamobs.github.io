@@ -2,11 +2,15 @@
    메인 스크립트
    - 다크 모드 전환 및 저장
    - 프로젝트 카드 렌더링 및 분류 필터
+   - 스크롤 등장 애니메이션 / 관성 스크롤 / 히어로 패럴랙스
    - 헤더 스크롤 효과 / 푸터 연도
    =================================================== */
 
 (function () {
   'use strict';
+
+  // 모션을 줄이겠다고 설정한 사용자에게는 애니메이션을 걸지 않습니다.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- 다크 모드 ---------- */
 
@@ -36,6 +40,29 @@
       applyTheme(next);
       localStorage.setItem(STORAGE_KEY, next);
     });
+  }
+
+  /* ---------- 스크롤 등장 애니메이션 ---------- */
+
+  // 한 번 나타난 요소는 다시 숨기지 않습니다(되돌아 올라올 때 깜빡이지 않도록).
+  const revealObserver = ('IntersectionObserver' in window && !reduceMotion)
+    ? new IntersectionObserver(function (entries, obs) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          obs.unobserve(entry.target);
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 })
+    : null;
+
+  function observeReveals(scope) {
+    const targets = (scope || document).querySelectorAll('[data-reveal]:not(.is-visible)');
+    if (!revealObserver) {
+      // 관찰자를 쓸 수 없으면 즉시 보이게 합니다.
+      targets.forEach(function (el) { el.classList.add('is-visible'); });
+      return;
+    }
+    targets.forEach(function (el) { revealObserver.observe(el); });
   }
 
   /* ---------- 프로젝트 렌더링 ---------- */
@@ -85,8 +112,11 @@
   }
 
   function cardHTML(project, index) {
+    // 한 줄에 3개까지 들어가므로 지연은 3개 주기로 반복시켜
+    // 목록이 길어져도 마지막 카드가 늦게 뜨지 않게 합니다.
+    const delay = (index % 3) * 90;
     return '' +
-      '<article class="card" style="animation-delay:' + (index * 45) + 'ms">' +
+      '<article class="card" data-reveal style="--reveal-delay:' + delay + 'ms">' +
         '<div class="card-thumb">' + thumbHTML(project) + '</div>' +
         '<div class="card-body">' +
           '<p class="card-category">' + esc(project.category) + '</p>' +
@@ -105,6 +135,7 @@
 
     grid.innerHTML = list.map(cardHTML).join('');
     if (emptyMsg) emptyMsg.hidden = list.length > 0;
+    observeReveals(grid);
   }
 
   function buildFilters() {
@@ -137,15 +168,64 @@
     render('전체');
   }
 
-  /* ---------- 헤더 스크롤 효과 ---------- */
+  // 페이지 전체의 등장 대상을 관찰 시작
+  observeReveals(document);
+
+  /* ---------- 스크롤 반응: 헤더 + 히어로 패럴랙스 ---------- */
 
   const header = document.querySelector('.site-header');
-  if (header) {
-    const onScroll = function () {
-      header.classList.toggle('scrolled', window.scrollY > 8);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+  const hero   = document.querySelector('.hero');
+
+  let ticking = false;
+
+  function onScrollFrame() {
+    const y = window.scrollY;
+
+    if (header) header.classList.toggle('scrolled', y > 8);
+
+    // 히어로가 화면에 남아 있는 동안만 계산합니다.
+    if (hero && !reduceMotion) {
+      const limit = hero.offsetHeight;
+      hero.style.setProperty('--scroll-y', (y < limit ? y : limit) + 'px');
+    }
+
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', function () {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(onScrollFrame);
+  }, { passive: true });
+
+  onScrollFrame();
+
+  /* ---------- 관성 스크롤 (Lenis) ---------- */
+
+  // CDN 로드에 실패하거나 모션 감소 설정이면 브라우저 기본 스크롤을 씁니다.
+  if (typeof Lenis !== 'undefined' && !reduceMotion) {
+    const lenis = new Lenis({ duration: 1.05, smoothWheel: true });
+
+    (function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    })(0);
+
+    // 앵커 링크를 Lenis가 처리하도록 넘깁니다(헤더 높이만큼 offset).
+    const headerH = header ? header.offsetHeight : 0;
+
+    document.querySelectorAll('a[href^="#"]').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        const href = link.getAttribute('href');
+        if (!href || href === '#') return;
+
+        const target = document.querySelector(href);
+        if (!target) return;
+
+        e.preventDefault();
+        lenis.scrollTo(target, { offset: -(headerH + 16) });
+      });
+    });
   }
 
   /* ---------- 푸터 연도 ---------- */
