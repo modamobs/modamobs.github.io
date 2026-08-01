@@ -109,10 +109,25 @@ const PROJECTS = [
   {
     title: "WebCanvas",
     category: "웹",
-    desc: "브라우저에서 동작하는 캔버스 드로잉 도구. 설명을 실제 내용으로 바꿔 주세요.",
-    tags: ["JavaScript", "Canvas API"],
+    desc: "이미지를 드래그하거나 Ctrl+V로 붙여넣어 자유롭게 배치·편집하는 " +
+          "웹 캔버스. 텍스트·스티커 추가, 줌·팬, 정렬, 영역 캡처, " +
+          "저장/불러오기를 지원합니다.",
+    tags: ["JavaScript", "드래그 앤 드롭", "이미지 편집"],
     thumb: "",
-    links: []
+    links: [
+      { label: "서비스 바로가기", url: "https://webcanvas-ten.vercel.app/" }
+    ]
+  },
+  {
+    title: "이미지 개그 대결",
+    category: "웹",
+    desc: "이미지를 올리고 웃긴 멘트를 녹음해 대결하는 커뮤니티 서비스. " +
+          "AI 이미지 생성과 Google 로그인을 지원합니다.",
+    tags: ["JavaScript", "AI 이미지 생성", "커뮤니티"],
+    thumb: "",
+    links: [
+      { label: "서비스 바로가기", url: "https://funny-image-voice.vercel.app/" }
+    ]
   },
   {
     title: "WebImageCV",
