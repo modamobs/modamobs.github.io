@@ -437,6 +437,25 @@ html.lenis { scroll-behavior: auto !important; }
 
 .project-row { margin-bottom: 14px; }
 
+/* --- 카드 전체 클릭 (stretched-link 기법) ---
+   제목 링크의 ::after를 카드 전체로 펼쳐서, 링크가 있는
+   프로젝트는 카드 어디를 눌러도 해당 사이트로 이동합니다.
+   보조 링크·태그는 z-index로 그 위에 올려 개별 클릭을 유지합니다. */
+
+.row-inner .title-link::after,
+.feature-inner .title-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.row-links,
+.chip-list {
+  position: relative;
+  z-index: 2;
+}
+
 .row-inner {
   position: relative;
   display: grid;
@@ -562,6 +581,7 @@ html.lenis { scroll-behavior: auto !important; }
 .feature-card { margin-bottom: 18px; }
 
 .feature-inner {
+  position: relative; /* stretched-link 기준점 */
   display: grid;
   grid-template-columns: 1fr;
   gap: 18px;
