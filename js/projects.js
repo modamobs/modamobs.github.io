@@ -48,15 +48,19 @@ const PROJECTS = [
     title: "CrossSum",
     category: "게임",
     featured: true,
-    desc: "숫자 합을 맞추는 퍼즐 게임. 대표작이므로 게임의 핵심 재미와 " +
-          "본인이 만든 부분을 두세 문장으로 자세히 적어 주세요.",
+    desc: "같은 숫자를 상하좌우로 이어붙여 더 큰 숫자를 만드는 4×4 머지 퍼즐. " +
+          "200개 스테이지의 싱글 모드에 실시간 1:1 대전과 매일 갱신되는 " +
+          "챌린지 랭킹을 더했습니다.",
     highlights: [
-      "핵심 성과를 적어 주세요 (예: 기획부터 출시까지 단독 개발)",
-      "수치가 있으면 좋습니다 (예: 다운로드 1만 회)"
+      "싱글 200스테이지 + 실시간 1:1 대전 + 일일 챌린지 랭킹",
+      "언두·해머·요술봉 아이템과 타일 커스터마이징",
+      "Google Play 출시 준비 중"
     ],
-    tags: ["Unity", "퍼즐"],
+    tags: ["Unity", "C#", "퍼즐", "실시간 대전"],
     thumb: "",
-    links: []
+    links: [
+      { label: "소개 페이지", url: "https://modamobs.github.io/" }
+    ]
   },
   {
     title: "PickDat",
@@ -68,18 +72,22 @@ const PROJECTS = [
   },
 
   {
-    title: "RelayToon",
-    category: "앱",
+    title: "릴레이툰 (RelayToon)",
+    category: "웹",
     featured: true,
-    desc: "웹툰 관련 Android 앱. 대표작이므로 어떤 서비스인지, 어떤 기능을 " +
-          "직접 만들었는지 두세 문장으로 자세히 적어 주세요.",
+    desc: "작가들이 다음 화 후보를 올리면 일주일 투표로 1위가 정식 연재되는 " +
+          "릴레이 창작 플랫폼. 누구나 1화를 올려 릴레이를 시작할 수 있고, " +
+          "웹툰·소설·영상 형식을 지원합니다.",
     highlights: [
-      "핵심 성과를 적어 주세요 (예: 스토어 출시, 사용자 수)",
-      "사용한 핵심 기술이나 구현 포인트"
+      "투표로 다음 화가 결정되는 릴레이 연재 구조를 기획·구현",
+      "웹툰·소설·영상 세 가지 형식 지원",
+      "Vercel에 배포해 실서비스 운영 중"
     ],
-    tags: ["Android", "Kotlin"],
+    tags: ["Next.js", "React", "Vercel"],
     thumb: "",
-    links: []
+    links: [
+      { label: "서비스 바로가기", url: "https://relaytoon-mu.vercel.app/" }
+    ]
   },
   {
     title: "MediCheck",
