@@ -23,13 +23,7 @@ const PROJECTS = [
   {
     title: "Undead",
     category: "게임",
-    featured: true,
-    desc: "언데드를 소재로 한 Unity 게임. 대표작이므로 게임의 핵심 재미와 " +
-          "본인이 만든 부분을 두세 문장으로 자세히 적어 주세요.",
-    highlights: [
-      "핵심 성과를 적어 주세요 (예: 기획부터 출시까지 단독 개발)",
-      "수치가 있으면 좋습니다 (예: 다운로드 1만 회)"
-    ],
+    desc: "언데드를 소재로 한 Unity 게임. 설명을 실제 내용으로 바꿔 주세요.",
     tags: ["Unity", "C#"],
     thumb: "",
     links: []
@@ -37,13 +31,7 @@ const PROJECTS = [
   {
     title: "Last Escape Rocket",
     category: "게임",
-    featured: true,
-    desc: "로켓을 조종해 탈출하는 아케이드 게임. 대표작이므로 게임의 핵심 재미와 " +
-          "본인이 만든 부분을 두세 문장으로 자세히 적어 주세요.",
-    highlights: [
-      "핵심 성과를 적어 주세요",
-      "사용한 핵심 기술이나 구현 포인트"
-    ],
+    desc: "로켓을 조종해 탈출하는 아케이드 게임. 설명을 실제 내용으로 바꿔 주세요.",
     tags: ["Unity", "C#", "2D"],
     thumb: "",
     links: []
@@ -59,7 +47,13 @@ const PROJECTS = [
   {
     title: "CrossSum",
     category: "게임",
-    desc: "숫자 합을 맞추는 퍼즐 게임. 설명을 실제 내용으로 바꿔 주세요.",
+    featured: true,
+    desc: "숫자 합을 맞추는 퍼즐 게임. 대표작이므로 게임의 핵심 재미와 " +
+          "본인이 만든 부분을 두세 문장으로 자세히 적어 주세요.",
+    highlights: [
+      "핵심 성과를 적어 주세요 (예: 기획부터 출시까지 단독 개발)",
+      "수치가 있으면 좋습니다 (예: 다운로드 1만 회)"
+    ],
     tags: ["Unity", "퍼즐"],
     thumb: "",
     links: []
@@ -76,7 +70,13 @@ const PROJECTS = [
   {
     title: "RelayToon",
     category: "앱",
-    desc: "웹툰 관련 Android 앱. 설명을 실제 내용으로 바꿔 주세요.",
+    featured: true,
+    desc: "웹툰 관련 Android 앱. 대표작이므로 어떤 서비스인지, 어떤 기능을 " +
+          "직접 만들었는지 두세 문장으로 자세히 적어 주세요.",
+    highlights: [
+      "핵심 성과를 적어 주세요 (예: 스토어 출시, 사용자 수)",
+      "사용한 핵심 기술이나 구현 포인트"
+    ],
     tags: ["Android", "Kotlin"],
     thumb: "",
     links: []
@@ -109,13 +109,7 @@ const PROJECTS = [
   {
     title: "WebImageCV",
     category: "웹",
-    featured: true,
-    desc: "웹에서 이미지를 처리하는 컴퓨터 비전 도구. 대표작이므로 어떤 문제를 " +
-          "해결하는 도구인지, 어떻게 만들었는지 자세히 적어 주세요.",
-    highlights: [
-      "핵심 성과를 적어 주세요",
-      "사용한 핵심 기술이나 구현 포인트"
-    ],
+    desc: "웹에서 이미지를 처리하는 컴퓨터 비전 도구. 설명을 실제 내용으로 바꿔 주세요.",
     tags: ["JavaScript", "OpenCV.js"],
     thumb: "",
     links: []
