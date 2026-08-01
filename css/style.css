@@ -1,47 +1,50 @@
 /* ===================================================
    기본 설정 / 디자인 토큰
+   ---------------------------------------------------
+   brittanychiang.com의 팔레트와 레이아웃 언어를
+   참고했습니다: 짙은 네이비 배경, 민트 포인트,
+   좌측 고정 헤더 + 우측 스크롤 콘텐츠.
    =================================================== */
 
 :root {
-  /* 라이트 모드 색상 */
-  --bg:            #ffffff;
-  --bg-alt:        #f6f7f9;
-  --bg-card:       #ffffff;
-  --text:          #17191c;
-  --text-muted:    #5f6570;
-  --border:        #e3e6ea;
-  --accent:        #3b5bdb;
-  --accent-soft:   #eaeeff;
-  --shadow:        0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
-  --shadow-hover:  0 2px 4px rgba(0,0,0,.06), 0 16px 40px rgba(0,0,0,.10);
-
-  --radius:        14px;
-  --radius-sm:     8px;
-  --container:     1080px;
-  --header-h:      64px;
+  /* 다크(기본): slate-900 계열 + teal 포인트 */
+  --bg:          #0f172a;
+  --text:        #94a3b8;
+  --heading:     #e2e8f0;
+  --muted:       #64748b;
+  --accent:      #5eead4;
+  --accent-dim:  rgba(45, 212, 191, .1);
+  --line:        #475569;
+  --line-soft:   #1e293b;
+  --card-hover:  rgba(30, 41, 59, .5);
+  --card-inset:  rgba(148, 163, 184, .1);
+  --thumb-border: rgba(148, 163, 184, .15);
+  --spotlight:   rgba(29, 78, 216, .15);
 
   --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
           "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
 }
 
-:root[data-theme="dark"] {
-  --bg:            #0f1115;
-  --bg-alt:        #15181e;
-  --bg-card:       #191d24;
-  --text:          #e8eaed;
-  --text-muted:    #9aa1ad;
-  --border:        #272c35;
-  --accent:        #748ffc;
-  --accent-soft:   #1e2537;
-  --shadow:        0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
-  --shadow-hover:  0 2px 4px rgba(0,0,0,.35), 0 16px 40px rgba(0,0,0,.5);
+:root[data-theme="light"] {
+  --bg:          #f8fafc;
+  --text:        #475569;
+  --heading:     #0f172a;
+  --muted:       #64748b;
+  --accent:      #0d9488;
+  --accent-dim:  rgba(13, 148, 136, .09);
+  --line:        #94a3b8;
+  --line-soft:   #e2e8f0;
+  --card-hover:  rgba(226, 232, 240, .6);
+  --card-inset:  rgba(15, 23, 42, .04);
+  --thumb-border: rgba(15, 23, 42, .12);
+  --spotlight:   rgba(13, 148, 136, .08);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--header-h) + 16px);
+  scroll-padding-top: 24px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -64,11 +67,7 @@ body {
 
 img { max-width: 100%; display: block; }
 ul  { list-style: none; padding: 0; margin: 0; }
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a   { color: inherit; text-decoration: none; }
 
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -76,31 +75,23 @@ a {
   border-radius: 4px;
 }
 
-.container {
-  width: 100%;
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 0 24px;
-}
+::selection { background: var(--accent); color: var(--bg); }
 
 .skip-link {
   position: absolute;
   left: -9999px;
   top: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
   padding: 10px 18px;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   z-index: 200;
+  font-weight: 600;
 }
 .skip-link:focus { left: 16px; }
 
 /* ===================================================
-   스크롤 등장 애니메이션
-   ---------------------------------------------------
-   main.js의 IntersectionObserver가 .is-visible을 붙입니다.
-   JS가 꺼져 있어도 내용이 보이도록 .js-reveal이 붙은
-   문서에서만 숨김이 적용됩니다.
+   스크롤 등장 애니메이션 (main.js가 .is-visible 부여)
    =================================================== */
 
 .js-reveal [data-reveal] {
@@ -138,8 +129,6 @@ a {
 
 html.lenis, html.lenis body { height: auto; }
 
-/* Lenis가 붙는 즉시 브라우저 smooth scroll을 끕니다.
-   (버전에 따라 lenis-smooth가 붙지 않을 수 있어 기본 클래스에 겁니다) */
 html.lenis { scroll-behavior: auto !important; }
 
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
@@ -147,234 +136,244 @@ html.lenis { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }
 
 /* ===================================================
-   헤더
+   마우스 스포트라이트
    =================================================== */
 
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: var(--header-h);
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid transparent;
-  transition: border-color .25s ease;
-}
-.site-header.scrolled { border-bottom-color: var(--border); }
-
-.header-inner {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.spotlight {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 0%),
+    var(--spotlight),
+    transparent 80%
+  );
+  transition: background .15s ease;
 }
 
-.logo {
-  font-size: 1.2rem;
+/* ===================================================
+   레이아웃: 좌측 고정 + 우측 스크롤
+   =================================================== */
+
+.layout {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.side {
+  padding: 56px 0 24px;
+}
+
+#content {
+  padding: 24px 0 72px;
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    display: flex;
+    justify-content: space-between;
+    gap: 4rem;
+    padding: 0 48px;
+  }
+
+  .side {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 46%;
+    max-height: 100vh;
+    padding: 96px 0;
+  }
+
+  #content {
+    width: 54%;
+    padding: 96px 0;
+  }
+}
+
+/* ===================================================
+   왼쪽 헤더
+   =================================================== */
+
+.side-name {
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 3rem);
   font-weight: 800;
-  letter-spacing: -.02em;
+  letter-spacing: -.03em;
+  color: var(--heading);
+  line-height: 1.15;
 }
 .logo-dot { color: var(--accent); }
 
-.nav {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
+.side-role {
+  margin: 14px 0 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--heading);
 }
-.nav a {
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font-size: .94rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  transition: color .18s ease, background-color .18s ease;
-}
-.nav a:hover {
+
+.side-tagline {
+  margin: 16px 0 0;
+  max-width: 34ch;
   color: var(--text);
-  background: var(--bg-alt);
+}
+
+/* --- 세로 내비게이션 (선이 자라나는 인터랙션) --- */
+
+.side-nav {
+  display: none;
+  margin-top: 56px;
+}
+
+@media (min-width: 1024px) {
+  .side-nav { display: block; }
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.nav-line {
+  width: 32px;
+  height: 1px;
+  margin-right: 16px;
+  background: var(--line);
+  transition: width .25s ease, background-color .25s ease;
+}
+
+.nav-text {
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  color: var(--muted);
+  transition: color .25s ease;
+}
+
+.nav-link:hover .nav-line,
+.nav-link.is-active .nav-line {
+  width: 64px;
+  background: var(--heading);
+}
+.nav-link:hover .nav-text,
+.nav-link.is-active .nav-text {
+  color: var(--heading);
+}
+
+/* --- 소셜 + 테마 토글 --- */
+
+.side-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+}
+
+.social-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.social-list a {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: var(--muted);
+  transition: color .18s ease, transform .18s ease;
+}
+.social-list a:hover {
+  color: var(--accent);
+  transform: translateY(-2px);
 }
 
 .theme-toggle {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--border);
+  width: 42px;
+  height: 42px;
+  border: none;
   border-radius: 50%;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--muted);
   cursor: pointer;
-  transition: color .18s ease, border-color .18s ease;
+  transition: color .18s ease;
 }
-.theme-toggle:hover { color: var(--text); border-color: var(--text-muted); }
+.theme-toggle:hover { color: var(--accent); }
 
 .theme-toggle .icon-moon { display: none; }
-:root[data-theme="dark"] .theme-toggle .icon-sun  { display: none; }
-:root[data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+:root[data-theme="light"] .theme-toggle .icon-sun  { display: none; }
+:root[data-theme="light"] .theme-toggle .icon-moon { display: block; }
 
 /* ===================================================
-   Hero
+   오른쪽 콘텐츠 공통
    =================================================== */
 
-.hero {
-  padding: clamp(72px, 14vw, 140px) 0 clamp(64px, 10vw, 110px);
-  position: relative;
-  overflow: hidden;
+.section {
+  padding: 48px 0;
 }
+.section:first-child { padding-top: 8px; }
 
-/* --scroll-y는 main.js가 스크롤에 따라 갱신합니다 (은은한 패럴랙스). */
-.hero::before {
-  content: "";
-  position: absolute;
-  top: -180px;
-  left: 50%;
-  transform: translateX(-50%) translateY(calc(var(--scroll-y, 0px) * 0.28));
-  width: 720px;
-  height: 480px;
-  background: radial-gradient(closest-side, var(--accent-soft), transparent);
-  opacity: .8;
-  pointer-events: none;
-}
-
-.hero .container { position: relative; }
-
-/* 첫 화면은 관찰자를 기다리지 않고 로드 즉시 순차 등장시킵니다. */
-.hero-eyebrow,
-.hero-title,
-.hero-desc,
-.hero-actions {
-  animation: hero-in .75s cubic-bezier(.22,.61,.36,1) backwards;
-}
-.hero-eyebrow { animation-delay: .05s; }
-.hero-title   { animation-delay: .15s; }
-.hero-desc    { animation-delay: .25s; }
-.hero-actions { animation-delay: .35s; }
-
-@keyframes hero-in {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: none; }
-}
-
-.hero-eyebrow {
-  margin: 0 0 18px;
-  font-size: .82rem;
-  font-weight: 600;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.hero-title {
+/* 모바일에서는 섹션 제목을 상단 고정 라벨처럼, 데스크톱에서는 숨기지 않고 표시 */
+.section-heading {
   margin: 0 0 24px;
-  font-size: clamp(2.2rem, 6vw, 3.9rem);
-  font-weight: 800;
-  line-height: 1.22;
-  letter-spacing: -.035em;
-}
-.hero-title .accent { color: var(--accent); }
-
-.hero-desc {
-  margin: 0 0 36px;
-  max-width: 46ch;
-  font-size: clamp(1rem, 2vw, 1.1rem);
-  color: var(--text-muted);
-}
-
-.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 26px;
-  border-radius: 999px;
-  font-size: .95rem;
-  font-weight: 600;
-  border: 1px solid transparent;
-  transition: transform .16s ease, box-shadow .16s ease,
-              background-color .16s ease, border-color .16s ease;
-}
-.btn:hover { transform: translateY(-2px); }
-
-.btn-primary {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 32%, transparent);
-}
-.btn-primary:hover {
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 42%, transparent);
-}
-
-.btn-ghost {
-  border-color: var(--border);
-  color: var(--text);
-}
-.btn-ghost:hover { border-color: var(--text-muted); background: var(--bg-alt); }
-
-/* ===================================================
-   섹션 공통
-   =================================================== */
-
-.section { padding: clamp(64px, 10vw, 104px) 0; }
-.section-alt { background: var(--bg-alt); }
-
-.section-title {
-  margin: 0 0 12px;
-  font-size: clamp(1.6rem, 3.6vw, 2.1rem);
+  font-size: .84rem;
   font-weight: 700;
-  letter-spacing: -.025em;
+  letter-spacing: .16em;
+  color: var(--heading);
 }
 
-.section-desc {
-  margin: 0 0 40px;
-  color: var(--text-muted);
+.section p {
+  margin: 0 0 18px;
+  max-width: 60ch;
+}
+
+.hl {
+  color: var(--accent);
+  font-weight: 500;
 }
 
 /* ===================================================
-   About
+   소개: 기술 스택
    =================================================== */
 
-.about-grid {
+.skills {
   display: grid;
-  grid-template-columns: 1.25fr 1fr;
-  gap: clamp(32px, 6vw, 72px);
-  align-items: start;
-}
-
-.about-text p {
-  margin: 0 0 18px;
-  color: var(--text-muted);
-  font-size: 1.02rem;
-}
-.about-text p:last-child { margin-bottom: 0; }
-
-.about-skills {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  margin-top: 36px;
 }
 
 .skill-group h3 {
-  margin: 0 0 12px;
-  font-size: .78rem;
+  margin: 0 0 10px;
+  font-size: .74rem;
   font-weight: 700;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  letter-spacing: .12em;
+  color: var(--muted);
 }
 
-.tag-list {
+/* --- 민트 알약 태그 (Chiang 시그니처) --- */
+
+.chip-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-.tag-list li {
-  padding: 5px 13px;
-  border: 1px solid var(--border);
+.chip-list li {
+  padding: 4px 12px;
   border-radius: 999px;
-  font-size: .84rem;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: .78rem;
   font-weight: 500;
-  background: var(--bg-card);
+  line-height: 1.6;
 }
 
 /* ===================================================
@@ -385,234 +384,198 @@ html.lenis { scroll-behavior: auto !important; }
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .filter-btn {
-  padding: 8px 18px;
-  border: 1px solid var(--border);
+  padding: 6px 16px;
+  border: 1px solid var(--line-soft);
   border-radius: 999px;
-  background: var(--bg-card);
-  color: var(--text-muted);
+  background: transparent;
+  color: var(--muted);
   font-family: inherit;
-  font-size: .9rem;
-  font-weight: 500;
+  font-size: .84rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all .18s ease;
 }
 .filter-btn:hover {
-  color: var(--text);
-  border-color: var(--text-muted);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .filter-btn[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--accent-dim);
+  border-color: transparent;
+  color: var(--accent);
 }
 
 /* ===================================================
-   프로젝트 카드
+   프로젝트 목록 (행 기반, 호버 시 나머지 흐려짐)
    =================================================== */
 
-.project-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 22px;
-}
-
-.card {
+.project-list {
   display: flex;
   flex-direction: column;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
-}
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
 }
 
-/* 카드는 등장 후 hover transform과 충돌하지 않도록
-   .is-visible 상태에서 transition을 원래 값으로 되돌립니다. */
-.card[data-reveal].is-visible {
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
-}
+.project-row { margin-bottom: 14px; }
 
-.card-thumb {
+.row-inner {
   position: relative;
-  aspect-ratio: 16 / 10;
-  background: var(--bg-alt);
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 12px;
+  transition: opacity .25s ease, background-color .25s ease,
+              box-shadow .25s ease, transform .25s ease;
 }
-.card-thumb img {
+
+@media (min-width: 640px) {
+  .row-inner {
+    grid-template-columns: 150px 1fr;
+    gap: 22px;
+  }
+}
+
+/* 목록 위에 마우스가 있으면 전체를 흐리게 하고,
+   호버 중인 행만 또렷하게 + 배경 하이라이트 */
+@media (hover: hover) and (min-width: 640px) {
+  .project-list:hover .row-inner { opacity: .5; }
+  .project-list .project-row:hover .row-inner {
+    opacity: 1;
+    background: var(--card-hover);
+    box-shadow: inset 0 1px 0 var(--card-inset),
+                0 4px 24px rgba(0, 0, 0, .12);
+  }
+}
+
+.row-thumb {
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--thumb-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--line-soft);
+  transition: border-color .25s ease;
+}
+.project-row:hover .row-thumb { border-color: var(--thumb-border); }
+
+.row-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform .35s ease;
 }
-.card:hover .card-thumb img { transform: scale(1.04); }
 
-/* 이미지가 없을 때 보여줄 대체 썸네일 */
-.card-thumb-placeholder {
+.thumb-placeholder {
   width: 100%;
   height: 100%;
   display: grid;
   place-items: center;
-  font-size: 2.4rem;
+  font-size: 1.9rem;
   font-weight: 800;
   letter-spacing: -.04em;
   color: color-mix(in srgb, var(--accent) 55%, transparent);
   background:
-    linear-gradient(135deg,
-      color-mix(in srgb, var(--accent) 12%, transparent),
-      transparent 65%),
-    var(--bg-alt);
+    linear-gradient(135deg, var(--accent-dim), transparent 70%),
+    var(--line-soft);
 }
 
-.card-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  padding: 20px;
-}
-
-.card-category {
-  margin: 0 0 8px;
-  font-size: .74rem;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.card-title {
-  margin: 0 0 8px;
-  font-size: 1.14rem;
-  font-weight: 700;
-  letter-spacing: -.02em;
-}
-
-.card-desc {
-  margin: 0 0 18px;
-  font-size: .92rem;
-  color: var(--text-muted);
-  flex: 1;
-}
-
-.card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-.card-tags li {
-  padding: 3px 10px;
-  border-radius: 6px;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  font-size: .76rem;
-  color: var(--text-muted);
-}
-
-.card-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: auto;
-}
-
-.card-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: .84rem;
-  font-weight: 600;
-  transition: all .18s ease;
-}
-.card-link:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.empty-msg {
-  padding: 48px 0;
-  text-align: center;
-  color: var(--text-muted);
-}
-
-/* ===================================================
-   Contact
-   =================================================== */
-
-.contact-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 14px;
-  max-width: 720px;
-}
-
-.contact-list a {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 20px 24px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-card);
-  transition: all .18s ease;
-}
-.contact-list a:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-
-.contact-label {
-  font-size: .74rem;
+.row-category {
+  margin: 0 0 4px;
+  font-size: .72rem;
   font-weight: 700;
   letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--muted);
 }
-.contact-value { font-weight: 600; word-break: break-all; }
+
+.row-title {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.4;
+}
+
+.row-title .title-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  transition: color .18s ease;
+}
+.project-row:hover .row-title .title-link { color: var(--accent); }
+
+.arrow {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  transform: translateY(1px);
+  transition: transform .2s ease;
+}
+.project-row:hover .arrow { transform: translate(3px, -2px); }
+
+.row-desc {
+  margin: 0 0 14px;
+  font-size: .92rem;
+  max-width: 56ch;
+}
+
+.row-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.row-links a {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color .18s ease;
+}
+.row-links a:hover { color: var(--accent); }
+
+.empty-msg {
+  padding: 40px 0;
+  color: var(--muted);
+}
 
 /* ===================================================
-   푸터
+   연락
    =================================================== */
 
-.site-footer {
-  padding: 36px 0;
-  border-top: 1px solid var(--border);
+.contact-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: clamp(1.1rem, 3vw, 1.45rem);
+  font-weight: 700;
+  color: var(--heading);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 3px;
+  transition: color .18s ease;
 }
-.site-footer p {
-  margin: 0;
-  font-size: .88rem;
-  color: var(--text-muted);
+.contact-cta:hover { color: var(--accent); }
+.contact-cta svg { transition: transform .2s ease; }
+.contact-cta:hover svg { transform: translate(3px, -3px); }
+
+.colophon {
+  margin-top: 72px;
+  font-size: .84rem;
+  color: var(--muted);
 }
+.colophon p { margin: 0 0 6px; max-width: 52ch; }
+.colophon a {
+  color: var(--text);
+  font-weight: 600;
+  transition: color .18s ease;
+}
+.colophon a:hover { color: var(--accent); }
 
 /* ===================================================
-   반응형
+   반응형 보정
    =================================================== */
 
-@media (max-width: 860px) {
-  .about-grid { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 560px) {
-  .container { padding: 0 18px; }
-  .nav a { padding: 8px 10px; font-size: .88rem; }
-  .project-grid { grid-template-columns: 1fr; }
-  .hero-actions .btn { flex: 1; justify-content: center; }
-}
-
-@media (max-width: 400px) {
-  .nav { display: none; }
+@media (max-width: 1023px) {
+  .side-bottom { margin-top: 28px; }
 }

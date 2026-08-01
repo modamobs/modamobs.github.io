@@ -1,9 +1,10 @@
 /* ===================================================
    메인 스크립트
-   - 다크 모드 전환 및 저장
-   - 프로젝트 카드 렌더링 및 분류 필터
-   - 스크롤 등장 애니메이션 / 관성 스크롤 / 히어로 패럴랙스
-   - 헤더 스크롤 효과 / 푸터 연도
+   - 다크/라이트 테마 전환 및 저장 (기본: 다크)
+   - 프로젝트 행 렌더링 및 분류 필터
+   - 좌측 내비 스크롤스파이
+   - 마우스 스포트라이트
+   - 스크롤 등장 애니메이션 / 관성 스크롤
    =================================================== */
 
 (function () {
@@ -12,7 +13,7 @@
   // 모션을 줄이겠다고 설정한 사용자에게는 애니메이션을 걸지 않습니다.
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- 다크 모드 ---------- */
+  /* ---------- 테마 ---------- */
 
   const root = document.documentElement;
   const STORAGE_KEY = 'theme';
@@ -21,17 +22,8 @@
     root.setAttribute('data-theme', theme);
   }
 
-  // 저장된 설정이 있으면 그걸, 없으면 OS 설정을 따릅니다.
-  const saved = localStorage.getItem(STORAGE_KEY);
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-  applyTheme(saved || (prefersDark.matches ? 'dark' : 'light'));
-
-  // 사용자가 직접 고르기 전까지는 OS 설정 변화를 따라갑니다.
-  prefersDark.addEventListener('change', function (e) {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      applyTheme(e.matches ? 'dark' : 'light');
-    }
-  });
+  // 이 디자인은 다크가 기본입니다. 저장된 선택이 있으면 그걸 따릅니다.
+  applyTheme(localStorage.getItem(STORAGE_KEY) || 'dark');
 
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
@@ -40,6 +32,28 @@
       applyTheme(next);
       localStorage.setItem(STORAGE_KEY, next);
     });
+  }
+
+  /* ---------- 마우스 스포트라이트 ---------- */
+
+  // 터치 기기·모션 감소 환경에서는 스포트라이트를 갱신하지 않습니다(기본 위치 고정).
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (finePointer && !reduceMotion) {
+    let spotTicking = false;
+    let mx = 0, my = 0;
+
+    document.addEventListener('mousemove', function (e) {
+      mx = e.clientX;
+      my = e.clientY;
+      if (spotTicking) return;
+      spotTicking = true;
+      requestAnimationFrame(function () {
+        root.style.setProperty('--mouse-x', mx + 'px');
+        root.style.setProperty('--mouse-y', my + 'px');
+        spotTicking = false;
+      });
+    }, { passive: true });
   }
 
   /* ---------- 스크롤 등장 애니메이션 ---------- */
@@ -90,42 +104,55 @@
     }
     // 이미지가 없으면 제목 첫 글자로 대체 썸네일을 만듭니다.
     const initial = (project.title || '?').trim().charAt(0).toUpperCase();
-    return '<div class="card-thumb-placeholder" aria-hidden="true">' + esc(initial) + '</div>';
+    return '<div class="thumb-placeholder" aria-hidden="true">' + esc(initial) + '</div>';
   }
 
-  function tagsHTML(tags) {
+  function chipsHTML(tags) {
     if (!Array.isArray(tags) || tags.length === 0) return '';
-    return '<ul class="card-tags">' +
+    return '<ul class="chip-list">' +
       tags.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') +
       '</ul>';
   }
 
   function linksHTML(links, title) {
     if (!Array.isArray(links) || links.length === 0) return '';
-    return '<div class="card-links">' + links.map(function (link) {
+    return '<div class="row-links">' + links.map(function (link) {
       const external = /^https?:\/\//i.test(link.url || '');
-      return '<a class="card-link" href="' + esc(link.url) + '"' +
+      return '<a href="' + esc(link.url) + '"' +
         (external ? ' target="_blank" rel="noopener noreferrer"' : '') +
         ' aria-label="' + esc(title) + ' — ' + esc(link.label) + '">' +
         esc(link.label) + '</a>';
     }).join('') + '</div>';
   }
 
-  function cardHTML(project, index) {
-    // 한 줄에 3개까지 들어가므로 지연은 3개 주기로 반복시켜
-    // 목록이 길어져도 마지막 카드가 늦게 뜨지 않게 합니다.
-    const delay = (index % 3) * 90;
+  // 제목: 첫 번째 링크가 있으면 화살표와 함께 링크로, 없으면 텍스트로.
+  function titleHTML(project) {
+    const first = Array.isArray(project.links) && project.links[0];
+    if (!first) return esc(project.title);
+    const external = /^https?:\/\//i.test(first.url || '');
+    return '<a class="title-link" href="' + esc(first.url) + '"' +
+      (external ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' +
+      esc(project.title) +
+      '<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+      ' stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"' +
+      ' aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>';
+  }
+
+  function rowHTML(project, index) {
+    const delay = Math.min(index, 5) * 60;
     return '' +
-      '<article class="card" data-reveal style="--reveal-delay:' + delay + 'ms">' +
-        '<div class="card-thumb">' + thumbHTML(project) + '</div>' +
-        '<div class="card-body">' +
-          '<p class="card-category">' + esc(project.category) + '</p>' +
-          '<h3 class="card-title">' + esc(project.title) + '</h3>' +
-          '<p class="card-desc">' + esc(project.desc) + '</p>' +
-          tagsHTML(project.tags) +
-          linksHTML(project.links, project.title) +
+      '<li class="project-row" data-reveal style="--reveal-delay:' + delay + 'ms">' +
+        '<div class="row-inner">' +
+          '<div class="row-thumb">' + thumbHTML(project) + '</div>' +
+          '<div class="row-body">' +
+            '<p class="row-category">' + esc(project.category) + '</p>' +
+            '<h3 class="row-title">' + titleHTML(project) + '</h3>' +
+            '<p class="row-desc">' + esc(project.desc) + '</p>' +
+            linksHTML(project.links && project.links.slice(1), project.title) +
+            chipsHTML(project.tags) +
+          '</div>' +
         '</div>' +
-      '</article>';
+      '</li>';
   }
 
   function render(category) {
@@ -133,7 +160,7 @@
       ? projects
       : projects.filter(function (p) { return p.category === category; });
 
-    grid.innerHTML = list.map(cardHTML).join('');
+    grid.innerHTML = list.map(rowHTML).join('');
     if (emptyMsg) emptyMsg.hidden = list.length > 0;
     observeReveals(grid);
   }
@@ -171,34 +198,34 @@
   // 페이지 전체의 등장 대상을 관찰 시작
   observeReveals(document);
 
-  /* ---------- 스크롤 반응: 헤더 + 히어로 패럴랙스 ---------- */
+  /* ---------- 좌측 내비 스크롤스파이 ---------- */
 
-  const header = document.querySelector('.site-header');
-  const hero   = document.querySelector('.hero');
+  const navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
+  const sections = navLinks
+    .map(function (link) { return document.querySelector(link.getAttribute('href')); })
+    .filter(Boolean);
 
-  let ticking = false;
-
-  function onScrollFrame() {
-    const y = window.scrollY;
-
-    if (header) header.classList.toggle('scrolled', y > 8);
-
-    // 히어로가 화면에 남아 있는 동안만 계산합니다.
-    if (hero && !reduceMotion) {
-      const limit = hero.offsetHeight;
-      hero.style.setProperty('--scroll-y', (y < limit ? y : limit) + 'px');
-    }
-
-    ticking = false;
+  function setActive(id) {
+    navLinks.forEach(function (link) {
+      link.classList.toggle('is-active', link.getAttribute('href') === '#' + id);
+    });
   }
 
-  window.addEventListener('scroll', function () {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(onScrollFrame);
-  }, { passive: true });
+  if ('IntersectionObserver' in window && sections.length) {
+    // 뷰포트 상단 1/3 지점을 지나는 섹션을 활성으로 표시합니다.
+    const spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) setActive(entry.target.id);
+      });
+    }, { rootMargin: '-30% 0px -60% 0px' });
 
-  onScrollFrame();
+    sections.forEach(function (s) { spy.observe(s); });
+  }
+
+  /* ---------- 푸터 연도 ---------- */
+
+  const yearEl = document.getElementById('year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
 
   /* ---------- 관성 스크롤 (Lenis) ---------- */
 
@@ -211,9 +238,7 @@
       requestAnimationFrame(raf);
     })(0);
 
-    // 앵커 링크를 Lenis가 처리하도록 넘깁니다(헤더 높이만큼 offset).
-    const headerH = header ? header.offsetHeight : 0;
-
+    // 앵커 링크를 Lenis가 처리하도록 넘깁니다.
     document.querySelectorAll('a[href^="#"]').forEach(function (link) {
       link.addEventListener('click', function (e) {
         const href = link.getAttribute('href');
@@ -223,14 +248,9 @@
         if (!target) return;
 
         e.preventDefault();
-        lenis.scrollTo(target, { offset: -(headerH + 16) });
+        lenis.scrollTo(target, { offset: -24 });
       });
     });
   }
-
-  /* ---------- 푸터 연도 ---------- */
-
-  const yearEl = document.getElementById('year');
-  if (yearEl) yearEl.textContent = new Date().getFullYear();
 
 })();
