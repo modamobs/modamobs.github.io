@@ -418,6 +418,23 @@ html.lenis { scroll-behavior: auto !important; }
   flex-direction: column;
 }
 
+.project-group { margin-bottom: 20px; }
+
+.project-subheading {
+  margin: 0 0 18px;
+  padding-left: 18px;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--muted);
+}
+
+.row-list,
+.feature-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .project-row { margin-bottom: 14px; }
 
 .row-inner {
@@ -438,11 +455,15 @@ html.lenis { scroll-behavior: auto !important; }
   }
 }
 
-/* 목록 위에 마우스가 있으면 전체를 흐리게 하고,
-   호버 중인 행만 또렷하게 + 배경 하이라이트 */
+/* 목록 위에 마우스가 있으면 그 목록 안의 항목을 흐리게 하고,
+   호버 중인 항목만 또렷하게 + 배경이 은은하게 밝아짐.
+   (대표작·일반 목록 각각 자기 그룹 안에서만 동작) */
 @media (hover: hover) and (min-width: 640px) {
-  .project-list:hover .row-inner { opacity: .5; }
-  .project-list .project-row:hover .row-inner {
+  .row-list:hover .row-inner,
+  .feature-list:hover .feature-inner { opacity: .5; }
+
+  .row-list .project-row:hover .row-inner,
+  .feature-list .feature-card:hover .feature-inner {
     opacity: 1;
     background: var(--card-hover);
     box-shadow: inset 0 1px 0 var(--card-inset),
@@ -533,6 +554,83 @@ html.lenis { scroll-behavior: auto !important; }
   transition: color .18s ease;
 }
 .row-links a:hover { color: var(--accent); }
+
+/* ===================================================
+   대표작 카드 (큰 가로형: 스크린샷 + 상세 설명)
+   =================================================== */
+
+.feature-card { margin-bottom: 18px; }
+
+.feature-inner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  padding: 20px;
+  border-radius: 14px;
+  transition: opacity .25s ease, background-color .25s ease,
+              box-shadow .25s ease;
+}
+
+@media (min-width: 640px) {
+  .feature-inner {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 26px;
+    align-items: start;
+  }
+}
+
+.feature-thumb {
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--thumb-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--line-soft);
+}
+
+.feature-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feature-thumb .thumb-placeholder { font-size: 3rem; }
+
+.feature-title {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--heading);
+  line-height: 1.35;
+}
+
+.feature-card:hover .feature-title .title-link { color: var(--accent); }
+.feature-card:hover .arrow { transform: translate(3px, -2px); }
+
+.feature-desc {
+  margin: 0 0 14px;
+  font-size: .95rem;
+  max-width: 56ch;
+}
+
+/* 핵심 성과 목록: 민트 마커 */
+.feature-highlights {
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.feature-highlights li {
+  position: relative;
+  padding-left: 18px;
+  font-size: .88rem;
+}
+.feature-highlights li::before {
+  content: "▹";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
 
 .empty-msg {
   padding: 40px 0;

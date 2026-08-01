@@ -155,13 +155,60 @@
       '</li>';
   }
 
-  function render(category) {
-    const list = category === '전체'
-      ? projects
-      : projects.filter(function (p) { return p.category === category; });
+  function highlightsHTML(highlights) {
+    if (!Array.isArray(highlights) || highlights.length === 0) return '';
+    return '<ul class="feature-highlights">' +
+      highlights.map(function (h) { return '<li>' + esc(h) + '</li>'; }).join('') +
+      '</ul>';
+  }
 
-    grid.innerHTML = list.map(rowHTML).join('');
-    if (emptyMsg) emptyMsg.hidden = list.length > 0;
+  // 대표작: 큰 가로형 카드 (스크린샷 크게 + 상세 설명 + 핵심 성과)
+  function featureHTML(project, index) {
+    const delay = Math.min(index, 3) * 80;
+    return '' +
+      '<li class="feature-card" data-reveal style="--reveal-delay:' + delay + 'ms">' +
+        '<div class="feature-inner">' +
+          '<div class="feature-thumb">' + thumbHTML(project) + '</div>' +
+          '<div class="feature-body">' +
+            '<p class="row-category">' + esc(project.category) + '</p>' +
+            '<h3 class="feature-title">' + titleHTML(project) + '</h3>' +
+            '<p class="feature-desc">' + esc(project.desc) + '</p>' +
+            highlightsHTML(project.highlights) +
+            linksHTML(project.links && project.links.slice(1), project.title) +
+            chipsHTML(project.tags) +
+          '</div>' +
+        '</div>' +
+      '</li>';
+  }
+
+  function render(category) {
+    // ul 바로 아래에는 li만 올 수 있으므로 그룹을 li로 감쌉니다.
+    function group(heading, listClass, itemsHTML) {
+      return '<li class="project-group">' +
+        (heading ? '<h3 class="project-subheading">' + heading + '</h3>' : '') +
+        '<ul class="' + listClass + '">' + itemsHTML + '</ul></li>';
+    }
+
+    if (category === '전체') {
+      // 전체 보기: 대표작은 큰 카드로, 나머지는 작은 행으로 나눠 보여줍니다.
+      const featured = projects.filter(function (p) { return p.featured; });
+      const rest     = projects.filter(function (p) { return !p.featured; });
+
+      grid.innerHTML =
+        (featured.length
+          ? group('대표 프로젝트', 'feature-list', featured.map(featureHTML).join(''))
+          : '') +
+        (rest.length
+          ? group(featured.length ? '그 외 프로젝트' : '', 'row-list',
+                  rest.map(rowHTML).join(''))
+          : '');
+      if (emptyMsg) emptyMsg.hidden = projects.length > 0;
+    } else {
+      // 분류 필터: 대표작 포함 전부 작은 행으로 통일해 보여줍니다.
+      const list = projects.filter(function (p) { return p.category === category; });
+      grid.innerHTML = group('', 'row-list', list.map(rowHTML).join(''));
+      if (emptyMsg) emptyMsg.hidden = list.length > 0;
+    }
     observeReveals(grid);
   }
 
