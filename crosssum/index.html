@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CROSS SUM — 숫자를 모아 큰 수를 만드는 크로스 퍼즐</title>
+<meta name="description" content="상하좌우로 같은 숫자를 이어붙여 더 큰 숫자를 만드는 크로스 숫자 퍼즐, CROSS SUM. 200개의 싱글 스테이지와 실시간 1:1 대전.">
+<link rel="icon" type="image/png" href="assets/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CROSS SUM — 크로스 숫자 퍼즐">
+<meta property="og:description" content="같은 숫자를 이어붙여 더 큰 숫자를 만드는 퍼즐. 200개의 스테이지와 실시간 1:1 대전.">
+<meta property="og:image" content="https://modamobs.github.io/crosssum/assets/icon.png">
+<meta property="og:url" content="https://modamobs.github.io/crosssum/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  /*
+    디자인 노트
+    ------------------------------------------------------------------
+    색  : 게임 실제 화면(로그인/스플래시)의 "밤하늘 남색 → 청록 → 초원"
+          그라데이션을 그대로 페이지 배경으로 확장. 포인트 컬러는
+          스테이지 클리어 별 배지에 쓰이는 골드.
+    글자: 헤드라인 = Jua(둥글고 통통한 한글 디스플레이체, 타일 속 숫자와
+          같은 인상), 본문 = Noto Sans KR.
+    구조: 히어로를 "밤하늘에서 초원으로 이어지는 한 장면"으로 만들고,
+          그 위에 실제 게임 타일 모양(둥근 사각형)의 카드를 얹는다.
+          모드 소개는 임의의 01/02/03 번호 대신, 게임의 실제 합치기
+          진행(2 → 4 → 8)을 그대로 시각 장치로 사용한다.
+    ------------------------------------------------------------------
+  */
+
+  :root {
+    --sky-top: #0b1f3a;
+    --sky-mid: #135b7c;
+    --sky-low: #2fa7ad;
+    --meadow: #7cb845;
+    --meadow-shade: #4f7a2d;
+
+    --paper: #fbf7ee;
+    --paper-card: #ffffff;
+    --ink: #16222c;
+    --ink-soft: rgba(22, 34, 44, 0.64);
+    --ink-faint: rgba(22, 34, 44, 0.42);
+    --line: rgba(22, 34, 44, 0.1);
+
+    --gold: #f2a93c;
+    --gold-deep: #c97f1c;
+
+    --tile-shadow: 0 18px 40px rgba(11, 31, 58, 0.28);
+    --font-display: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+    --font-body: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10161c;
+      --paper-card: #182129;
+      --ink: #edf1f4;
+      --ink-soft: rgba(237, 241, 244, 0.68);
+      --ink-faint: rgba(237, 241, 244, 0.46);
+      --line: rgba(237, 241, 244, 0.12);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  h1, h2, h3 { text-wrap: balance; font-weight: 400; }
+
+  :focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+  }
+
+  /* ================= HERO : 밤하늘 -> 초원 ================= */
+
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding-top: 64px;
+    background: linear-gradient(180deg,
+      var(--sky-top) 0%,
+      var(--sky-mid) 52%,
+      var(--sky-low) 82%,
+      var(--sky-low) 100%);
+  }
+
+  .stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(2px 2px at 12% 18%, rgba(255,255,255,0.85), transparent 60%),
+      radial-gradient(2px 2px at 78% 10%, rgba(255,255,255,0.7), transparent 60%),
+      radial-gradient(1.5px 1.5px at 45% 28%, rgba(255,255,255,0.6), transparent 60%),
+      radial-gradient(2px 2px at 88% 34%, rgba(255,255,255,0.5), transparent 60%),
+      radial-gradient(1.5px 1.5px at 25% 8%, rgba(255,255,255,0.6), transparent 60%);
+    opacity: 0.9;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    padding-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: rgba(255, 255, 255, 0.68);
+    margin: 0 0 22px;
+  }
+
+  .tile-hero {
+    width: 128px;
+    height: 128px;
+    margin: 0 auto 30px;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: var(--tile-shadow), 0 0 0 1px rgba(255,255,255,0.15) inset;
+  }
+
+  .tile-hero img { width: 100%; height: 100%; object-fit: cover; }
+
+  h1.title {
+    font-family: var(--font-display);
+    font-size: clamp(42px, 8vw, 68px);
+    color: #ffffff;
+    margin: 0 0 18px;
+    letter-spacing: 0.01em;
+  }
+
+  .subhead {
+    font-size: clamp(16px, 2.4vw, 19px);
+    color: rgba(255, 255, 255, 0.86);
+    max-width: 480px;
+    margin: 0 auto 44px;
+  }
+
+  /* 합치기 시연: 2 + 2 -> 4 */
+
+  .merge-demo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 52px;
+  }
+
+  .demo-tile {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 22px rgba(11, 31, 58, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 26px;
+    color: var(--sky-mid);
+  }
+
+  .demo-op { color: rgba(255,255,255,0.55); font-family: var(--font-display); font-size: 22px; }
+  .demo-result {
+    background: var(--gold);
+    color: #ffffff;
+    animation: pop-result 2.6s ease-in-out infinite;
+  }
+
+  @keyframes pop-result {
+    0%, 55%  { transform: scale(1); box-shadow: 0 10px 22px rgba(11, 31, 58, 0.3); }
+    68%      { transform: scale(1.14); box-shadow: 0 14px 30px rgba(242, 169, 60, 0.45); }
+    82%, 100%{ transform: scale(1); box-shadow: 0 10px 22px rgba(11, 31, 58, 0.3); }
+  }
+
+  .status-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.72);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 10px 20px;
+    border-radius: 999px;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* 초원 + 나무 실루엣 */
+
+  .meadow {
+    position: relative;
+    height: 128px;
+  }
+
+  .meadow svg { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; display: block; }
+
+  /* ================= 소개 문단 ================= */
+
+  .intro {
+    background: var(--paper);
+    padding: 68px 0 12px;
+  }
+
+  .intro-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 56px;
+    align-items: start;
+  }
+
+  .intro h2 {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 4vw, 34px);
+    margin: 0 0 18px;
+    color: var(--ink);
+  }
+
+  .intro p {
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 46ch;
+    margin: 0;
+  }
+
+  .stat-row {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stat .num {
+    font-family: var(--font-display);
+    font-size: 30px;
+    color: var(--gold-deep);
+    font-variant-numeric: tabular-nums;
+    min-width: 74px;
+  }
+
+  .stat .desc {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 720px) {
+    .intro-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ================= 기능 ================= */
+
+  .features {
+    padding: 72px 0 20px;
+    background: var(--paper);
+  }
+
+  .features-head {
+    max-width: 46ch;
+    margin-bottom: 40px;
+  }
+
+  .features-head h2 {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 3.6vw, 30px);
+    margin: 0 0 10px;
+  }
+
+  .features-head p {
+    color: var(--ink-soft);
+    margin: 0;
+    font-size: 15.5px;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 18px;
+  }
+
+  .feature-card {
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 26px 24px;
+  }
+
+  .fi {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 16px;
+  }
+
+  .feature-card h3 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 16.5px;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+
+  .feature-card p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  /* ================= 모드 : 2 -> 4 -> 8 진행 ================= */
+
+  .modes {
+    background: linear-gradient(180deg, var(--sky-top), #0e2a45);
+    color: #ffffff;
+    padding: 76px 0;
+    margin-top: 80px;
+  }
+
+  .modes-head {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .modes-head h2 {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 3.6vw, 30px);
+    margin: 0 0 10px;
+  }
+
+  .modes-head p {
+    color: rgba(255,255,255,0.6);
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .mode-chain {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 56px;
+    flex-wrap: wrap;
+  }
+
+  .mode-tile {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .mode-tile.lit {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #1a1200;
+  }
+
+  .mode-arrow {
+    color: rgba(255,255,255,0.35);
+    font-size: 18px;
+    padding: 0 14px;
+  }
+
+  .mode-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 32px;
+    text-align: center;
+  }
+
+  .mode-list h4 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 17px;
+    margin: 0 0 8px;
+  }
+
+  .mode-list p {
+    margin: 0;
+    font-size: 14px;
+    color: rgba(255,255,255,0.62);
+  }
+
+  /* ================= footer ================= */
+
+  footer {
+    background: var(--paper);
+    padding: 44px 0;
+    text-align: center;
+  }
+
+  footer .icon-mini {
+    width: 34px; height: 34px; border-radius: 9px;
+    margin: 0 auto 14px;
+    overflow: hidden;
+  }
+
+  footer p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-faint);
+  }
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="stars" aria-hidden="true"></div>
+
+    <div class="wrap hero-content">
+      <p class="eyebrow">숫자 퍼즐</p>
+
+      <div class="tile-hero">
+        <img src="assets/icon.png" alt="CROSS SUM 앱 아이콘">
+      </div>
+
+      <h1 class="title">CROSS SUM</h1>
+      <p class="subhead">상하좌우로 같은 숫자를 이어붙여 더 큰 숫자를 만드세요.<br>
+      판이 가득 차기 전에, 목표를 먼저 채우는 사람이 이깁니다.</p>
+
+      <div class="merge-demo" role="img" aria-label="숫자 2 타일 두 개가 합쳐져 4가 되는 게임 방식 시연">
+        <div class="demo-tile">2</div>
+        <span class="demo-op">+</span>
+        <div class="demo-tile">2</div>
+        <span class="demo-op">=</span>
+        <div class="demo-tile demo-result">4</div>
+      </div>
+
+      <div class="status-note">
+        <span class="status-dot" aria-hidden="true"></span>
+        Google Play 출시 준비 중
+      </div>
+    </div>
+
+    <div class="meadow" aria-hidden="true">
+      <svg viewBox="0 0 1200 160" preserveAspectRatio="none">
+        <path d="M0,60 Q120,10 260,50 T560,40 T900,55 T1200,35 L1200,160 L0,160 Z" fill="#4f7a2d" opacity="0.55"/>
+        <path d="M0,90 Q150,50 320,85 T680,70 T1050,88 T1200,75 L1200,160 L0,160 Z" fill="#7cb845"/>
+        <g fill="#3f6224">
+          <polygon points="90,90 100,40 110,90" />
+          <rect x="97" y="88" width="6" height="14" />
+          <polygon points="150,95 158,55 166,95" />
+          <rect x="155" y="93" width="6" height="12" />
+          <polygon points="1020,88 1030,38 1040,88" />
+          <rect x="1027" y="86" width="6" height="14" />
+          <polygon points="1090,95 1098,58 1106,95" />
+          <rect x="1095" y="93" width="6" height="12" />
+          <polygon points="960,98 967,68 974,98" />
+        </g>
+      </svg>
+    </div>
+  </header>
+
+  <section class="intro">
+    <div class="wrap intro-grid">
+      <div>
+        <h2>규칙은 단순하게,<br>판은 치열하게.</h2>
+        <p>CROSS SUM은 같은 숫자 타일을 붙여 더 큰 숫자를 만드는 크로스 숫자 퍼즐입니다.
+        혼자 차근차근 스테이지를 깨나가도 좋고, 다른 플레이어와 같은 목표를 두고
+        실시간으로 맞붙어도 좋습니다. 보드는 4×4, 규칙은 한 줄이지만 수는 매판 새롭게 갈립니다.</p>
+      </div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="num">200</span>
+          <span class="desc">개의 싱글 스테이지, 저마다 다른 목표</span>
+        </div>
+        <div class="stat">
+          <span class="num">1:1</span>
+          <span class="desc">실시간 매칭으로 즉시 붙는 대전</span>
+        </div>
+        <div class="stat">
+          <span class="num">매일</span>
+          <span class="desc">새로 갱신되는 일일 도전 랭크전</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="wrap">
+      <div class="features-head">
+        <h2>플레이를 채우는 것들</h2>
+        <p>규칙은 한 줄이지만, 판을 다르게 만드는 요소는 여럿입니다.</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <svg class="fi" viewBox="0 0 44 44"><rect x="4" y="4" width="36" height="36" rx="10" fill="#eaf4ec"/><polygon points="18,13 28,13 18,20" fill="#4f7a2d"/><rect x="17" y="13" width="3" height="18" fill="#4f7a2d"/></svg>
+          <h3>스테이지 모드</h3>
+          <p>타일 만들기, 콤보, 제한 시간까지 — 스테이지마다 다른 목표를 순서대로 클리어합니다.</p>
+        </article>
+        <article class="feature-card">
+          <svg class="fi" viewBox="0 0 44 44"><rect x="4" y="4" width="36" height="36" rx="10" fill="#eef2fb"/><polygon points="14,14 20,22 14,30" fill="#135b7c"/><polygon points="30,14 24,22 30,30" fill="#f2a93c"/></svg>
+          <h3>실시간 대전</h3>
+          <p>같은 목표를 두고 다른 플레이어와 실시간으로 겨루는 1:1 매칭 대전.</p>
+        </article>
+        <article class="feature-card">
+          <svg class="fi" viewBox="0 0 44 44"><rect x="4" y="4" width="36" height="36" rx="10" fill="#fdf3e3"/><polygon points="22,11 25.5,18.5 33.5,19.3 27.5,24.7 29.2,32.6 22,28.4 14.8,32.6 16.5,24.7 10.5,19.3 18.5,18.5" fill="#c97f1c"/></svg>
+          <h3>랭킹 &amp; 일일 도전</h3>
+          <p>점수와 최고 숫자로 겨루는 리더보드, 매일 새로 열리는 일일 스테이지.</p>
+        </article>
+        <article class="feature-card">
+          <svg class="fi" viewBox="0 0 44 44"><rect x="4" y="4" width="36" height="36" rx="10" fill="#f3ecf7"/><circle cx="16" cy="18" r="4.2" fill="#c97f1c"/><circle cx="28" cy="18" r="4.2" fill="#135b7c"/><circle cx="22" cy="28" r="4.2" fill="#7cb845"/></svg>
+          <h3>스킨 &amp; 아이템</h3>
+          <p>되돌리기·망치·요술봉 아이템과 다양한 타일 스킨으로 나만의 판을 꾸밉니다.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="modes">
+    <div class="wrap">
+      <div class="modes-head">
+        <h2>혼자서, 그리고 함께</h2>
+        <p>타일이 쌓이듯, 즐기는 방법도 하나씩 쌓입니다.</p>
+      </div>
+
+      <div class="mode-chain" aria-hidden="true">
+        <div class="mode-tile">2</div>
+        <span class="mode-arrow">→</span>
+        <div class="mode-tile">4</div>
+        <span class="mode-arrow">→</span>
+        <div class="mode-tile lit">8</div>
+      </div>
+
+      <div class="mode-list">
+        <div>
+          <h4>싱글 플레이</h4>
+          <p>200개의 스테이지를 순서대로, 내 속도로.</p>
+        </div>
+        <div>
+          <h4>실시간 대전</h4>
+          <p>매칭 한 번이면 바로 시작되는 1:1 승부.</p>
+        </div>
+        <div>
+          <h4>일일 도전</h4>
+          <p>매일 새로 열리는 랭크 모드로 순위를 갱신.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div class="icon-mini"><img src="assets/icon.png" alt=""></div>
+      <p>&copy; <span id="year"></span> Smart it</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
