@@ -20,6 +20,7 @@
   --card-inset:  rgba(148, 163, 184, .1);
   --thumb-border: rgba(148, 163, 184, .15);
   --spotlight:   rgba(29, 78, 216, .15);
+  --grid-line:   rgba(148, 163, 184, .05);
 
   --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
           "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
@@ -38,6 +39,7 @@
   --card-inset:  rgba(15, 23, 42, .04);
   --thumb-border: rgba(15, 23, 42, .12);
   --spotlight:   rgba(13, 148, 136, .08);
+  --grid-line:   rgba(15, 23, 42, .045);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -152,6 +154,21 @@ html.lenis { scroll-behavior: auto !important; }
   transition: background .15s ease;
 }
 
+/* 배경에 아주 옅은 격자를 깔아 빈 여백의 허전함을 덜어 줍니다. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 25%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 25%, transparent 75%);
+}
+
 /* ===================================================
    레이아웃: 좌측 고정 + 우측 스크롤
    =================================================== */
@@ -203,13 +220,21 @@ html.lenis { scroll-behavior: auto !important; }
 
 .side-name {
   margin: 0;
-  font-size: clamp(2.4rem, 5vw, 3rem);
+  font-size: clamp(2.6rem, 5.5vw, 3.4rem);
   font-weight: 800;
-  letter-spacing: -.03em;
-  color: var(--heading);
-  line-height: 1.15;
+  letter-spacing: -.035em;
+  line-height: 1.12;
+  background: linear-gradient(135deg,
+    var(--heading) 20%,
+    color-mix(in srgb, var(--accent) 70%, var(--heading)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.logo-dot { color: var(--accent); }
+.logo-dot {
+  -webkit-text-fill-color: var(--accent);
+  color: var(--accent);
+}
 
 .side-role {
   margin: 14px 0 0;
@@ -485,8 +510,8 @@ html.lenis { scroll-behavior: auto !important; }
   .feature-list .feature-card:hover .feature-inner {
     opacity: 1;
     background: var(--card-hover);
-    box-shadow: inset 0 1px 0 var(--card-inset),
-                0 4px 24px rgba(0, 0, 0, .12);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
+                0 8px 30px rgba(0, 0, 0, .18);
   }
 }
 
@@ -506,18 +531,74 @@ html.lenis { scroll-behavior: auto !important; }
   object-fit: cover;
 }
 
+/* --- 생성형 대체 썸네일 ---
+   스크린샷이 없을 때 프로젝트마다 다른 색의 그라디언트 아트를
+   만들어 줍니다. --h는 main.js가 제목에서 계산해 넣습니다. */
+
 .thumb-placeholder {
+  position: relative;
   width: 100%;
   height: 100%;
   display: grid;
   place-items: center;
-  font-size: 1.9rem;
+  overflow: hidden;
+  background:
+    radial-gradient(115% 115% at 12% 10%,
+      hsl(var(--h, 170) 72% 52% / .55), transparent 58%),
+    radial-gradient(95% 95% at 88% 85%,
+      hsl(calc(var(--h, 170) + 55) 78% 48% / .42), transparent 55%),
+    linear-gradient(140deg,
+      hsl(var(--h, 170) 42% 20%), hsl(calc(var(--h, 170) + 40) 48% 12%));
+}
+
+:root[data-theme="light"] .thumb-placeholder {
+  background:
+    radial-gradient(115% 115% at 12% 10%,
+      hsl(var(--h, 170) 80% 72% / .75), transparent 58%),
+    radial-gradient(95% 95% at 88% 85%,
+      hsl(calc(var(--h, 170) + 55) 85% 68% / .6), transparent 55%),
+    linear-gradient(140deg,
+      hsl(var(--h, 170) 55% 88%), hsl(calc(var(--h, 170) + 40) 60% 78%));
+}
+
+/* 미세한 점 격자로 질감을 더합니다. */
+.thumb-placeholder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(currentColor .5px, transparent .5px);
+  background-size: 10px 10px;
+  opacity: .16;
+  color: #fff;
+}
+:root[data-theme="light"] .thumb-placeholder::after { color: #0f172a; }
+
+.thumb-initial {
+  position: relative;
+  z-index: 1;
+  font-size: 2.1rem;
   font-weight: 800;
   letter-spacing: -.04em;
-  color: color-mix(in srgb, var(--accent) 55%, transparent);
-  background:
-    linear-gradient(135deg, var(--accent-dim), transparent 70%),
-    var(--line-soft);
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, .35);
+}
+:root[data-theme="light"] .thumb-initial {
+  color: hsl(var(--h, 170) 60% 22%);
+  text-shadow: 0 1px 6px rgba(255, 255, 255, .5);
+}
+
+/* 호버 시 썸네일이 살짝 확대됩니다. */
+.row-thumb .thumb-placeholder,
+.feature-thumb .thumb-placeholder,
+.row-thumb img,
+.feature-thumb img {
+  transition: transform .4s cubic-bezier(.22,.61,.36,1);
+}
+.project-row:hover .thumb-placeholder,
+.feature-card:hover .thumb-placeholder,
+.project-row:hover .row-thumb img,
+.feature-card:hover .feature-thumb img {
+  transform: scale(1.06);
 }
 
 .row-category {
@@ -585,8 +666,10 @@ html.lenis { scroll-behavior: auto !important; }
   display: grid;
   grid-template-columns: 1fr;
   gap: 18px;
-  padding: 20px;
+  padding: 22px;
   border-radius: 14px;
+  /* 대표작은 평소에도 옅은 테두리로 존재감을 줍니다. */
+  box-shadow: inset 0 0 0 1px var(--card-inset);
   transition: opacity .25s ease, background-color .25s ease,
               box-shadow .25s ease;
 }

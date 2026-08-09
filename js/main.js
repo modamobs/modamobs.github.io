@@ -97,14 +97,28 @@
       .replace(/'/g, '&#39;');
   }
 
+  // 제목에서 0~359 사이의 색상값을 만들어, 프로젝트마다
+  // 다르지만 새로고침해도 변하지 않는 썸네일 색을 얻습니다.
+  // 해시값이 몰리는 걸 막으려고 황금각(137.5°)을 곱해 분산시킵니다.
+  function hueFor(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = (h * 31 + str.charCodeAt(i)) % 360;
+    }
+    return Math.round(h * 137.508) % 360;
+  }
+
   function thumbHTML(project) {
     if (project.thumb) {
       return '<img src="' + esc(project.thumb) + '" alt="' + esc(project.title) +
              ' 스크린샷" loading="lazy">';
     }
-    // 이미지가 없으면 제목 첫 글자로 대체 썸네일을 만듭니다.
-    const initial = (project.title || '?').trim().charAt(0).toUpperCase();
-    return '<div class="thumb-placeholder" aria-hidden="true">' + esc(initial) + '</div>';
+    // 이미지가 없으면 제목 첫 글자로 그라디언트 대체 썸네일을 만듭니다.
+    const title = project.title || '?';
+    const initial = title.trim().charAt(0).toUpperCase();
+    return '<div class="thumb-placeholder" style="--h:' + hueFor(title) + '" aria-hidden="true">' +
+             '<span class="thumb-initial">' + esc(initial) + '</span>' +
+           '</div>';
   }
 
   function chipsHTML(tags) {
