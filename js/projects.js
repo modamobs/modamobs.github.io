@@ -55,6 +55,30 @@ const PROJECTS = [
     ]
   },
   {
+    title: "여검사 키우기",
+    category: "게임",
+    // ⚠️ 아래 설명·태그를 실제 게임 내용으로 바꿔 주세요.
+    desc: "검 한 자루로 시작해, 자리를 비운 사이에도 강해지는 여검사를 키우는 " +
+          "방치형 성장 RPG. 출시 준비 중입니다.",
+    tags: ["Unity", "C#", "방치형 RPG"],
+    thumb: "",
+    links: [
+      { label: "소개 페이지", url: "swordgirl/" }
+    ]
+  },
+  {
+    title: "강화용자 김회춘",
+    category: "게임",
+    // ⚠️ 아래 설명·태그를 실제 게임 내용으로 바꿔 주세요.
+    desc: "한 번 더 누르면 될 것 같은 그 마음. 터지고 또 도전하는 강화 게임. " +
+          "출시 준비 중입니다.",
+    tags: ["Unity", "C#", "강화"],
+    thumb: "",
+    links: [
+      { label: "소개 페이지", url: "upgradekim/" }
+    ]
+  },
+  {
     title: "WebCanvas",
     category: "웹",
     desc: "이미지를 드래그하거나 Ctrl+V로 붙여넣어 자유롭게 배치·편집하는 " +

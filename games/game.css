@@ -1,0 +1,349 @@
+/* ===================================================
+   게임 소개 페이지 공용 스타일
+   ---------------------------------------------------
+   새 게임을 추가할 때는 이 파일을 건드리지 말고,
+   페이지의 <body style="--game-accent: ...">에서
+   색만 바꾸면 됩니다.
+
+   사용법:
+     <body style="--game-accent:#c084fc; --game-accent2:#f0abfc; --game-hue:280">
+   =================================================== */
+
+:root {
+  --bg:        #0d0f16;
+  --bg-soft:   #141824;
+  --text:      #a8b0c2;
+  --heading:   #eef1f7;
+  --muted:     #6b7488;
+  --line:      rgba(168, 176, 194, .14);
+
+  /* 페이지마다 덮어쓰는 값 (기본값은 민트) */
+  --game-accent:  #5eead4;
+  --game-accent2: #99f6e4;
+  --game-hue:     170;
+
+  --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; display: block; }
+ul  { list-style: none; padding: 0; margin: 0; }
+a   { color: inherit; text-decoration: none; }
+
+:focus-visible {
+  outline: 2px solid var(--game-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection { background: var(--game-accent); color: var(--bg); }
+
+.wrap {
+  width: 100%;
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ===================================================
+   상단 바 — 포트폴리오로 돌아가는 링크
+   =================================================== */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 14px 0;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color .18s ease, gap .18s ease;
+}
+.back-link:hover { color: var(--game-accent); gap: 12px; }
+
+/* ===================================================
+   히어로
+   =================================================== */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(56px, 11vw, 110px) 0 clamp(48px, 9vw, 90px);
+  text-align: center;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: 50%;
+  width: min(900px, 130%);
+  height: 620px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side,
+      hsl(var(--game-hue) 80% 60% / .22), transparent 70%),
+    radial-gradient(closest-side at 70% 60%,
+      hsl(calc(var(--game-hue) + 45) 85% 62% / .16), transparent 70%);
+  filter: blur(6px);
+}
+
+.hero .wrap { position: relative; }
+
+.eyebrow {
+  margin: 0 0 20px;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  color: var(--game-accent);
+}
+
+/* 아이콘: 실제 파일이 생기면 .icon-art를 <img>로 교체하세요. */
+.icon-slot {
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 26px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px hsl(var(--game-hue) 70% 20% / .55),
+              inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.icon-slot img { width: 100%; height: 100%; object-fit: cover; }
+
+.icon-art {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .4);
+  background:
+    radial-gradient(120% 120% at 20% 15%,
+      hsl(var(--game-hue) 85% 62%), transparent 62%),
+    linear-gradient(145deg,
+      hsl(var(--game-hue) 55% 32%), hsl(calc(var(--game-hue) + 40) 60% 20%));
+}
+
+.title {
+  margin: 0 0 16px;
+  font-size: clamp(2.3rem, 7vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -.035em;
+  line-height: 1.15;
+  color: var(--heading);
+}
+
+.subhead {
+  margin: 0 auto 28px;
+  max-width: 40ch;
+  font-size: clamp(1rem, 2.2vw, 1.12rem);
+}
+
+/* 출시 상태 배지 */
+.status-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: hsl(var(--game-hue) 70% 55% / .1);
+  color: var(--game-accent);
+  font-size: .86rem;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;  transform: scale(1); }
+  50%      { opacity: .35; transform: scale(.8); }
+}
+
+/* ===================================================
+   섹션 공통
+   =================================================== */
+
+.section { padding: clamp(48px, 9vw, 88px) 0; }
+.section-alt { background: var(--bg-soft); }
+
+.section h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.5rem, 3.4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -.025em;
+  line-height: 1.35;
+  color: var(--heading);
+}
+
+.section-lead {
+  margin: 0 0 40px;
+  max-width: 52ch;
+}
+
+/* ===================================================
+   숫자 통계
+   =================================================== */
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.stat {
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+}
+.section-alt .stat { background: var(--bg); }
+
+.stat .num {
+  display: block;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  color: var(--game-accent);
+  line-height: 1.2;
+}
+
+.stat .desc {
+  display: block;
+  margin-top: 6px;
+  font-size: .9rem;
+}
+
+/* ===================================================
+   기능 카드
+   =================================================== */
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.feature-card {
+  padding: 26px 24px;
+  border-radius: 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  transition: transform .22s ease, border-color .22s ease;
+}
+.section-alt .feature-card { background: var(--bg); }
+
+.feature-card:hover {
+  transform: translateY(-3px);
+  border-color: hsl(var(--game-hue) 70% 55% / .4);
+}
+
+.feature-card .fi {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 14px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  background: hsl(var(--game-hue) 70% 55% / .12);
+}
+
+.feature-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.feature-card p {
+  margin: 0;
+  font-size: .92rem;
+}
+
+/* ===================================================
+   출시 알림 안내
+   =================================================== */
+
+.cta {
+  text-align: center;
+}
+
+.cta .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 13px 28px;
+  border-radius: 999px;
+  background: var(--game-accent);
+  color: #0d0f16;
+  font-size: .96rem;
+  font-weight: 700;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.cta .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px hsl(var(--game-hue) 70% 50% / .35);
+}
+
+/* ===================================================
+   푸터
+   =================================================== */
+
+.site-footer {
+  padding: 36px 0;
+  border-top: 1px solid var(--line);
+  font-size: .86rem;
+  color: var(--muted);
+}
+
+.site-footer a { font-weight: 600; transition: color .18s ease; }
+.site-footer a:hover { color: var(--game-accent); }
