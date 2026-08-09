@@ -32,7 +32,7 @@ const PROJECTS = [
     tags: ["Unity", "C#", "퍼즐", "실시간 대전"],
     thumb: "",
     links: [
-      { label: "소개 페이지", url: "https://modamobs.github.io/" }
+      { label: "소개 페이지", url: "https://modamobs.github.io/crosssum/" }
     ]
   },
   {
