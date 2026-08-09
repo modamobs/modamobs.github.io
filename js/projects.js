@@ -32,7 +32,8 @@ const PROJECTS = [
     tags: ["Unity", "C#", "퍼즐", "실시간 대전"],
     thumb: "",
     links: [
-      { label: "소개 페이지", url: "https://modamobs.github.io/crosssum/" }
+      // 같은 사이트 안의 페이지는 상대 경로로 두면 같은 탭에서 열립니다.
+      { label: "소개 페이지", url: "crosssum/" }
     ]
   },
   {
