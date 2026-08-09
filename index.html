@@ -13,7 +13,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=4">
 
   <!-- JS가 켜져 있을 때만 등장 애니메이션을 활성화합니다.
        본문 렌더링 전에 실행되어야 깜빡임이 없으므로 head에 인라인으로 둡니다. -->
@@ -32,7 +32,14 @@
     <header class="side">
       <div>
         <h1 class="side-name"><a href="#">정찬중<span class="logo-dot">.</span></a></h1>
-        <p class="side-role">Game · Web Developer</p>
+
+        <p class="side-role">
+          <!-- 화면에는 타이핑 효과, 스크린리더에는 고정 문구를 읽힙니다. -->
+          <span class="sr-only">Game &amp; Web Developer</span>
+          <span class="typed" id="typedRole" aria-hidden="true">Game Developer</span><span
+                class="caret" aria-hidden="true"></span>
+        </p>
+
         <p class="side-tagline">
           아이디어를 실제로 동작하는<br>
           게임과 웹 서비스로 옮깁니다.
@@ -55,6 +62,13 @@
       </div>
 
       <div class="side-bottom">
+        <!-- 스크롤 유도 표시: 맨 위에 있을 때만 보입니다. -->
+        <a class="scroll-cue" href="#projects" id="scrollCue">
+          <span class="scroll-cue-track" aria-hidden="true"><span class="scroll-cue-dot"></span></span>
+          <span class="scroll-cue-text">프로젝트 보기</span>
+        </a>
+
+        <div class="side-actions">
         <ul class="social-list">
           <li>
             <a href="https://github.com/modamobs" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
@@ -82,6 +96,7 @@
             <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>
           </svg>
         </button>
+        </div>
       </div>
     </header>
 
@@ -168,6 +183,6 @@
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
   <!-- ?v=은 브라우저 캐시 무효화용입니다. 스크립트를 크게 바꿀 때 숫자를 올리세요. -->
   <script src="js/projects.js?v=6"></script>
-  <script src="js/main.js?v=4"></script>
+  <script src="js/main.js?v=5"></script>
 </body>
 </html>

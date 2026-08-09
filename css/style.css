@@ -92,6 +92,20 @@ a   { color: inherit; text-decoration: none; }
 }
 .skip-link:focus { left: 16px; }
 
+/* 화면에는 숨기고 스크린리더에만 읽히는 텍스트 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ===================================================
    스크롤 등장 애니메이션 (main.js가 .is-visible 부여)
    =================================================== */
@@ -182,7 +196,33 @@ body::before {
 }
 
 .side {
+  position: relative;
   padding: 56px 0 24px;
+}
+
+/* 이름 뒤에 은은한 민트 글로우 */
+.side::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: -80px;
+  width: 420px;
+  height: 300px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--accent) 20%, transparent), transparent);
+  filter: blur(24px);
+  animation: glow-breathe 7s ease-in-out infinite;
+}
+
+@keyframes glow-breathe {
+  0%, 100% { opacity: .65; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side::before { animation: none; }
 }
 
 #content {
@@ -218,35 +258,138 @@ body::before {
    왼쪽 헤더
    =================================================== */
 
+/* --- 이름: 첫 화면의 주인공 --- */
+
 .side-name {
   margin: 0;
-  font-size: clamp(2.6rem, 5.5vw, 3.4rem);
+  font-size: clamp(3.2rem, 8.5vw, 5.2rem);
   font-weight: 800;
-  letter-spacing: -.035em;
-  line-height: 1.12;
-  background: linear-gradient(135deg,
-    var(--heading) 20%,
-    color-mix(in srgb, var(--accent) 70%, var(--heading)) 100%);
+  letter-spacing: -.045em;
+  line-height: 1.05;
+  background: linear-gradient(120deg,
+    var(--heading) 15%,
+    color-mix(in srgb, var(--accent) 85%, var(--heading)) 95%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  /* 왼쪽에서 오른쪽으로 닦아내듯 등장 */
+  animation: name-wipe 1s cubic-bezier(.22,.61,.36,1) both;
 }
 .logo-dot {
   -webkit-text-fill-color: var(--accent);
   color: var(--accent);
 }
 
+@keyframes name-wipe {
+  from { clip-path: inset(0 100% 0 0); transform: translateY(8px); }
+  to   { clip-path: inset(0 -8% 0 0);  transform: none; }
+}
+
+/* --- 직함: 타이핑 효과 --- */
+
 .side-role {
-  margin: 14px 0 0;
-  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  margin: 18px 0 0;
+  min-height: 1.9rem;      /* 문구가 바뀌어도 아래 내용이 밀리지 않도록 */
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--heading);
+  animation: fade-up .7s cubic-bezier(.22,.61,.36,1) .5s both;
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.25em;
+  margin-left: 3px;
+  background: var(--accent);
+  animation: caret-blink 1.1s step-end infinite;
+}
+
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
 }
 
 .side-tagline {
-  margin: 16px 0 0;
+  margin: 18px 0 0;
   max-width: 34ch;
   color: var(--text);
+  animation: fade-up .7s cubic-bezier(.22,.61,.36,1) .68s both;
+}
+
+.side-nav { animation: fade-up .7s cubic-bezier(.22,.61,.36,1) .86s both; }
+
+.side-bottom { animation: fade-up .7s cubic-bezier(.22,.61,.36,1) 1s both; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 모션을 줄이는 사용자에게는 등장 연출을 걸지 않습니다. */
+@media (prefers-reduced-motion: reduce) {
+  .side-name, .side-role, .side-tagline, .side-nav, .side-bottom {
+    animation: none;
+  }
+  .caret { animation: none; }
+}
+
+/* --- 스크롤 유도 --- */
+
+.scroll-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  transition: color .2s ease, opacity .35s ease, visibility .35s ease;
+}
+.scroll-cue:hover { color: var(--accent); }
+
+/* 스크롤을 내리면 사라집니다 (main.js가 클래스를 붙임). */
+.scroll-cue.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.scroll-cue-track {
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 32px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  opacity: .7;
+}
+
+.scroll-cue-dot {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 3px;
+  height: 6px;
+  margin-left: -1.5px;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: cue-fall 1.8s cubic-bezier(.6,.05,.3,.95) infinite;
+}
+
+@keyframes cue-fall {
+  0%       { transform: translateY(0);    opacity: 0; }
+  25%      { opacity: 1; }
+  75%      { transform: translateY(13px); opacity: 0; }
+  100%     { transform: translateY(13px); opacity: 0; }
+}
+
+.scroll-cue-text {
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue-dot { animation: none; opacity: 1; }
 }
 
 /* --- 세로 내비게이션 (선이 자라나는 인터랙션) --- */
@@ -296,9 +439,24 @@ body::before {
 
 .side-bottom {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+  margin-top: 40px;
+}
+
+.side-actions {
+  display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 40px;
+  margin-left: -10px; /* 아이콘 여백만큼 당겨 왼쪽 정렬을 맞춥니다 */
+}
+
+/* 스크롤 유도는 좌측 열이 고정되는 데스크톱에서만 의미가 있습니다. */
+.scroll-cue { display: none; }
+
+@media (min-width: 1024px) {
+  .scroll-cue { display: inline-flex; }
 }
 
 .social-list {

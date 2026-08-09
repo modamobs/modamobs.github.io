@@ -259,6 +259,64 @@
   // 페이지 전체의 등장 대상을 관찰 시작
   observeReveals(document);
 
+  /* ---------- 직함 타이핑 효과 ---------- */
+
+  const ROLES = [
+    'Game Developer',
+    'Web Developer',
+    'Unity · C#',
+    'Next.js · React'
+  ];
+
+  const typedEl = document.getElementById('typedRole');
+
+  // 모션 감소 설정이면 첫 문구만 정적으로 남깁니다(HTML 기본값 그대로).
+  if (typedEl && !reduceMotion) {
+    let roleIndex = 0;
+    let charIndex = ROLES[0].length; // 첫 문구는 이미 그려져 있으므로 지우기부터
+    let deleting = true;
+
+    (function tick() {
+      const word = ROLES[roleIndex];
+      charIndex += deleting ? -1 : 1;
+      typedEl.textContent = word.slice(0, charIndex);
+
+      let delay;
+      if (!deleting && charIndex === word.length) {
+        delay = 1800;           // 다 쓰고 잠시 멈춤
+        deleting = true;
+      } else if (deleting && charIndex === 0) {
+        delay = 320;            // 다 지우고 다음 문구로
+        deleting = false;
+        roleIndex = (roleIndex + 1) % ROLES.length;
+      } else {
+        delay = deleting ? 45 : 85;
+      }
+
+      setTimeout(tick, delay);
+    })();
+  }
+
+  /* ---------- 스크롤 유도 표시 ---------- */
+
+  const scrollCue = document.getElementById('scrollCue');
+
+  if (scrollCue) {
+    let cueTicking = false;
+    const updateCue = function () {
+      scrollCue.classList.toggle('is-hidden', window.scrollY > 80);
+      cueTicking = false;
+    };
+
+    window.addEventListener('scroll', function () {
+      if (cueTicking) return;
+      cueTicking = true;
+      requestAnimationFrame(updateCue);
+    }, { passive: true });
+
+    updateCue();
+  }
+
   /* ---------- 좌측 내비 스크롤스파이 ---------- */
 
   const navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
