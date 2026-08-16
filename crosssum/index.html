@@ -164,50 +164,6 @@
     margin: 0 auto 44px;
   }
 
-  /* 합치기 시연: 2 + 2 -> 4 */
-
-  .merge-demo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 52px;
-  }
-
-  .demo-tile {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    background: #ffffff;
-    box-shadow: 0 10px 22px rgba(11, 31, 58, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-display);
-    font-size: 26px;
-    color: var(--sky-mid);
-  }
-
-  .demo-op {
-    color: rgba(255,255,255,0.62);
-    font-family: var(--font-display);
-    font-size: 19px;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-  }
-  .demo-result {
-    background: var(--gold);
-    color: #ffffff;
-    animation: pop-result 2.6s ease-in-out infinite;
-  }
-
-  @keyframes pop-result {
-    0%, 55%  { transform: scale(1); box-shadow: 0 10px 22px rgba(11, 31, 58, 0.3); }
-    68%      { transform: scale(1.14); box-shadow: 0 14px 30px rgba(242, 169, 60, 0.45); }
-    82%, 100%{ transform: scale(1); box-shadow: 0 10px 22px rgba(11, 31, 58, 0.3); }
-  }
-
   .status-note {
     display: inline-flex;
     align-items: center;
@@ -340,11 +296,31 @@
     grid-template-rows: repeat(4, var(--cell));
     gap: var(--gap);
     flex-shrink: 0;
-    cursor: pointer;   /* 누르면 처음부터 다시 */
+    /* 반드시 내용 크기로 잡을 것. 그리드 컨테이너는 블록이라 그냥 두면 가로를 꽉 채우는데,
+       손가락·링·x2가 이 상자를 기준으로 자리를 잡기 때문에 상자가 넓어지면 죄다 왼쪽으로
+       밀려난다(히어로로 옮겼을 때 984px이 되어 손가락이 355px 밖으로 나갔다). */
+    width: max-content;
+    margin: 0 auto 14px;   /* 히어로 가운데에 놓는다 */
+    cursor: pointer;       /* 누르면 처음부터 다시 */
   }
 
   @media (max-width: 420px) {
-    .board { --cell: 40px; }
+    .board { --cell: 42px; }
+  }
+
+  /* 히어로는 밤하늘 배경이라 판의 색을 뒤집는다. 히어로 안 다른 타일들과 같은 배색이다. */
+  .board.on-dark .bc { background: rgba(255, 255, 255, 0.10); }
+  .board.on-dark .bc.t { background: #ffffff; color: var(--sky-mid); }
+  .board.on-dark .bc.tap { background: var(--gold); color: #1a1200; }
+  .board.on-dark .x2-badge { color: var(--gold); }
+  .board.on-dark .tap-ring { border-color: var(--gold); }
+  .board.on-dark .tap-hand { color: #ffffff; }
+  .board.on-dark .tap-hand svg path { stroke: rgba(11, 31, 58, 0.55); }
+
+  .board-caption {
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0 0 44px;
   }
 
   .bc {
@@ -396,6 +372,46 @@
   }
 
   .x2-badge.show { opacity: 1; transform: translate(-50%, -108%) scale(1.15); }
+
+  /* 누를 자리 표시. 게임에도 같은 것이 있다 - 화면 녹화든 그림이든 손가락이 없으면
+     저절로 합쳐지는 것처럼 보인다. */
+  .tap-ring {
+    position: absolute;
+    left: calc(var(--step) + var(--cell) / 2);
+    top: calc(var(--step) + var(--cell) / 2);
+    width: var(--cell);
+    height: var(--cell);
+    margin-left: calc(var(--cell) / -2);
+    margin-top: calc(var(--cell) / -2);
+    border: 2px solid var(--gold-deep);
+    border-radius: 12px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tap-ring.show { animation: ring-pulse 1s ease-out infinite; }
+
+  @keyframes ring-pulse {
+    0%   { opacity: .85; transform: scale(1); }
+    100% { opacity: 0;   transform: scale(1.55); }
+  }
+
+  .tap-hand {
+    position: absolute;
+    left: calc(var(--step) + var(--cell) * 0.66);
+    top: calc(var(--step) + var(--cell) * 0.58);
+    width: 27px;
+    color: var(--ink);
+    opacity: 0;
+    transform: translate(0, 7px);
+    transition: opacity .18s ease, transform .2s ease;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .3));
+  }
+
+  .tap-hand.show { opacity: 1; transform: translate(0, 0); }
+  .tap-hand.tapping { transform: translate(0, -6px) scale(.9); }
+  .tap-hand svg { display: block; width: 100%; height: auto; }
 
   /* 합치기와 무관한 다른 타일들. 판이 텅 빈 격자로 보이지 않게 두되, 눈이 가운데
      합쳐지는 쪽을 따라가도록 흐리게 둔다. 숫자가 달라서 실제로도 안 붙는다. */
@@ -639,12 +655,24 @@
       붙은 방향마다 두 배 — 판이 가득 차기 전에 목표를 채우세요.</p>
 
       <!-- 예전에는 여기가 "2 + 2 = 4"였다. 숫자는 맞지만 규칙이 더하기라고 가르치는 셈이라
-           바꿨다. 이 게임은 방향마다 두 배여서 네 방향이면 8이 아니라 32다. -->
-      <div class="merge-demo" role="img" aria-label="숫자 2 타일을 누르면 네 방향에서 같은 숫자가 몰려와 32가 되는 게임 방식 시연">
-        <div class="demo-tile">2</div>
-        <span class="demo-op">&times;2 &times;2 &times;2 &times;2</span>
-        <div class="demo-tile demo-result">32</div>
+           바꿨다. 이 게임은 방향마다 두 배여서 네 방향이면 8이 아니라 32다.
+           아래 사다리와 표가 같은 내용을 글로 담고 있어서 이 그림은 화면 낭독기에서 뺀다. -->
+      <div class="board on-dark" id="ruleBoard" aria-hidden="true">
+        <span class="bc"></span><span class="bc t up">2</span><span class="bc"></span><span class="bc t idle">8</span>
+        <span class="bc t left">2</span><span class="bc t tap" id="ruleTap">2</span><span class="bc t right">2</span><span class="bc"></span>
+        <span class="bc"></span><span class="bc t down">2</span><span class="bc"></span><span class="bc t idle">4</span>
+        <span class="bc"></span><span class="bc t idle">16</span><span class="bc"></span><span class="bc"></span>
+        <span class="x2-badge" id="ruleX2">&times;2</span>
+        <span class="tap-ring" id="ruleRing"></span>
+        <span class="tap-hand" id="ruleHand">
+          <svg viewBox="0 0 32 40">
+            <path fill="currentColor" stroke="rgba(255,255,255,.9)" stroke-width="1.4" stroke-linejoin="round"
+                  d="M13 18.5V6.2a2.6 2.6 0 0 1 5.2 0v8.6h1V9.6a2.4 2.4 0 0 1 4.8 0v5.6h1v-3.1a2.4 2.4 0 0 1 4.8 0v10.8c0 5.3-3.6 9.1-8.9 9.1h-2.2c-2.6 0-5-1.3-6.4-3.5l-4.6-7.2a2.4 2.4 0 0 1 .8-3.3c1-.6 2.3-.4 3.1.5z"/>
+          </svg>
+        </span>
       </div>
+
+      <p class="board-caption">가운데를 누르면 상하좌우에서 같은 숫자가 달려옵니다</p>
 
       <div class="status-note">
         <span class="status-dot" aria-hidden="true"></span>
@@ -671,6 +699,48 @@
     </div>
   </header>
 
+  <section class="rule">
+    <div class="wrap">
+      <div class="rule-head">
+        <h2>더하기가 아닙니다.<br>붙은 방향마다 두 배입니다.</h2>
+        <p>타일을 누르면 상하좌우에서 같은 숫자가 달려옵니다.
+        한 방향이 붙을 때마다 숫자가 두 배가 됩니다.</p>
+      </div>
+
+      <div class="rule-body">
+        <div class="ladder">
+          <div class="ladder-row" role="img" aria-label="2가 네 번 두 배가 되어 4, 8, 16을 거쳐 32가 된다">
+            <span class="lad">2</span><span class="x2">&times;2</span>
+            <span class="lad">4</span><span class="x2">&times;2</span>
+            <span class="lad">8</span><span class="x2">&times;2</span>
+            <span class="lad">16</span><span class="x2">&times;2</span>
+            <span class="lad lit">32</span>
+          </div>
+          <p class="ladder-note">네 방향이 한 번에 붙으면 8이 아니라 <strong>32</strong>입니다.</p>
+        </div>
+
+        <div class="ladder">
+          <div class="ladder-row" role="img" aria-label="32가 세 번 두 배가 되어 64, 128을 거쳐 256이 된다">
+            <span class="lad">32</span><span class="x2">&times;2</span>
+            <span class="lad">64</span><span class="x2">&times;2</span>
+            <span class="lad">128</span><span class="x2">&times;2</span>
+            <span class="lad lit">256</span>
+          </div>
+          <p class="ladder-note">그 32를 세 방향으로 붙이면 <strong>256</strong>. 숫자가 달라져도 규칙은 같습니다.</p>
+        </div>
+      </div>
+
+      <ul class="rule-grid">
+        <li><span class="dir">한 방향</span><span class="val">&times;2</span></li>
+        <li><span class="dir">두 방향</span><span class="val">&times;4</span></li>
+        <li><span class="dir">세 방향</span><span class="val">&times;8</span></li>
+        <li><span class="dir">네 방향</span><span class="val">&times;16</span></li>
+      </ul>
+
+      <p class="rule-foot">그래서 2를 네 방향으로 붙이면 32, 32를 세 방향으로 붙이면 256이 됩니다.</p>
+    </div>
+  </section>
+
   <section class="intro">
     <div class="wrap intro-grid">
       <div>
@@ -695,47 +765,6 @@
           <span class="desc">새로 갱신되는 일일 도전 랭크전</span>
         </div>
       </div>
-    </div>
-  </section>
-
-  <section class="rule">
-    <div class="wrap">
-      <div class="rule-head">
-        <h2>더하기가 아닙니다.<br>붙은 방향마다 두 배입니다.</h2>
-        <p>타일을 누르면 상하좌우에서 같은 숫자가 달려옵니다.
-        한 방향이 붙을 때마다 숫자가 두 배가 됩니다.</p>
-      </div>
-
-      <div class="rule-body">
-        <!-- 아래 사다리와 표가 같은 내용을 글로 담고 있어서 이 그림은 화면 낭독기에서 뺀다. -->
-        <div class="board" id="ruleBoard" aria-hidden="true">
-          <span class="bc"></span><span class="bc t up">2</span><span class="bc"></span><span class="bc t idle">8</span>
-          <span class="bc t left">2</span><span class="bc t tap" id="ruleTap">2</span><span class="bc t right">2</span><span class="bc"></span>
-          <span class="bc"></span><span class="bc t down">2</span><span class="bc"></span><span class="bc t idle">4</span>
-          <span class="bc"></span><span class="bc t idle">16</span><span class="bc"></span><span class="bc"></span>
-          <span class="x2-badge" id="ruleX2">&times;2</span>
-        </div>
-
-        <div class="ladder">
-          <div class="ladder-row" role="img" aria-label="2가 네 번 두 배가 되어 4, 8, 16을 거쳐 32가 된다">
-            <span class="lad">2</span><span class="x2">&times;2</span>
-            <span class="lad">4</span><span class="x2">&times;2</span>
-            <span class="lad">8</span><span class="x2">&times;2</span>
-            <span class="lad">16</span><span class="x2">&times;2</span>
-            <span class="lad lit">32</span>
-          </div>
-          <p class="ladder-note">네 방향이 한 번에 붙으면 8이 아니라 <strong>32</strong>입니다.</p>
-        </div>
-      </div>
-
-      <ul class="rule-grid">
-        <li><span class="dir">한 방향</span><span class="val">4</span></li>
-        <li><span class="dir">두 방향</span><span class="val">8</span></li>
-        <li><span class="dir">세 방향</span><span class="val">16</span></li>
-        <li><span class="dir">네 방향</span><span class="val">32</span></li>
-      </ul>
-
-      <p class="rule-foot">2로 시작했을 때입니다. 4로 시작하면 8 &middot; 16 &middot; 32 &middot; 64가 됩니다.</p>
     </div>
   </section>
 
@@ -830,10 +859,22 @@
 
       var tap = document.getElementById('ruleTap');
       var badge = document.getElementById('ruleX2');
-      var arms = ['up', 'right', 'down', 'left'].map(function (d) {
-        return board.querySelector('.' + d);
-      });
-      var steps = [4, 8, 16, 32];
+      var ring = document.getElementById('ruleRing');
+      var hand = document.getElementById('ruleHand');
+
+      function arm(d) { return board.querySelector('.' + d); }
+
+      // 두 판을 잇달아 보여준다. 첫 판만 보면 "2를 네 방향이면 32"라는 한 가지 사실로
+      // 남는데, 시작 숫자와 방향 수를 둘 다 바꾼 판이 뒤따라야 규칙으로 읽힌다.
+      // 게임 안 연습이 네 판을 도는 것도 같은 이유다.
+      var ACTS = [
+        { value: 2,  dirs: ['up', 'right', 'down', 'left'], steps: [4, 8, 16, 32] },
+        { value: 32, dirs: ['up', 'right', 'down'],         steps: [64, 128, 256] }
+      ];
+
+      var ALL = ['up', 'right', 'down', 'left'];
+      var STAGGER = 820;        // 타일 하나가 도착하고 다음이 출발하기까지
+      var TRAVEL = 420;         // 달려오는 데 걸리는 시간 (CSS 전환과 맞춘다)
       var timers = [];
 
       function clear() {
@@ -843,41 +884,70 @@
 
       function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
 
-      function reset() {
-        tap.textContent = '2';
+      // 자리로 되돌리는 단계. 아직 안 보이는 상태로 둔다 - 보이는 채로 되돌리면
+      // 앞 판에서 가운데로 달려갔던 타일이 제자리로 미끄러져 돌아가는 게 그대로 보인다.
+      function setupAct(act) {
+        tap.textContent = act.value;
         tap.classList.remove('pop');
         badge.classList.remove('show');
-        arms.forEach(function (a) {
-          a.classList.remove('rush');
-          a.classList.remove('gone');
+        ALL.forEach(function (d) {
+          var el = arm(d);
+          el.classList.add('gone');
+          el.classList.remove('rush');
+          if (act.dirs.indexOf(d) >= 0) el.textContent = act.value;
         });
       }
 
-      // 움직임을 줄여 달라는 설정이면 결과만 세워 둔다.
+      // 되돌린 뒤에 이 판에서 쓸 방향만 띄운다.
+      function revealArms(act) {
+        act.dirs.forEach(function (d) { arm(d).classList.remove('gone'); });
+      }
+
+      function showHand(on) {
+        hand.classList.toggle('show', on);
+        ring.classList.toggle('show', on);
+        if (!on) hand.classList.remove('tapping');
+      }
+
+      // 움직임을 줄여 달라는 설정이면 마지막 결과만 세워 둔다.
       function still() {
         clear();
-        tap.textContent = '32';
-        arms.forEach(function (a) { a.classList.add('gone'); });
+        showHand(false);
+        tap.textContent = 256;
+        ALL.forEach(function (d) { arm(d).classList.add('gone'); });
       }
 
       function run() {
         clear();
-        reset();
-        arms.forEach(function (arm, i) {
-          var t = 600 + i * 900;
-          at(t, function () { arm.classList.add('rush'); });
-          at(t + 420, function () {
-            arm.classList.add('gone');
-            tap.textContent = steps[i];
-            tap.classList.add('pop');
-            badge.classList.add('show');
+        var t = 0;
+
+        ACTS.forEach(function (act) {
+          at(t, function () { setupAct(act); });
+          at(t + 120, function () { revealArms(act); });
+          at(t + 320, function () { showHand(true); });        // 여기를 누르세요
+          at(t + 750, function () { hand.classList.add('tapping'); });
+          at(t + 980, function () { showHand(false); });       // 눌렀다
+
+          var base = t + 1000;
+          act.dirs.forEach(function (d, i) {
+            var s = base + i * STAGGER;
+            at(s, function () { arm(d).classList.add('rush'); });
+            at(s + TRAVEL, function () {
+              arm(d).classList.add('gone');
+              tap.textContent = act.steps[i];
+              tap.classList.add('pop');
+              badge.classList.add('show');
+            });
+            at(s + TRAVEL + 340, function () {
+              tap.classList.remove('pop');
+              badge.classList.remove('show');
+            });
           });
-          at(t + 760, function () {
-            tap.classList.remove('pop');
-            badge.classList.remove('show');
-          });
+
+          t = base + act.dirs.length * STAGGER + 1100;         // 결과를 잠깐 보여준다
         });
-        at(600 + arms.length * 900 + 1600, run);   // 결과를 잠깐 두고 처음부터
+
+        at(t + 600, run);
       }
 
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
