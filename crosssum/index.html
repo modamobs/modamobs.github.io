@@ -94,7 +94,7 @@
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
     /* 규칙 시연은 자바스크립트가 결과만 세워 두는데, 전환까지 꺼야 그 자리에 바로 선다. */
-    .bc, .bc.t, .bc.tap, .x2-badge { transition: none !important; }
+    .bc, .bc.tap, .x2-badge, .tap-hand { transition: none !important; }
   }
 
   /* ================= HERO : 밤하늘 -> 초원 ================= */
@@ -284,12 +284,16 @@
     padding: 32px 24px;
   }
 
-  /* 실제 판과 같은 4x4. 가운데를 누르면 상하좌우가 하나씩 달려오고, 도착할 때마다
-     숫자가 한 계단 오른다. 게임 안 연습이 보여주는 것과 같은 순서다. */
+  /* 실제 판과 같은 4x4.
+     칸을 두 겹으로 만든다. 아래는 빈 칸 열여섯 개(.slots), 위는 숫자 타일이다.
+     한 겹으로 만들었더니 타일이 합쳐져 사라질 때 그 자리의 칸 배경까지 같이 사라져
+     판에 구멍이 뚫렸다. 게임에서는 타일이 빠져도 빈 칸은 그대로 남는다. */
   .board {
     --cell: 48px;
     --gap: 6px;
     --step: calc(var(--cell) + var(--gap));
+    --tc: 1;   /* 지금 누르는 칸의 열 (0부터) */
+    --tr: 1;   /* 지금 누르는 칸의 행 */
     position: relative;
     display: grid;
     grid-template-columns: repeat(4, var(--cell));
@@ -300,7 +304,9 @@
        손가락·링·x2가 이 상자를 기준으로 자리를 잡기 때문에 상자가 넓어지면 죄다 왼쪽으로
        밀려난다(히어로로 옮겼을 때 984px이 되어 손가락이 355px 밖으로 나갔다). */
     width: max-content;
-    margin: 0 auto 14px;   /* 히어로 가운데에 놓는다 */
+    /* 아래 여백은 2판 때 손가락이 맨 아랫줄로 내려가 판 밖으로 14px 나오기 때문에 둔다.
+       14px로 뒀더니 캡션과 간격이 0이 되어 글자에 닿았다. */
+    margin: 0 auto 30px;
     cursor: pointer;       /* 누르면 처음부터 다시 */
   }
 
@@ -308,9 +314,55 @@
     .board { --cell: 42px; }
   }
 
-  /* 히어로는 밤하늘 배경이라 판의 색을 뒤집는다. 히어로 안 다른 타일들과 같은 배색이다. */
-  .board.on-dark .bc { background: rgba(255, 255, 255, 0.10); }
-  .board.on-dark .bc.t { background: #ffffff; color: var(--sky-mid); }
+  .slots {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(4, var(--cell));
+    grid-template-rows: repeat(4, var(--cell));
+    gap: var(--gap);
+    pointer-events: none;
+  }
+
+  .slots span { border-radius: 10px; background: rgba(128, 128, 128, 0.10); }
+
+  .bc {
+    position: relative;
+    border-radius: 10px;
+    background: var(--sky-mid);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 17px;
+    transition: transform .42s cubic-bezier(.4, 0, .2, 1), opacity .16s ease;
+  }
+
+  .bc.tap {
+    background: var(--gold);
+    color: #1a1200;
+    box-shadow: 0 0 0 3px rgba(242, 169, 60, 0.35);
+    transition: transform .2s ease, background .2s ease, color .2s ease;
+  }
+
+  /* 달려오는 방향과 거리. --d로 몇 칸을 오는지 정한다(두 칸 떨어진 타일도 사이가
+     비어 있으면 달려온다 - 합치기는 처음 만나는 숫자에서 멈추기 때문이다). */
+  .bc.rush.to-down  { transform: translateY(calc(var(--step) * var(--d, 1))); }
+  .bc.rush.to-up    { transform: translateY(calc(var(--step) * var(--d, 1) * -1)); }
+  .bc.rush.to-right { transform: translateX(calc(var(--step) * var(--d, 1))); }
+  .bc.rush.to-left  { transform: translateX(calc(var(--step) * var(--d, 1) * -1)); }
+
+  .bc.gone { opacity: 0; }
+  .bc.tap.pop { transform: scale(1.18); }
+
+  /* 합치기와 무관한 다른 타일들. 눈이 합쳐지는 쪽을 따라가도록 흐리게 둔다.
+     숫자가 달라서 실제로도 안 붙는다. */
+  .bc.idle { opacity: .45; }
+
+  /* 히어로는 밤하늘 배경이라 판의 색을 뒤집는다. */
+  .board.on-dark .slots span { background: rgba(255, 255, 255, 0.13); }
+  .board.on-dark .bc { background: #ffffff; color: var(--sky-mid); }
   .board.on-dark .bc.tap { background: var(--gold); color: #1a1200; }
   .board.on-dark .x2-badge { color: var(--gold); }
   .board.on-dark .tap-ring { border-color: var(--gold); }
@@ -323,45 +375,13 @@
     margin: 0 0 44px;
   }
 
-  .bc {
-    border-radius: 10px;
-    background: rgba(128, 128, 128, 0.09);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-display);
-    font-size: 17px;
-  }
-
-  .bc.t {
-    background: var(--sky-mid);
-    color: #ffffff;
-    transition: transform .42s cubic-bezier(.4, 0, .2, 1), opacity .16s ease;
-  }
-
-  .bc.tap {
-    background: var(--gold);
-    color: #1a1200;
-    box-shadow: 0 0 0 3px rgba(242, 169, 60, 0.35);
-    transition: transform .2s ease;
-  }
-
-  /* 달려오는 방향. 한 칸 + 간격만큼 가운데로 움직인다. */
-  .bc.up.rush    { transform: translateY(var(--step)); }
-  .bc.down.rush  { transform: translateY(calc(var(--step) * -1)); }
-  .bc.left.rush  { transform: translateX(var(--step)); }
-  .bc.right.rush { transform: translateX(calc(var(--step) * -1)); }
-
-  .bc.gone { opacity: 0; }
-  .bc.tap.pop { transform: scale(1.18); }
-
-  /* 도착할 때마다 뜨는 x2. 가운데 칸 위로 솟는다. */
+  /* 도착할 때마다 뜨는 x2. 누르는 칸 위로 솟는다. */
   .x2-badge {
     position: absolute;
-    /* 기준을 가운데 칸의 위 모서리로 잡는다. 칸 중심을 기준으로 잡았더니 글자 상자가
+    /* 기준을 칸의 위 모서리로 잡는다. 칸 중심을 기준으로 잡았더니 글자 상자가
        칸을 파고들어 숫자와 겹쳤다. */
-    left: calc(var(--step) + var(--cell) / 2);
-    top: var(--step);
+    left: calc(var(--step) * var(--tc) + var(--cell) / 2);
+    top: calc(var(--step) * var(--tr));
     transform: translate(-50%, -20%) scale(.6);
     opacity: 0;
     font-family: var(--font-display);
@@ -373,12 +393,11 @@
 
   .x2-badge.show { opacity: 1; transform: translate(-50%, -108%) scale(1.15); }
 
-  /* 누를 자리 표시. 게임에도 같은 것이 있다 - 화면 녹화든 그림이든 손가락이 없으면
-     저절로 합쳐지는 것처럼 보인다. */
+  /* 누를 자리 표시. 게임에도 같은 것이 있다 - 손가락이 없으면 저절로 합쳐지는 것처럼 보인다. */
   .tap-ring {
     position: absolute;
-    left: calc(var(--step) + var(--cell) / 2);
-    top: calc(var(--step) + var(--cell) / 2);
+    left: calc(var(--step) * var(--tc) + var(--cell) / 2);
+    top: calc(var(--step) * var(--tr) + var(--cell) / 2);
     width: var(--cell);
     height: var(--cell);
     margin-left: calc(var(--cell) / -2);
@@ -398,8 +417,8 @@
 
   .tap-hand {
     position: absolute;
-    left: calc(var(--step) + var(--cell) * 0.66);
-    top: calc(var(--step) + var(--cell) * 0.58);
+    left: calc(var(--step) * var(--tc) + var(--cell) * 0.66);
+    top: calc(var(--step) * var(--tr) + var(--cell) * 0.58);
     width: 27px;
     color: var(--ink);
     opacity: 0;
@@ -413,9 +432,6 @@
   .tap-hand.tapping { transform: translate(0, -6px) scale(.9); }
   .tap-hand svg { display: block; width: 100%; height: auto; }
 
-  /* 합치기와 무관한 다른 타일들. 판이 텅 빈 격자로 보이지 않게 두되, 눈이 가운데
-     합쳐지는 쪽을 따라가도록 흐리게 둔다. 숫자가 달라서 실제로도 안 붙는다. */
-  .bc.t.idle { opacity: .42; }
 
   .ladder-row {
     display: flex;
@@ -658,10 +674,32 @@
            바꿨다. 이 게임은 방향마다 두 배여서 네 방향이면 8이 아니라 32다.
            아래 사다리와 표가 같은 내용을 글로 담고 있어서 이 그림은 화면 낭독기에서 뺀다. -->
       <div class="board on-dark" id="ruleBoard" aria-hidden="true">
-        <span class="bc"></span><span class="bc t up">2</span><span class="bc"></span><span class="bc t idle">8</span>
-        <span class="bc t left">2</span><span class="bc t tap" id="ruleTap">2</span><span class="bc t right">2</span><span class="bc"></span>
-        <span class="bc"></span><span class="bc t down">2</span><span class="bc"></span><span class="bc t idle">4</span>
-        <span class="bc"></span><span class="bc t idle">16</span><span class="bc"></span><span class="bc"></span>
+        <!-- 빈 칸 열여섯. 타일이 합쳐져 사라져도 이 칸은 그대로 남는다. -->
+        <div class="slots">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+
+        <!--
+          1판: 가운데(2행2열)를 눌러 상하좌우의 2 넷이 붙는다        -> 32
+          2판: 그 32가 아래(4행2열)의 32에게 달려가고, 오른쪽 끝 32도 같이 온다 -> 128
+
+          2판이 성립하는 이유: 합치기는 처음 만나는 숫자에서 멈추는데, 1판에서 3행2열과
+          4행3열이 비워졌으므로 두 칸 떨어진 32끼리 서로에게 닿는다. 새 판을 까는 게
+          아니라 1판이 만든 결과가 그대로 재료가 된다.
+        -->
+        <span class="bc"      style="grid-area:1/2" data-k="a1">2</span>
+        <span class="bc idle" style="grid-area:1/4">8</span>
+        <span class="bc"      style="grid-area:2/1" data-k="a2">2</span>
+        <span class="bc tap"  style="grid-area:2/2" data-k="core" id="ruleTap">2</span>
+        <span class="bc"      style="grid-area:2/3" data-k="a3">2</span>
+        <span class="bc"      style="grid-area:3/2" data-k="a4">2</span>
+        <span class="bc idle" style="grid-area:3/4">4</span>
+        <span class="bc"      style="grid-area:4/2" data-k="seed">32</span>
+        <span class="bc"      style="grid-area:4/4" data-k="mate">32</span>
+
         <span class="x2-badge" id="ruleX2">&times;2</span>
         <span class="tap-ring" id="ruleRing"></span>
         <span class="tap-hand" id="ruleHand">
@@ -672,7 +710,7 @@
         </span>
       </div>
 
-      <p class="board-caption">가운데를 누르면 상하좌우에서 같은 숫자가 달려옵니다</p>
+      <p class="board-caption">손가락이 가리키는 칸을 누르면 같은 숫자가 달려옵니다</p>
 
       <div class="status-note">
         <span class="status-dot" aria-hidden="true"></span>
@@ -720,13 +758,13 @@
         </div>
 
         <div class="ladder">
-          <div class="ladder-row" role="img" aria-label="32가 세 번 두 배가 되어 64, 128을 거쳐 256이 된다">
+          <div class="ladder-row" role="img" aria-label="32가 두 번 두 배가 되어 64를 거쳐 128이 된다">
             <span class="lad">32</span><span class="x2">&times;2</span>
             <span class="lad">64</span><span class="x2">&times;2</span>
-            <span class="lad">128</span><span class="x2">&times;2</span>
-            <span class="lad lit">256</span>
+            <span class="lad lit">128</span>
           </div>
-          <p class="ladder-note">그 32를 세 방향으로 붙이면 <strong>256</strong>. 숫자가 달라져도 규칙은 같습니다.</p>
+          <p class="ladder-note">그렇게 만든 32를 두 방향으로 붙이면 <strong>128</strong>.
+          숫자가 달라져도 규칙은 같습니다.</p>
         </div>
       </div>
 
@@ -737,7 +775,7 @@
         <li><span class="dir">네 방향</span><span class="val">&times;16</span></li>
       </ul>
 
-      <p class="rule-foot">그래서 2를 네 방향으로 붙이면 32, 32를 세 방향으로 붙이면 256이 됩니다.</p>
+      <p class="rule-foot">떨어져 있어도 사이가 비어 있으면 달려옵니다. 합치기는 처음 만나는 숫자에서 멈춥니다.</p>
     </div>
   </section>
 
@@ -848,59 +886,81 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // 합치는 규칙 시연. 상하좌우가 하나씩 도착하고, 도착할 때마다 가운데 숫자가 두 배가 된다.
+    // 합치는 규칙 시연. 한 판 위에서 두 번 합친다.
     //
-    // 간격을 0.9초로 잡았다. 게임 안 연습도 같은 이유로 0.55초를 두고 하나씩 도착시킨다 -
-    // 한꺼번에 붙여 버리면 "눌렀더니 32가 됐다"로만 보여서, 정작 보여주려던 과정이 사라진다.
-    // 홈페이지는 한 번 스쳐 가는 자리라 게임보다 조금 더 느리게 둔다.
+    //   1판  가운데 2를 눌러 상하좌우의 2 넷이 붙는다                 -> 32
+    //   2판  그 32가 아래 칸의 32에게 달려가고, 오른쪽 끝 32도 같이 온다 -> 128
+    //
+    // 2판을 새로 깔지 않는 것이 핵심이다. 1판이 만든 32가 그대로 2판의 재료가 되고,
+    // 1판이 비운 칸 덕분에 두 칸 떨어진 32끼리 닿는다(합치기는 처음 만나는 숫자에서
+    // 멈추므로 사이가 비어 있어야 한다). 시작 숫자도 방향 수도 달라져야 "2를 네 방향이면
+    // 32"라는 한 가지 사실이 아니라 규칙으로 읽힌다.
     (function () {
       var board = document.getElementById('ruleBoard');
       if (!board) return;
 
-      var tap = document.getElementById('ruleTap');
       var badge = document.getElementById('ruleX2');
       var ring = document.getElementById('ruleRing');
       var hand = document.getElementById('ruleHand');
 
-      function arm(d) { return board.querySelector('.' + d); }
+      function K(k) { return board.querySelector('[data-k="' + k + '"]'); }
 
-      // 두 판을 잇달아 보여준다. 첫 판만 보면 "2를 네 방향이면 32"라는 한 가지 사실로
-      // 남는데, 시작 숫자와 방향 수를 둘 다 바꾼 판이 뒤따라야 규칙으로 읽힌다.
-      // 게임 안 연습이 네 판을 도는 것도 같은 이유다.
       var ACTS = [
-        { value: 2,  dirs: ['up', 'right', 'down', 'left'], steps: [4, 8, 16, 32] },
-        { value: 32, dirs: ['up', 'right', 'down'],         steps: [64, 128, 256] }
+        {
+          tap: 'core', col: 1, row: 1,
+          movers: [
+            { k: 'a1', dir: 'to-down',  d: 1 },
+            { k: 'a3', dir: 'to-left',  d: 1 },
+            { k: 'a4', dir: 'to-up',    d: 1 },
+            { k: 'a2', dir: 'to-right', d: 1 }
+          ],
+          steps: [4, 8, 16, 32]
+        },
+        {
+          tap: 'seed', col: 1, row: 3,
+          movers: [
+            { k: 'core', dir: 'to-down', d: 2 },
+            { k: 'mate', dir: 'to-left', d: 2 }
+          ],
+          steps: [64, 128]
+        }
       ];
 
-      var ALL = ['up', 'right', 'down', 'left'];
-      var STAGGER = 820;        // 타일 하나가 도착하고 다음이 출발하기까지
-      var TRAVEL = 420;         // 달려오는 데 걸리는 시간 (CSS 전환과 맞춘다)
+      var KEYS = ['a1', 'a2', 'a3', 'a4', 'core', 'seed', 'mate'];
+      var DIRS = ['to-up', 'to-down', 'to-left', 'to-right'];
+      var STAGGER = 820;   // 하나가 도착하고 다음이 출발하기까지
+      var TRAVEL = 420;    // 달려오는 시간 (CSS 전환과 맞춘다)
+
+      var origin = {};
+      KEYS.forEach(function (k) { origin[k] = K(k).textContent; });
+
       var timers = [];
-
-      function clear() {
-        timers.forEach(clearTimeout);
-        timers = [];
-      }
-
+      function clear() { timers.forEach(clearTimeout); timers = []; }
       function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
 
-      // 자리로 되돌리는 단계. 아직 안 보이는 상태로 둔다 - 보이는 채로 되돌리면
-      // 앞 판에서 가운데로 달려갔던 타일이 제자리로 미끄러져 돌아가는 게 그대로 보인다.
-      function setupAct(act) {
-        tap.textContent = act.value;
-        tap.classList.remove('pop');
+      // 처음으로 되돌린다. 안 보이는 상태로 되돌려야 앞 바퀴에서 달려갔던 타일이
+      // 제자리로 미끄러져 돌아가는 게 보이지 않는다.
+      function reset() {
         badge.classList.remove('show');
-        ALL.forEach(function (d) {
-          var el = arm(d);
+        KEYS.forEach(function (k) {
+          var el = K(k);
           el.classList.add('gone');
-          el.classList.remove('rush');
-          if (act.dirs.indexOf(d) >= 0) el.textContent = act.value;
+          el.classList.remove('rush', 'tap', 'pop');
+          DIRS.forEach(function (d) { el.classList.remove(d); });
+          el.textContent = origin[k];
         });
       }
 
-      // 되돌린 뒤에 이 판에서 쓸 방향만 띄운다.
-      function revealArms(act) {
-        act.dirs.forEach(function (d) { arm(d).classList.remove('gone'); });
+      function reveal() {
+        KEYS.forEach(function (k) { K(k).classList.remove('gone'); });
+      }
+
+      // 누를 칸을 옮긴다. 손가락·링·x2가 이 좌표를 보고 따라온다.
+      function setAct(act) {
+        board.style.setProperty('--tc', act.col);
+        board.style.setProperty('--tr', act.row);
+        KEYS.forEach(function (k) { K(k).classList.remove('tap'); });
+        K(act.tap).classList.add('tap');
       }
 
       function showHand(on) {
@@ -913,38 +973,50 @@
       function still() {
         clear();
         showHand(false);
-        tap.textContent = 256;
-        ALL.forEach(function (d) { arm(d).classList.add('gone'); });
+        reset();
+        reveal();
+        setAct(ACTS[1]);
+        K('seed').textContent = 128;
+        ['a1', 'a2', 'a3', 'a4', 'core', 'mate'].forEach(function (k) {
+          K(k).classList.add('gone');
+        });
       }
 
       function run() {
         clear();
-        var t = 0;
+        reset();
+        at(120, reveal);
 
+        var t = 300;
         ACTS.forEach(function (act) {
-          at(t, function () { setupAct(act); });
-          at(t + 120, function () { revealArms(act); });
-          at(t + 320, function () { showHand(true); });        // 여기를 누르세요
+          at(t, function () { setAct(act); });
+          at(t + 320, function () { showHand(true); });
           at(t + 750, function () { hand.classList.add('tapping'); });
-          at(t + 980, function () { showHand(false); });       // 눌렀다
+          at(t + 980, function () { showHand(false); });
 
           var base = t + 1000;
-          act.dirs.forEach(function (d, i) {
+          act.movers.forEach(function (m, i) {
             var s = base + i * STAGGER;
-            at(s, function () { arm(d).classList.add('rush'); });
+            at(s, function () {
+              var el = K(m.k);
+              el.style.setProperty('--d', m.d);
+              el.classList.add(m.dir);
+              el.classList.add('rush');
+            });
             at(s + TRAVEL, function () {
-              arm(d).classList.add('gone');
-              tap.textContent = act.steps[i];
-              tap.classList.add('pop');
+              K(m.k).classList.add('gone');
+              var tapEl = K(act.tap);
+              tapEl.textContent = act.steps[i];
+              tapEl.classList.add('pop');
               badge.classList.add('show');
             });
             at(s + TRAVEL + 340, function () {
-              tap.classList.remove('pop');
+              K(act.tap).classList.remove('pop');
               badge.classList.remove('show');
             });
           });
 
-          t = base + act.dirs.length * STAGGER + 1100;         // 결과를 잠깐 보여준다
+          t = base + act.movers.length * STAGGER + 1100;   // 결과를 잠깐 보여준다
         });
 
         at(t + 600, run);
