@@ -93,6 +93,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+    /* 규칙 시연은 자바스크립트가 결과만 세워 두는데, 전환까지 꺼야 그 자리에 바로 선다. */
+    .bc, .bc.t, .bc.tap, .x2-badge { transition: none !important; }
   }
 
   /* ================= HERO : 밤하늘 -> 초원 ================= */
@@ -313,46 +315,91 @@
 
   .rule-head p { color: var(--ink-soft); margin: 0; font-size: 15.5px; }
 
+  /* 판 아래에 사다리를 둔다. 가로로 놓았더니 좁은 화면에서 사다리만 접혀 내려가
+     화살표가 허공을 가리켰다. 세로로 고정하면 어느 폭에서도 같은 모양이 된다. */
   .rule-body {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 26px;
+    gap: 24px;
     background: var(--paper-card);
     border: 1px solid var(--line);
     border-radius: 20px;
     padding: 32px 24px;
   }
 
-  /* 십자 배치. 가운데를 누르면 상하좌우가 몰려온다. */
-  .cross {
+  /* 실제 판과 같은 4x4. 가운데를 누르면 상하좌우가 하나씩 달려오고, 도착할 때마다
+     숫자가 한 계단 오른다. 게임 안 연습이 보여주는 것과 같은 순서다. */
+  .board {
+    --cell: 48px;
+    --gap: 6px;
+    --step: calc(var(--cell) + var(--gap));
+    position: relative;
     display: grid;
-    grid-template-columns: repeat(3, 46px);
-    grid-template-rows: repeat(3, 46px);
-    gap: 6px;
+    grid-template-columns: repeat(4, var(--cell));
+    grid-template-rows: repeat(4, var(--cell));
+    gap: var(--gap);
     flex-shrink: 0;
+    cursor: pointer;   /* 누르면 처음부터 다시 */
   }
 
-  .cross span {
+  @media (max-width: 420px) {
+    .board { --cell: 40px; }
+  }
+
+  .bc {
     border-radius: 10px;
+    background: rgba(128, 128, 128, 0.09);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: var(--font-display);
-    font-size: 18px;
+    font-size: 17px;
   }
 
-  .cross .empty { background: rgba(128, 128, 128, 0.09); }
-  .cross .tile { background: var(--sky-mid); color: #ffffff; }
+  .bc.t {
+    background: var(--sky-mid);
+    color: #ffffff;
+    transition: transform .42s cubic-bezier(.4, 0, .2, 1), opacity .16s ease;
+  }
 
-  .cross .tap {
+  .bc.tap {
     background: var(--gold);
     color: #1a1200;
     box-shadow: 0 0 0 3px rgba(242, 169, 60, 0.35);
+    transition: transform .2s ease;
   }
 
-  .rule-arrow { font-size: 22px; color: var(--ink-faint); }
+  /* 달려오는 방향. 한 칸 + 간격만큼 가운데로 움직인다. */
+  .bc.up.rush    { transform: translateY(var(--step)); }
+  .bc.down.rush  { transform: translateY(calc(var(--step) * -1)); }
+  .bc.left.rush  { transform: translateX(var(--step)); }
+  .bc.right.rush { transform: translateX(calc(var(--step) * -1)); }
+
+  .bc.gone { opacity: 0; }
+  .bc.tap.pop { transform: scale(1.18); }
+
+  /* 도착할 때마다 뜨는 x2. 가운데 칸 위로 솟는다. */
+  .x2-badge {
+    position: absolute;
+    /* 기준을 가운데 칸의 위 모서리로 잡는다. 칸 중심을 기준으로 잡았더니 글자 상자가
+       칸을 파고들어 숫자와 겹쳤다. */
+    left: calc(var(--step) + var(--cell) / 2);
+    top: var(--step);
+    transform: translate(-50%, -20%) scale(.6);
+    opacity: 0;
+    font-family: var(--font-display);
+    font-size: 25px;
+    color: var(--gold-deep);
+    pointer-events: none;
+    transition: opacity .16s ease, transform .32s cubic-bezier(.34, 1.56, .64, 1);
+  }
+
+  .x2-badge.show { opacity: 1; transform: translate(-50%, -108%) scale(1.15); }
+
+  /* 합치기와 무관한 다른 타일들. 판이 텅 빈 격자로 보이지 않게 두되, 눈이 가운데
+     합쳐지는 쪽을 따라가도록 흐리게 둔다. 숫자가 달라서 실제로도 안 붙는다. */
+  .bc.t.idle { opacity: .42; }
 
   .ladder-row {
     display: flex;
@@ -660,19 +707,14 @@
       </div>
 
       <div class="rule-body">
-        <div class="cross" role="img" aria-label="가운데 2 타일의 위·아래·왼쪽·오른쪽에 각각 2 타일이 놓인 배치">
-          <span class="empty"></span>
-          <span class="tile">2</span>
-          <span class="empty"></span>
-          <span class="tile">2</span>
-          <span class="tile tap">2</span>
-          <span class="tile">2</span>
-          <span class="empty"></span>
-          <span class="tile">2</span>
-          <span class="empty"></span>
+        <!-- 아래 사다리와 표가 같은 내용을 글로 담고 있어서 이 그림은 화면 낭독기에서 뺀다. -->
+        <div class="board" id="ruleBoard" aria-hidden="true">
+          <span class="bc"></span><span class="bc t up">2</span><span class="bc"></span><span class="bc t idle">8</span>
+          <span class="bc t left">2</span><span class="bc t tap" id="ruleTap">2</span><span class="bc t right">2</span><span class="bc"></span>
+          <span class="bc"></span><span class="bc t down">2</span><span class="bc"></span><span class="bc t idle">4</span>
+          <span class="bc"></span><span class="bc t idle">16</span><span class="bc"></span><span class="bc"></span>
+          <span class="x2-badge" id="ruleX2">&times;2</span>
         </div>
-
-        <span class="rule-arrow" aria-hidden="true">&rarr;</span>
 
         <div class="ladder">
           <div class="ladder-row" role="img" aria-label="2가 네 번 두 배가 되어 4, 8, 16을 거쳐 32가 된다">
@@ -776,6 +818,99 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // 합치는 규칙 시연. 상하좌우가 하나씩 도착하고, 도착할 때마다 가운데 숫자가 두 배가 된다.
+    //
+    // 간격을 0.9초로 잡았다. 게임 안 연습도 같은 이유로 0.55초를 두고 하나씩 도착시킨다 -
+    // 한꺼번에 붙여 버리면 "눌렀더니 32가 됐다"로만 보여서, 정작 보여주려던 과정이 사라진다.
+    // 홈페이지는 한 번 스쳐 가는 자리라 게임보다 조금 더 느리게 둔다.
+    (function () {
+      var board = document.getElementById('ruleBoard');
+      if (!board) return;
+
+      var tap = document.getElementById('ruleTap');
+      var badge = document.getElementById('ruleX2');
+      var arms = ['up', 'right', 'down', 'left'].map(function (d) {
+        return board.querySelector('.' + d);
+      });
+      var steps = [4, 8, 16, 32];
+      var timers = [];
+
+      function clear() {
+        timers.forEach(clearTimeout);
+        timers = [];
+      }
+
+      function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+
+      function reset() {
+        tap.textContent = '2';
+        tap.classList.remove('pop');
+        badge.classList.remove('show');
+        arms.forEach(function (a) {
+          a.classList.remove('rush');
+          a.classList.remove('gone');
+        });
+      }
+
+      // 움직임을 줄여 달라는 설정이면 결과만 세워 둔다.
+      function still() {
+        clear();
+        tap.textContent = '32';
+        arms.forEach(function (a) { a.classList.add('gone'); });
+      }
+
+      function run() {
+        clear();
+        reset();
+        arms.forEach(function (arm, i) {
+          var t = 600 + i * 900;
+          at(t, function () { arm.classList.add('rush'); });
+          at(t + 420, function () {
+            arm.classList.add('gone');
+            tap.textContent = steps[i];
+            tap.classList.add('pop');
+            badge.classList.add('show');
+          });
+          at(t + 760, function () {
+            tap.classList.remove('pop');
+            badge.classList.remove('show');
+          });
+        });
+        at(600 + arms.length * 900 + 1600, run);   // 결과를 잠깐 두고 처음부터
+      }
+
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+      var playing = false;
+
+      function start() {
+        if (playing) return;
+        playing = true;
+        if (reduce.matches) still(); else run();
+      }
+
+      function stop() {
+        playing = false;
+        clear();
+      }
+
+      // 화면에 보일 때만 돌린다. 스크롤 밖에서 계속 도는 것을 막는다.
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) start(); else stop();
+          });
+        }, { threshold: 0.35 }).observe(board);
+      } else {
+        start();
+      }
+
+      board.addEventListener('click', function () {
+        if (reduce.matches) return;
+        stop();
+        start();
+      });
+    })();
   </script>
 
 </body>
