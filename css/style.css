@@ -918,6 +918,23 @@ body::before {
 .contact-cta svg { transition: transform .2s ease; }
 .contact-cta:hover svg { transform: translate(3px, -3px); }
 
+/* 메일 앱이 없는 사람을 위한 대안. mailto:는 메일 앱이 설정돼 있지 않으면
+   눌러도 아무 일이 일어나지 않고, 보낸 사람은 보냈다고 생각한다. */
+.contact-alt {
+  margin: 22px 0 0;
+  font-size: .9rem;
+  color: var(--muted);
+}
+
+.contact-alt a {
+  color: var(--text);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line-soft);
+  transition: color .18s ease, border-color .18s ease;
+}
+
+.contact-alt a:hover { color: var(--accent); border-color: var(--accent); }
+
 .colophon {
   margin-top: 72px;
   font-size: .84rem;
