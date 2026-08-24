@@ -176,6 +176,25 @@
     border-radius: 999px;
   }
 
+  .store-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0b1f3a;
+    background: #f2a93c;
+    padding: 14px 28px;
+    border-radius: 999px;
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(242, 169, 60, 0.35);
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .store-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(242, 169, 60, 0.5);
+  }
+
   .status-dot {
     width: 7px; height: 7px; border-radius: 50%;
     background: var(--gold);
@@ -712,10 +731,13 @@
 
       <p class="board-caption">손가락이 가리키는 칸을 누르면 같은 숫자가 달려옵니다</p>
 
-      <div class="status-note">
-        <span class="status-dot" aria-hidden="true"></span>
-        Google Play 출시 준비 중
-      </div>
+      <a class="store-cta" href="https://play.google.com/store/apps/details?id=com.mobs.crosssum"
+         target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M3.6 1.8a1 1 0 00-.5.9v18.6a1 1 0 00.5.9l10-10.2-10-10.2zM15 8.6L5.5 1.3l11.9 6.8L15 8.6zm2.4 1.4l2.9 1.6a1 1 0 010 1.8l-2.9 1.7-2.4-2.6 2.4-2.5zM5.5 22.7L15 15.4l2.4 1.4-11.9 5.9z"/>
+        </svg>
+        Google Play에서 다운로드
+      </a>
     </div>
 
     <div class="meadow" aria-hidden="true">

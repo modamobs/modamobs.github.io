@@ -29,13 +29,15 @@ const PROJECTS = [
     highlights: [
       "목표가 저마다 다른 싱글 스테이지 · 실시간 1:1 대전 · 일일 챌린지 랭킹",
       "언두·해머·요술봉 아이템과 타일 커스터마이징",
-      "Google Play 출시 준비 중"
+      "Google Play 출시 — 게스트로 바로 시작하고 구글 계정에 기록 연결"
     ],
     tags: ["Unity", "C#", "퍼즐", "실시간 대전"],
     thumb: "assets/images/crosssum.png",
     links: [
+      // 첫 번째 링크가 카드 전체 클릭 대상입니다.
       // 같은 사이트 안의 페이지는 상대 경로로 두면 같은 탭에서 열립니다.
-      { label: "소개 페이지", url: "crosssum/" }
+      { label: "소개 페이지", url: "crosssum/" },
+      { label: "Google Play", url: "https://play.google.com/store/apps/details?id=com.mobs.crosssum" }
     ]
   },
   {
