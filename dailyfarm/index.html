@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>오늘의 농장 — 동물 논리 퍼즐</title>
+<meta name="description" content="색깔 영역마다 동물을 한 마리씩 놓는 논리 퍼즐. 찍기 없이 논리로만 푸는 200판. 오프라인으로 즐길 수 있고 계정도 필요 없습니다.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="오늘의 농장 — 동물 논리 퍼즐">
+<meta property="og:description" content="가로·세로·색깔 영역마다 동물 한 마리씩. 찍기 없이 논리로만 푸는 퍼즐 200판.">
+<meta property="og:url" content="https://modamobs.github.io/dailyfarm/">
+<meta property="og:image" content="https://modamobs.github.io/assets/images/dailyfarm.png">
+
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../games/game.css">
+
+<style>
+  /* 규칙 네 줄 — 체크 마커 목록 */
+  .rule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0 0 8px;
+    max-width: 52ch;
+  }
+  .rule-list li {
+    position: relative;
+    padding-left: 26px;
+    font-size: .98rem;
+  }
+  .rule-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    font-weight: 800;
+    color: var(--game-accent);
+  }
+
+  /* 스크린샷 3장 */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .shots figure { margin: 0; }
+  .shots img {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+  .shots figcaption {
+    margin-top: 10px;
+    font-size: .86rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* 챕터 흐름 */
+  .chapters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin-top: 6px;
+    font-size: .92rem;
+  }
+  .chapters span {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: hsl(var(--game-hue) 60% 50% / .12);
+    color: var(--heading);
+  }
+  .chapters em {
+    font-style: normal;
+    color: var(--muted);
+  }
+</style>
+</head>
+
+<!-- 농장 초록 -->
+<body style="--game-accent:#8ed05a; --game-accent2:#c6e9a3; --game-hue:95">
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="back-link" href="../">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6"/>
+      </svg>
+      포트폴리오
+    </a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">동물 논리 퍼즐</p>
+
+    <div class="icon-slot">
+      <img src="assets/icon.png" alt="오늘의 농장 앱 아이콘">
+    </div>
+
+    <h1 class="title">오늘의 농장</h1>
+
+    <p class="subhead">
+      색깔 영역마다 동물을 한 마리씩 놓습니다.<br>
+      운도, 반사신경도, 찍기도 필요 없습니다.
+    </p>
+
+    <div class="status-note">
+      <span class="status-dot" aria-hidden="true"></span>
+      Google Play 출시 준비 중
+    </div>
+  </div>
+</header>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>규칙은 네 줄이면<br>끝납니다.</h2>
+    <p class="section-lead">
+      정답은 언제나 하나뿐이고, 끝까지 논리만으로 닿을 수 있습니다.
+    </p>
+
+    <ul class="rule-list">
+      <li>가로줄마다 정확히 한 마리</li>
+      <li>세로줄마다 정확히 한 마리</li>
+      <li>색깔 영역마다 정확히 한 마리</li>
+      <li>동물끼리 붙을 수 없습니다 — 대각선 포함</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>200판, 다섯 챕터</h2>
+    <p class="section-lead">
+      판이 커질수록 필요한 논리도 한 겹씩 깊어집니다.
+    </p>
+
+    <div class="chapters">
+      <span>앞마당 5×5</span><em>→</em>
+      <span>텃밭</span><em>→</em>
+      <span>목초지</span><em>→</em>
+      <span>헛간</span><em>→</em>
+      <span>노을 언덕 10×10</span>
+    </div>
+
+    <div class="stat-row" style="margin-top:32px">
+      <div class="stat">
+        <span class="num">200</span>
+        <span class="desc">판 — 전부 정답 유일성을 검증했습니다</span>
+      </div>
+      <div class="stat">
+        <span class="num">13</span>
+        <span class="desc">마리의 동물을 모으고 골라서 플레이</span>
+      </div>
+      <div class="stat">
+        <span class="num">오프라인</span>
+        <span class="desc">인터넷 연결도 계정도 필요 없습니다</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>화면</h2>
+    <p class="section-lead">복잡한 장식 없이, 판과 동물만 남겼습니다.</p>
+
+    <div class="shots">
+      <figure>
+        <img src="assets/play.png" alt="퍼즐을 푸는 화면" loading="lazy">
+        <figcaption>퍼즐 화면</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/dex.png" alt="모은 동물을 보여 주는 도감 화면" loading="lazy">
+        <figcaption>동물 도감</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/daily.png" alt="매일 열리는 퍼즐과 달력 화면" loading="lazy">
+        <figcaption>매일 한 판</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>플레이를 채우는 것들</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">💡</div>
+        <h3>이유를 말하는 힌트</h3>
+        <p>"여기예요"가 아니라 "이 가로줄에서 놓을 수 있는 칸이 여기 하나뿐이에요". 쓸수록 다음 판이 쉬워집니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🐣</div>
+        <h3>13마리 도감</h3>
+        <p>클리어할 때마다 새 친구가 찾아오고, 고른 동물이 판 위에 그대로 올라갑니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">📅</div>
+        <h3>매일 한 판</h3>
+        <p>날마다 새 퍼즐이 열립니다. 연속으로 오면 아이템을 드리고, 달력에 도장이 쌓입니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">📊</div>
+        <h3>남는 기록</h3>
+        <p>평균 클리어 시간, 판 크기별 최고 기록, 무실수 클리어, 아이템 없이 깬 판.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt cta">
+  <div class="wrap">
+    <h2>출시되면 알려드릴게요.</h2>
+    <p class="section-lead" style="margin-inline:auto">
+      스도쿠, 노노그램, 스타 배틀을 좋아하신다면 맞을 겁니다.
+      준비가 끝나는 대로 Google Play에 올라갑니다.
+    </p>
+    <a class="btn" href="mailto:yamoda24@gmail.com?subject=%EC%98%A4%EB%8A%98%EC%9D%98%20%EB%86%8D%EC%9E%A5%20%EC%B6%9C%EC%8B%9C%20%EC%95%8C%EB%A6%BC">
+      출시 알림 신청
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7M7 7h10v10"/>
+      </svg>
+    </a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><a href="privacy-policy.html">개인정보처리방침</a></p>
+    <p>&copy; <span id="year"></span> Smart it · <a href="../">포트폴리오</a></p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
