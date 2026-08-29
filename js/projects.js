@@ -59,6 +59,18 @@ const PROJECTS = [
     ]
   },
   {
+    title: "문명 2048",
+    category: "게임",
+    desc: "같은 건물 둘을 붙이면 한 단계 위 건물이 되는 2048 퍼즐. 보통의 2048과 " +
+          "달리 판이 끝나도 점수가 재건 자재로 남아, 내 도시의 빈 부지를 하나씩 " +
+          "복원해 나갑니다. 2에서 4096까지 열두 단계의 건물이 있습니다.",
+    tags: ["React", "TypeScript", "Vite", "Capacitor"],
+    thumb: "assets/images/mergecity.png",
+    links: [
+      { label: "소개 페이지", url: "mergecity/" }
+    ]
+  },
+  {
     title: "오늘의 농장",
     category: "게임",
     desc: "색깔 영역마다 동물을 한 마리씩 놓는 논리 퍼즐. 가로줄·세로줄·색깔 " +

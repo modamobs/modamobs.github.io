@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>문명 2048 — 합치면 문명이 자랍니다</title>
+<meta name="description" content="같은 건물 둘을 붙이면 한 단계 위 건물이 되는 2048 퍼즐. 판이 끝나도 점수가 재건 자재로 남아 내 도시가 자랍니다.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="문명 2048 — 합치면 문명이 자랍니다">
+<meta property="og:description" content="숫자를 합쳐 오두막을 마천루로. 판이 끝나도 도시는 남습니다.">
+<meta property="og:url" content="https://modamobs.github.io/mergecity/">
+<meta property="og:image" content="https://modamobs.github.io/assets/images/mergecity.png">
+
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../games/game.css">
+
+<style>
+  /* 건물 성장 단계 — 2에서 4096까지 */
+  .ladder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin-top: 6px;
+    font-size: .92rem;
+  }
+  .ladder span {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: hsl(var(--game-hue) 60% 50% / .12);
+    color: var(--heading);
+  }
+  .ladder em { font-style: normal; color: var(--muted); }
+
+  /* 스크린샷 */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .shots figure { margin: 0; }
+  .shots img {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+  .shots figcaption {
+    margin-top: 10px;
+    font-size: .86rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* 이 게임의 핵심 한 줄 */
+  .pull {
+    margin: 28px 0 0;
+    padding: 20px 24px;
+    border-left: 3px solid var(--game-accent);
+    background: hsl(var(--game-hue) 60% 50% / .08);
+    border-radius: 0 12px 12px 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--heading);
+    max-width: 52ch;
+  }
+</style>
+</head>
+
+<!-- 도시의 황혼 — 앰버 -->
+<body style="--game-accent:#f4a340; --game-accent2:#ffd8a8; --game-hue:32">
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="back-link" href="../">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6"/>
+      </svg>
+      포트폴리오
+    </a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">도시 재건 2048</p>
+
+    <div class="icon-slot">
+      <img src="assets/icon.png" alt="문명 2048 앱 아이콘">
+    </div>
+
+    <h1 class="title">문명 2048</h1>
+
+    <p class="subhead">
+      숫자를 합쳐 오두막을 마천루로.<br>
+      판이 끝나도 도시는 남습니다.
+    </p>
+
+    <div class="status-note">
+      <span class="status-dot" aria-hidden="true"></span>
+      Google Play 출시 준비 중
+    </div>
+  </div>
+</header>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>합치면 문명이 자랍니다</h2>
+    <p class="section-lead">
+      같은 건물 둘을 붙이면 한 단계 위 건물이 됩니다. 모닥불이 오두막이 되고,
+      오두막이 마을이 되고, 끝내 구름 위 탑에 닿습니다.
+    </p>
+
+    <div class="ladder">
+      <span>모닥불 2</span><em>→</em>
+      <span>오두막</span><em>→</em>
+      <span>마을</span><em>→</em>
+      <span>도시</span><em>→</em>
+      <span>구름 위 탑 4096</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>판이 끝나도<br>남는 것</h2>
+    <p class="section-lead">
+      보통의 2048은 막히면 그걸로 끝입니다. 쌓아 올린 게 전부 사라지죠.
+      문명 2048은 한 판의 점수가 <strong>재건 자재</strong>로 바뀌어 내 도시에 쌓입니다.
+      자재로 빈 부지를 하나씩 복원하면 길이 이어지고, 나무와 가로등이 들어서고,
+      마침내 랜드마크가 올라갑니다.
+    </p>
+
+    <p class="pull">망해도 괜찮습니다. 이번 판도 도시에 보태집니다.</p>
+
+    <div class="stat-row" style="margin-top:32px">
+      <div class="stat">
+        <span class="num">12</span>
+        <span class="desc">단계의 건물 — 2에서 4096까지</span>
+      </div>
+      <div class="stat">
+        <span class="num">도감</span>
+        <span class="desc">처음 지은 건물이 기록되고, 못 본 건물은 실루엣으로</span>
+      </div>
+      <div class="stat">
+        <span class="num">오프라인</span>
+        <span class="desc">연결 없이 플레이 (광고 표시에는 연결 필요)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>화면</h2>
+    <p class="section-lead">아이소메트릭으로 기울어진 판 위에서 네 방향으로 쓸어 넘깁니다.</p>
+
+    <div class="shots">
+      <figure>
+        <img src="assets/board.png" alt="아이소메트릭 판에서 건물을 합치는 화면" loading="lazy">
+        <figcaption>퍼즐 판</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/city.png" alt="자재로 복원한 도시 화면" loading="lazy">
+        <figcaption>도시 재건</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/codex.png" alt="처음 지은 건물이 기록되는 도감 화면" loading="lazy">
+        <figcaption>건물 도감</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>플레이를 채우는 것들</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🏙️</div>
+        <h3>도시 재건</h3>
+        <p>한 판의 점수가 자재가 됩니다. 빈 부지를 복원하면 길과 가로등, 랜드마크가 차례로 올라갑니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">📖</div>
+        <h3>건물 도감</h3>
+        <p>새 건물을 처음 만들면 도감에 남습니다. 시대마다 열두 칸, 못 본 건물은 실루엣으로 기다립니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🧭</div>
+        <h3>비스듬한 판</h3>
+        <p>규칙은 아는 그대로지만, 블록이 아니라 건물이 자라는 걸 지켜보게 됩니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🎛️</div>
+        <h3>조작 선택</h3>
+        <p>쓸기가 불편하면 설정에서 방향 버튼으로 바꿀 수 있습니다.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt cta">
+  <div class="wrap">
+    <h2>출시되면 알려드릴게요.</h2>
+    <p class="section-lead" style="margin-inline:auto">
+      짧게 한 판씩 하고 싶은 분, 아무것도 안 남는 퍼즐에 지친 분께 맞을 겁니다.
+      준비가 끝나는 대로 Google Play에 올라갑니다.
+    </p>
+    <a class="btn" href="mailto:yamoda24@gmail.com?subject=%EB%AC%B8%EB%AA%85%202048%20%EC%B6%9C%EC%8B%9C%20%EC%95%8C%EB%A6%BC">
+      출시 알림 신청
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7M7 7h10v10"/>
+      </svg>
+    </a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><a href="privacy-policy.html">개인정보처리방침</a></p>
+    <p>&copy; <span id="year"></span> Smart it · <a href="../">포트폴리오</a></p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
