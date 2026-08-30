@@ -59,6 +59,18 @@ const PROJECTS = [
     ]
   },
   {
+    title: "Tile Feast",
+    category: "게임",
+    desc: "쌓인 재료 타일에서 같은 것 세 개를 찾아 맞추는 타일 퍼즐. 판을 다 비우면 " +
+          "요리 한 접시가 완성되고, 배운 요리로 손님 주문을 받습니다. 트레이가 " +
+          "일곱 칸뿐이라 무엇을 먼저 집을지가 실력이 됩니다.",
+    tags: ["React", "TypeScript", "Vite", "Capacitor"],
+    thumb: "assets/images/tilefeast.png",
+    links: [
+      { label: "소개 페이지", url: "tilefeast/" }
+    ]
+  },
+  {
     title: "문명 2048",
     category: "게임",
     desc: "같은 건물 둘을 붙이면 한 단계 위 건물이 되는 2048 퍼즐. 보통의 2048과 " +

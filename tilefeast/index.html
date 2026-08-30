@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Tile Feast — 요리 타일 퍼즐</title>
+<meta name="description" content="같은 재료 3개를 맞춰 요리를 완성하는 아기자기한 타일 퍼즐. 시간 제한 없이 느긋하게, 48가지 요리를 모아 보세요.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tile Feast — 요리 타일 퍼즐">
+<meta property="og:description" content="같은 재료 3개를 맞춰 요리를 완성하는 아기자기한 타일 퍼즐.">
+<meta property="og:url" content="https://modamobs.github.io/tilefeast/">
+<meta property="og:image" content="https://modamobs.github.io/assets/images/tilefeast.png">
+
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../games/game.css">
+
+<style>
+  /* 스크린샷 */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .shots figure { margin: 0; }
+  .shots img {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+  .shots figcaption {
+    margin-top: 10px;
+    font-size: .86rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* 이 게임의 핵심 한 줄 */
+  .pull {
+    margin: 28px 0 0;
+    padding: 20px 24px;
+    border-left: 3px solid var(--game-accent);
+    background: hsl(var(--game-hue) 60% 50% / .08);
+    border-radius: 0 12px 12px 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--heading);
+    max-width: 52ch;
+  }
+
+  /* 막혔을 때 쓰는 세 가지 */
+  .helpers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-top: 6px;
+    font-size: .92rem;
+  }
+  .helpers span {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: hsl(var(--game-hue) 60% 50% / .12);
+    color: var(--heading);
+  }
+</style>
+</head>
+
+<!-- 따뜻한 주방 — 토마토 레드 -->
+<body style="--game-accent:#ff7a59; --game-accent2:#ffc2b0; --game-hue:12">
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="back-link" href="../">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6"/>
+      </svg>
+      포트폴리오
+    </a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">요리 타일 퍼즐</p>
+
+    <div class="icon-slot">
+      <img src="assets/icon.png" alt="Tile Feast 앱 아이콘">
+    </div>
+
+    <h1 class="title">Tile Feast</h1>
+
+    <p class="subhead">
+      같은 재료 3개를 맞춰 요리를 완성하는<br>
+      아기자기한 타일 퍼즐.
+    </p>
+
+    <div class="status-note">
+      <span class="status-dot" aria-hidden="true"></span>
+      Google Play 출시 준비 중
+    </div>
+  </div>
+</header>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>맞추면 재료가 사라지고,<br>판을 비우면 한 접시.</h2>
+    <p class="section-lead">
+      쌓인 재료 타일에서 같은 것 세 개를 찾아 맞추세요. 판을 다 비우면
+      요리 한 접시가 완성됩니다. 시간 제한은 없습니다.
+    </p>
+
+    <p class="pull">칸은 일곱 개뿐입니다. 무엇을 먼저 집을지 정하는 게 실력입니다.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>모으고, 내주고, 별을 올리고</h2>
+    <p class="section-lead">
+      레벨을 깰 때마다 새 요리를 배우고 요리책을 채웁니다.
+      배운 요리로 밀린 손님 주문을 내주면 코인이 쌓입니다.
+    </p>
+
+    <div class="stat-row" style="margin-top:28px">
+      <div class="stat">
+        <span class="num">48</span>
+        <span class="desc">가지 요리 — 토마토 달걀볶음부터 파에야, 미소 라멘까지</span>
+      </div>
+      <div class="stat">
+        <span class="num">7칸</span>
+        <span class="desc">뿐인 트레이가 이 게임의 전부입니다</span>
+      </div>
+      <div class="stat">
+        <span class="num">4개 국어</span>
+        <span class="desc">한국어 · 영어 · 일본어 · 중국어 간체</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>화면</h2>
+    <p class="section-lead">시간에 쫓기지 않고 느긋하게 생각하며 푸는 판입니다.</p>
+
+    <div class="shots">
+      <figure>
+        <img src="assets/game.png" alt="재료 타일을 맞추는 퍼즐 화면" loading="lazy">
+        <figcaption>퍼즐 판</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/recipes.png" alt="배운 요리가 쌓이는 요리책 화면" loading="lazy">
+        <figcaption>요리책</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/orders.png" alt="손님 주문을 받는 화면" loading="lazy">
+        <figcaption>손님 주문</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>플레이를 채우는 것들</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🍳</div>
+        <h3>48가지 요리책</h3>
+        <p>레벨을 깰 때마다 새 요리를 배웁니다. 요리책이 차는 걸 보는 재미가 있습니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🧾</div>
+        <h3>손님 주문</h3>
+        <p>배운 요리로 밀린 주문을 내주면 코인이 쌓이고, 같은 요리를 여러 번 낼수록 별이 오릅니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">📈</div>
+        <h3>차오르는 난이도</h3>
+        <p>초반은 편하게 시작하지만 뒤로 갈수록 재료가 늘고 판이 높이 쌓입니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">⏳</div>
+        <h3>시간 제한 없음</h3>
+        <p>쫓기지 않습니다. 짧게 끊어서, 느긋하게 생각하며 풀 수 있습니다.</p>
+      </article>
+    </div>
+
+    <h3 style="margin-top:36px; font-size:.8rem; letter-spacing:.12em; color:var(--muted)">막히면 쓰는 세 가지</h3>
+    <div class="helpers">
+      <span>되돌리기</span>
+      <span>요술봉</span>
+      <span>섞기</span>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt cta">
+  <div class="wrap">
+    <h2>출시되면 알려드릴게요.</h2>
+    <p class="section-lead" style="margin-inline:auto">
+      삼매치·마작 스타일 퍼즐을 좋아하신다면 맞을 겁니다.
+      인터넷 없이도 플레이할 수 있습니다.
+    </p>
+    <a class="btn" href="mailto:yamoda24@gmail.com?subject=Tile%20Feast%20%EC%B6%9C%EC%8B%9C%20%EC%95%8C%EB%A6%BC">
+      출시 알림 신청
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7M7 7h10v10"/>
+      </svg>
+    </a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><a href="privacy-policy.html">개인정보처리방침</a></p>
+    <p>&copy; <span id="year"></span> Smart it · <a href="../">포트폴리오</a></p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
