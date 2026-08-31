@@ -59,6 +59,18 @@ const PROJECTS = [
     ]
   },
   {
+    title: "릴 던전",
+    category: "게임",
+    desc: "5×4 릴을 굴려 페이라인이 서면 배당표만큼 보스를 때리는 슬롯머신 " +
+          "로그라이크. 스핀 다섯 번 안에 라운드 목표를 넘기면 클리어하고, " +
+          "다섯 칸뿐인 유물을 무엇으로 채울지가 판을 가릅니다.",
+    tags: ["Flutter", "Dart", "로그라이크"],
+    thumb: "",
+    links: [
+      { label: "소개 페이지", url: "reeldungeon/" }
+    ]
+  },
+  {
     title: "Tile Feast",
     category: "게임",
     desc: "쌓인 재료 타일에서 같은 것 세 개를 찾아 맞추는 타일 퍼즐. 판을 다 비우면 " +

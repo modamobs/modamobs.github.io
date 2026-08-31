@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>릴 던전 — 슬롯머신 로그라이크</title>
+<meta name="description" content="5×4 릴을 굴려 페이라인이 서면 배당표만큼 보스를 때리는 슬롯머신 로그라이크. 스핀 다섯 번 안에 라운드를 넘기고, 유물을 골라 더 깊이 내려가세요.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="릴 던전 — 슬롯머신 로그라이크">
+<meta property="og:description" content="심볼을 굴려 아군을 소환하라. 릴을 굴려 보스를 때리는 엔들리스 로그라이크.">
+<meta property="og:url" content="https://modamobs.github.io/reeldungeon/">
+<meta property="og:image" content="https://modamobs.github.io/reeldungeon/assets/icon.png">
+
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../games/game.css">
+
+<style>
+  /* 픽셀 아트 아이콘은 부드럽게 늘리면 뭉개집니다 */
+  .icon-slot img { image-rendering: pixelated; }
+
+  /* 한 판이 굴러가는 순서 */
+  .loop {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin-top: 6px;
+    font-size: .92rem;
+  }
+  .loop span {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: hsl(var(--game-hue) 60% 50% / .12);
+    color: var(--heading);
+  }
+  .loop em { font-style: normal; color: var(--muted); }
+
+  /* 게임이 굴러가는 축 */
+  .axis-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: .93rem;
+  }
+  .axis-table td {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .axis-table td:first-child {
+    width: 34%;
+    padding-right: 18px;
+    color: var(--game-accent);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .axis-table tr:last-child td { border-bottom: 0; }
+
+  .pull {
+    margin: 28px 0 0;
+    padding: 20px 24px;
+    border-left: 3px solid var(--game-accent);
+    background: hsl(var(--game-hue) 60% 50% / .08);
+    border-radius: 0 12px 12px 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--heading);
+    max-width: 52ch;
+  }
+</style>
+</head>
+
+<!-- 던전의 금빛 -->
+<body style="--game-accent:#f5c542; --game-accent2:#ffe9a3; --game-hue:45">
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="back-link" href="../">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6"/>
+      </svg>
+      포트폴리오
+    </a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">슬롯머신 로그라이크</p>
+
+    <div class="icon-slot">
+      <img src="assets/icon.png" alt="릴 던전 앱 아이콘">
+    </div>
+
+    <h1 class="title">릴 던전</h1>
+
+    <p class="subhead">
+      심볼을 굴려 아군을 소환하라.
+    </p>
+
+    <div class="status-note">
+      <span class="status-dot" aria-hidden="true"></span>
+      Google Play 출시 준비 중
+    </div>
+  </div>
+</header>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>줄이 서면,<br>보스가 맞습니다.</h2>
+    <p class="section-lead">
+      5×4 릴을 굴립니다. 1열부터 왼쪽에서 오른쪽으로 페이라인이 이어지면
+      배당표만큼 보스에게 피해가 들어갑니다. 라운드 목표 피해를
+      <strong>스핀 다섯 번</strong> 안에 넘기면 클리어입니다.
+    </p>
+
+    <div class="loop">
+      <span>스핀</span><em>→</em>
+      <span>페이라인 성립</span><em>→</em>
+      <span>보스 타격</span><em>→</em>
+      <span>라운드 클리어</span><em>→</em>
+      <span>유물 구매</span>
+    </div>
+
+    <p class="pull">라운드 상한이 없습니다. 어디까지 내려갔는지(R)가 기록입니다.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>깊이는 판 위가 아니라<br>유물에 있습니다</h2>
+    <p class="section-lead">
+      심볼에는 능력을 달지 않았습니다. 종류가 많으면 같은 게 나란히 설 일이 없어
+      페이라인이 성립하지 않기 때문입니다. 심볼은 여덟 종에 확률만 고정해 두고,
+      선택은 전부 유물 쪽에 몰아 두었습니다.
+    </p>
+
+    <table class="axis-table">
+      <tr><td>심볼 8종</td><td>능력이 없습니다. 값과 확률만 있습니다</td></tr>
+      <tr><td>페이라인 20경로</td><td>1열부터 왼쪽에서 오른쪽으로 이어져야 지급</td></tr>
+      <tr><td>배당표</td><td>칸값을 곱하는 게 아니라 표에서 금액을 찾습니다</td></tr>
+      <tr><td>유물 30종</td><td>릴·판정·지급·스핀·금화 다섯 갈래. 판 안의 유일한 선택</td></tr>
+      <tr><td>배수</td><td>라운드를 넘길 때마다 +0.8. 판 밖이 아니라 판 안의 성장</td></tr>
+      <tr><td>조각</td><td>판을 넘어가는 진행. 유물 해금과 여섯째 칸에 씁니다</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>플레이를 채우는 것들</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🎰</div>
+        <h3>다섯 칸의 유물</h3>
+        <p>클리어할 때마다 금화로 유물을 삽니다. 칸은 다섯 개뿐이라, 판마다 무엇을 버릴지 정해야 합니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">💎</div>
+        <h3>남는 조각</h3>
+        <p>판이 끝나면 조각이 남습니다. 새 유물을 영구히 열고, 여섯째 칸을 여는 데 씁니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">📜</div>
+        <h3>일일 퀘스트</h3>
+        <p>R10 도달, 스핀 30번, 오버킬 클리어 같은 과제가 자정마다 새로 걸립니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🏆</div>
+        <h3>엔들리스 기록</h3>
+        <p>라운드 상한이 없습니다. 도달 라운드로 자신의 최고 기록을 넘어서면 됩니다.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section cta">
+  <div class="wrap">
+    <h2>출시되면 알려드릴게요.</h2>
+    <p class="section-lead" style="margin-inline:auto">
+      한 손으로, 세로 화면에서, 짧게 굴리는 로그라이크입니다.
+      준비가 끝나는 대로 Google Play에 올라갑니다.
+    </p>
+    <a class="btn" href="mailto:yamoda24@gmail.com?subject=%EB%A6%B4%20%EB%8D%98%EC%A0%84%20%EC%B6%9C%EC%8B%9C%20%EC%95%8C%EB%A6%BC">
+      출시 알림 신청
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7M7 7h10v10"/>
+      </svg>
+    </a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><a href="privacy-policy.html">개인정보처리방침</a></p>
+    <p>&copy; <span id="year"></span> Smart it · <a href="../">포트폴리오</a></p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
