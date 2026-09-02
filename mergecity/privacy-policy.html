@@ -36,20 +36,23 @@
 <body>
 
 <h1>문명 2048(Merge City 2048) 개인정보 처리방침</h1>
-<p class="meta">시행일: 2026년 8월 29일 · 최종 수정일: 2026년 8월 29일</p>
+<p class="meta">시행일: 2026년 8월 29일 · 최종 수정일: 2026년 9월 2일</p>
 
-<p>문명 2048(패키지 <code>com.mobs.civilization2048</code>, 이하 "본 게임")은 이용자를
-식별할 수 있는 정보를 수집하지 않습니다. 게임 진행 상황은 기기 안에만 저장되며
-서버로 전송되지 않습니다. 다만 본 게임에 표시되는 광고를 위해 Google AdMob이
-일부 정보를 수집합니다.</p>
+<p>문명 2048(패키지 <code>com.mobs.civilization2048</code>, 이하 "본 게임")은 로그인 없이
+즐길 수 있으며, 그때는 게임 진행 상황이 기기 안에만 저장됩니다. 이용자가 <strong>직접
+구글 계정으로 로그인한 경우에만</strong> 진행 상황이 서버에 함께 보관됩니다(아래 3항).
+그 밖에 본 게임에 표시되는 광고를 위해 Google AdMob이 일부 정보를 수집합니다.</p>
 
 <h2>1. 개발자가 직접 수집하는 정보</h2>
 
-<p><strong>없습니다.</strong> 본 게임은 회원 가입이 없고, 계정도 로그인도 요구하지
-않습니다. 개발자는 이용자를 식별할 수 있는 어떤 정보도 전달받지 않으며, 개발자가
-운영하는 서버 자체가 없습니다.</p>
+<p>본 게임은 <strong>로그인을 요구하지 않습니다.</strong> 로그인하지 않으면 개발자는
+이용자를 식별할 수 있는 어떤 정보도 전달받지 않습니다.</p>
 
-<p>이름, 주소, 전화번호, 생년월일, 결제 수단 정보를 수집하지 않습니다.
+<p>이용자가 설정에서 <strong>클라우드 저장</strong>을 켜고 구글 계정으로 로그인하면,
+그 계정의 이름과 이메일 주소가 Google Firebase 인증에 전달되어 계정을 구분하는 데
+쓰입니다. 이 정보는 광고나 마케팅에 쓰이지 않고 제3자에게 제공되지 않습니다.</p>
+
+<p>주소, 전화번호, 생년월일, 결제 수단 정보는 어떤 경우에도 수집하지 않습니다.
 위치·연락처·사진·카메라·마이크에도 접근하지 않습니다.</p>
 
 <h2>2. 기기 안에만 저장되는 정보</h2>
@@ -79,7 +82,23 @@
 </table>
 </div>
 
-<h2>3. 광고</h2>
+<h2>3. 클라우드 저장 (선택)</h2>
+
+<p>설정 → 클라우드 저장에서 구글 계정으로 로그인하면, 아래 진행 기록이 Google
+Firebase(Firestore, 서울 리전)에 이용자 계정별로 보관됩니다. 기기를 바꿔도 진행
+상황을 이어가기 위한 것입니다.</p>
+
+<ul>
+  <li>도시 재건 진행도와 보유 자재</li>
+  <li>건물 도감 달성 기록</li>
+  <li>최고 점수, 진행 중인 판, 부스터 보유 개수</li>
+</ul>
+
+<p>전송은 암호화되며, 보안 규칙에 따라 <strong>본인 계정만</strong> 읽고 쓸 수 있습니다.
+로그인하지 않으면 아무것도 전송되지 않습니다. 언어·소리 같은 기기 설정은 보관하지
+않습니다.</p>
+
+<h2>4. 광고</h2>
 
 <p>본 게임은 Google AdMob을 통해 배너 광고, 보상형 동영상 광고, 전면 광고를 제공합니다.
 AdMob은 광고 게재와 성과 측정을 위해 광고 식별자(Advertising ID), 기기 정보,
@@ -93,29 +112,33 @@ AdMob은 광고 게재와 성과 측정을 위해 광고 식별자(Advertising I
     Android: 설정 → 개인정보 보호 → 광고 → 광고 ID 삭제</li>
 </ul>
 
-<h2>4. 제3자 제공</h2>
+<h2>5. 제3자 제공</h2>
 
 <p>개발자는 어떤 정보도 제3자에게 판매하거나 제공하지 않습니다.
 위 광고 사업자의 수집은 해당 사업자의 방침에 따릅니다.</p>
 
-<h2>5. 아동</h2>
+<h2>6. 아동</h2>
 
 <p>본 게임은 만 13세 미만 아동을 주 대상으로 하지 않으며, 아동의 개인정보를
 고의로 수집하지 않습니다.</p>
 
-<h2>6. 정보 삭제</h2>
+<h2>7. 정보 삭제</h2>
 
 <p>앱을 삭제하면 기기에 저장된 모든 기록이 함께 삭제됩니다.
 앱 안의 <strong>설정 → 데이터 초기화</strong>로도 진행 기록을 지울 수 있습니다.</p>
 
-<p>개발자가 보관하는 이용자 정보가 없으므로, 개발자 쪽에서 열람·정정·삭제할 대상도
-없습니다. Google이 광고를 위해 수집하는 정보는 위에 링크한 Google 방침을 따릅니다.</p>
+<p>클라우드 저장을 쓴 경우, 앱 안의 <strong>설정 → 클라우드 저장 → 계정 삭제</strong>를
+누르면 서버에 보관된 진행 기록과 로그인 계정이 함께 삭제됩니다. 되돌릴 수 없으며,
+기기 안의 진행 상황은 그대로 남습니다. 앱을 쓸 수 없는 상황이라면 아래 문의
+이메일로 삭제를 요청하실 수 있고, 확인 후 30일 이내에 처리합니다.</p>
 
-<h2>7. 방침 변경</h2>
+<p>Google이 광고를 위해 수집하는 정보는 위에 링크한 Google 방침을 따릅니다.</p>
+
+<h2>8. 방침 변경</h2>
 
 <p>내용이 바뀌면 이 문서 상단의 최종 수정일을 갱신합니다.</p>
 
-<h2>8. 문의</h2>
+<h2>9. 문의</h2>
 
 <p>본 방침에 관한 문의는 아래로 보내 주세요.<br>
 <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
@@ -123,20 +146,26 @@ AdMob은 광고 게재와 성과 측정을 위해 광고 식별자(Advertising I
 <hr>
 
 <h1>Merge City 2048 Privacy Policy</h1>
-<p class="meta">Effective: 29 August 2026 · Last updated: 29 August 2026</p>
+<p class="meta">Effective: 29 August 2026 · Last updated: 2 September 2026</p>
 
 <p>Merge City 2048 (package <code>com.mobs.civilization2048</code>, "the Game")
-does not collect information that identifies you. Your progress is stored only on
-your device and is never sent to a server. Google AdMob does collect some
-information in order to serve the ads shown in the Game.</p>
+can be played without signing in, and in that case your progress stays on your
+device. Your progress is also kept on a server <strong>only if you choose to sign
+in with a Google account</strong> (section 3). Separately, Google AdMob collects
+some information in order to serve the ads shown in the Game.</p>
 
 <h2>1. Information the developer collects</h2>
 
-<p><strong>None.</strong> The Game has no sign-up, no account and no login. The
-developer receives no identifying information, and operates no server.</p>
+<p>The Game <strong>does not require you to sign in.</strong> If you do not sign
+in, the developer receives no information that identifies you.</p>
 
-<p>We do not collect your name, address, phone number, date of birth or payment
-details, and the Game does not access your location, contacts, photos, camera or
+<p>If you turn on <strong>Cloud save</strong> in settings and sign in with a Google
+account, that account's name and email address are passed to Google Firebase
+Authentication and used to tell accounts apart. This is not used for advertising or
+marketing and is not given to third parties.</p>
+
+<p>We never collect your address, phone number, date of birth or payment details,
+and the Game does not access your location, contacts, photos, camera or
 microphone.</p>
 
 <h2>2. Information stored on your device</h2>
@@ -155,7 +184,23 @@ uninstall the Game.</p>
 </table>
 </div>
 
-<h2>3. Advertising</h2>
+<h2>3. Cloud save (optional)</h2>
+
+<p>If you sign in with a Google account under Settings → Cloud save, the progress
+below is stored per account on Google Firebase (Firestore, Seoul region), so that
+you can carry on after changing devices.</p>
+
+<ul>
+  <li>City rebuilding progress and material in stock</li>
+  <li>Building codex entries</li>
+  <li>Best score, the run in progress and booster counts</li>
+</ul>
+
+<p>Transfers are encrypted and security rules allow <strong>only your own
+account</strong> to read and write it. Nothing is transmitted if you do not sign in.
+Device preferences such as language and sound are not stored.</p>
+
+<h2>4. Advertising</h2>
 
 <p>The Game shows banner, rewarded video and interstitial ads through Google AdMob. To serve and
 measure those ads, AdMob may collect and use your advertising identifier, device
@@ -169,30 +214,35 @@ governed by Google's own policies, and the developer does not receive that data.
     Android: Settings → Privacy → Ads → Delete advertising ID</li>
 </ul>
 
-<h2>4. Sharing with third parties</h2>
+<h2>5. Sharing with third parties</h2>
 
 <p>The developer does not sell or share any information with third parties.
 Collection by the advertising provider above is governed by that provider's policy.</p>
 
-<h2>5. Children</h2>
+<h2>6. Children</h2>
 
 <p>The Game is not directed primarily at children under 13, and does not knowingly
 collect personal information from children.</p>
 
-<h2>6. Deleting your data</h2>
+<h2>7. Deleting your data</h2>
 
 <p>Uninstalling the Game removes everything stored on your device. You can also
 clear your progress from <strong>Settings → Reset data</strong> inside the Game.</p>
 
-<p>Because the developer holds no user data, there is nothing to access, correct or
-delete on our side. For advertising data collected by Google, please refer to the
-Google policy linked above.</p>
+<p>If you used Cloud save, <strong>Settings → Cloud save → Delete account</strong>
+inside the Game deletes both the progress kept on the server and your sign-in
+account. This cannot be undone; the progress on your device is left untouched. If
+you cannot use the app, you may request deletion at the contact address below and
+we will act on it within 30 days of confirming the request.</p>
 
-<h2>7. Changes</h2>
+<p>For advertising data collected by Google, please refer to the Google policy
+linked above.</p>
+
+<h2>8. Changes</h2>
 
 <p>If this policy changes, the date at the top of this section is updated.</p>
 
-<h2>8. Contact</h2>
+<h2>9. Contact</h2>
 
 <p>For questions about this policy, please write to<br>
 <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
