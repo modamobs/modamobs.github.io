@@ -39,7 +39,7 @@
 
 <p>클래식 스도쿠(패키지 <code>com.mobs.sudoku</code>, 이하 "본 게임")는 로그인 없이 즐길 수
 있으며, 게임 진행 상황은 기기 안에만 저장됩니다. 본 게임에 표시되는 광고를 위해
-Google AdMob이 일부 정보를 수집합니다.</p>
+Google AdMob이 일부 정보를 수집하고, 게임 개선을 위한 사용 통계를 Google Firebase Analytics로 수집합니다.</p>
 
 <h2>1. 개발자가 직접 수집하는 정보</h2>
 
@@ -78,21 +78,39 @@ Google AdMob이 일부 정보를 수집합니다.</p>
 확인할 수 있습니다. 광고 ID는 기기 설정(Google → 광고)에서 직접 재설정하거나 맞춤 광고를 끌 수 있습니다.
 유럽 경제 지역(EEA)·영국의 이용자에게는 앱 실행 시 동의 창이 표시되며, 설정 화면에서 언제든 선택을 바꿀 수 있습니다.</p>
 
-<h2>4. 아동</h2>
+<h2>4. 사용 통계(Firebase Analytics)가 수집하는 정보</h2>
+
+<p>본 게임은 어떤 난이도가 많이 플레이되는지, 어디에서 게임을 그만두는지 같은 <strong>사용 통계</strong>를
+Google Firebase Analytics로 수집합니다. 게임을 고치는 데만 쓰며, 개인을 식별하는 정보(이름·이메일·연락처)는
+수집하지 않습니다. 이 통계는 Google이 처리하며 개발자는 합산된 수치만 봅니다.</p>
+
+<div class="wrap">
+<table>
+  <tr><th>정보</th><th>목적</th></tr>
+  <tr><td>게임 시작·완료·중단, 난이도, 소요 시간, 실수·힌트 횟수</td><td>난이도 조정, 기능 개선</td></tr>
+  <tr><td>앱 인스턴스 ID(설치마다 무작위로 생성), 기기 종류, OS 버전, 앱 버전, 언어</td><td>통계 집계</td></tr>
+  <tr><td>IP 주소로 추정한 대략적인 국가·지역</td><td>지역별 통계</td></tr>
+</table>
+</div>
+
+<p>Firebase의 처리 방식은 <a href="https://firebase.google.com/support/privacy">Firebase 개인정보 보호 및 보안</a>에서
+확인할 수 있습니다. 앱 인스턴스 ID는 앱을 삭제하면 함께 사라집니다.</p>
+
+<h2>5. 아동</h2>
 
 <p>본 게임은 전체 이용가이며 아동을 대상으로 만들어지지 않았습니다. 13세 미만 아동의
 개인정보를 의도적으로 수집하지 않습니다.</p>
 
-<h2>5. 보안과 보관</h2>
+<h2>6. 보안과 보관</h2>
 
 <p>개발자는 이용자의 개인정보를 서버에 보관하지 않으므로 유출될 서버 데이터가 없습니다.
-AdMob과의 통신은 암호화(TLS)되어 전송됩니다.</p>
+AdMob·Firebase와의 통신은 암호화(TLS)되어 전송됩니다.</p>
 
-<h2>6. 방침의 변경</h2>
+<h2>7. 방침의 변경</h2>
 
 <p>내용이 바뀌면 이 페이지를 갱신하고 시행일을 고칩니다.</p>
 
-<h2>7. 문의</h2>
+<h2>8. 문의</h2>
 
 <p>이메일: <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
 
@@ -103,7 +121,7 @@ AdMob과의 통신은 암호화(TLS)되어 전송됩니다.</p>
 
 <p>Classic Sudoku (package <code>com.mobs.sudoku</code>, "the Game") requires no account.
 Your progress is stored only on your device. Google AdMob collects some information to
-show ads in the Game.</p>
+show ads in the Game, and Google Firebase Analytics collects usage statistics to improve the Game.</p>
 
 <h2>1. Information the developer collects</h2>
 <p>The Game has <strong>no sign-in and no sign-up.</strong> The developer receives no
@@ -137,16 +155,31 @@ Google may collect and process the following. The developer does not receive it.
 You can reset your Advertising ID or opt out of personalized ads in your device settings (Google → Ads).
 Users in the EEA and the UK see a consent dialog on first launch and can change their choice in Settings at any time.</p>
 
-<h2>4. Children</h2>
+<h2>4. Usage statistics (Firebase Analytics)</h2>
+<p>The Game collects <strong>usage statistics</strong> with Google Firebase Analytics, such as which difficulties are
+played and where players stop. They are used only to improve the Game. No personally identifying information
+(name, email, contacts) is collected. Google processes these statistics; the developer sees aggregated numbers only.</p>
+<div class="wrap">
+<table>
+  <tr><th>Data</th><th>Purpose</th></tr>
+  <tr><td>Game start, completion and abandonment, difficulty, time taken, mistakes and hints used</td><td>Difficulty tuning, feature improvement</td></tr>
+  <tr><td>App instance ID (random per installation), device model, OS version, app version, language</td><td>Aggregation</td></tr>
+  <tr><td>Approximate country/region inferred from IP address</td><td>Regional statistics</td></tr>
+</table>
+</div>
+<p>See <a href="https://firebase.google.com/support/privacy">Privacy and Security in Firebase</a>.
+The app instance ID is deleted together with the app.</p>
+
+<h2>5. Children</h2>
 <p>The Game is rated for everyone and is not directed at children. We do not knowingly collect personal information from children under 13.</p>
 
-<h2>5. Security and retention</h2>
-<p>The developer keeps no user data on any server, so there is no server-side data to be breached. Communication with AdMob is encrypted (TLS).</p>
+<h2>6. Security and retention</h2>
+<p>The developer keeps no user data on any server, so there is no server-side data to be breached. Communication with AdMob and Firebase is encrypted (TLS).</p>
 
-<h2>6. Changes</h2>
+<h2>7. Changes</h2>
 <p>When this policy changes, this page is updated together with the effective date.</p>
 
-<h2>7. Contact</h2>
+<h2>8. Contact</h2>
 <p>E-mail: <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
 
 </body>
