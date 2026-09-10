@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Arrow Box — 화살표 상자 퍼즐</title>
+<meta name="description" content="상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 막다른 길이 없어 순서만 찾으면 됩니다.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Arrow Box — 화살표 상자 퍼즐">
+<meta property="og:description" content="상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 순서만 맞으면 됩니다.">
+<meta property="og:url" content="https://modamobs.github.io/arrow-box/">
+<meta property="og:image" content="https://modamobs.github.io/assets/images/arrow-box.png">
+
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../games/game.css">
+
+<style>
+  /* 스크린샷 */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .shots figure { margin: 0; }
+  .shots img {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+  .shots figcaption {
+    margin-top: 10px;
+    font-size: .86rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* 이 게임의 핵심 한 줄 */
+  .pull {
+    margin: 28px 0 0;
+    padding: 20px 24px;
+    border-left: 3px solid var(--game-accent);
+    background: hsl(var(--game-hue) 60% 50% / .08);
+    border-radius: 0 12px 12px 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--heading);
+    max-width: 52ch;
+  }
+
+  /* 규칙 두 줄 */
+  .rules {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 12px;
+    max-width: 52ch;
+  }
+  .rules li {
+    position: relative;
+    padding-left: 30px;
+    color: var(--text);
+  }
+  .rules li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--game-accent);
+    font-weight: 700;
+  }
+
+  /* 도와주는 것들 */
+  .helpers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-top: 6px;
+    font-size: .92rem;
+  }
+  .helpers span {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: hsl(var(--game-hue) 60% 50% / .12);
+    color: var(--heading);
+  }
+</style>
+</head>
+
+<!-- 크림 바탕에 나무색 화살표 -->
+<body style="--game-accent:#a8703a; --game-accent2:#e2c39b; --game-hue:28">
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="back-link" href="../">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6"/>
+      </svg>
+      포트폴리오
+    </a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">3D 화살표 퍼즐</p>
+
+    <div class="icon-slot">
+      <img src="assets/icon.png" alt="Arrow Box 앱 아이콘">
+    </div>
+
+    <h1 class="title">Arrow Box</h1>
+
+    <p class="subhead">
+      상자에 붙은 화살표를 눌러<br>
+      하나도 남기지 않고 빼내는 퍼즐.
+    </p>
+
+    <div class="status-note">
+      <span class="status-dot" aria-hidden="true"></span>
+      Google Play 내부 테스트 중
+    </div>
+  </div>
+</header>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>규칙은 두 줄,<br>어려운 건 순서.</h2>
+    <p class="section-lead">
+      화살표를 누르면 머리가 가리키는 쪽으로 미끄러져 상자 밖으로 날아갑니다.
+    </p>
+
+    <ul class="rules">
+      <li>앞을 다른 화살표가 막고 있으면 튕깁니다.</li>
+      <li>다 빼내면 클리어입니다.</li>
+    </ul>
+
+    <p class="pull">막다른 길이 없습니다. 판을 거꾸로 만들기 때문에, 어떤 순서로 눌러도 못 푸는 상태에 빠지지 않습니다.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>돌려 가며 찾습니다</h2>
+    <p class="section-lead">
+      상자는 손가락으로 돌립니다. 화살표는 여섯 면 어디에나 있고, 뒷면이나 바닥에
+      숨은 하나를 찾아야 풀리는 판도 있습니다. 오른쪽 위 나침반의 X·Y·Z 를 누르면
+      그 면을 곧바로 정면으로 봅니다.
+    </p>
+
+    <div class="stat-row" style="margin-top:28px">
+      <div class="stat">
+        <span class="num">12</span>
+        <span class="desc">가지 덩어리 모양 — L 자, 십자, 2×2×2, 구멍 난 판까지</span>
+      </div>
+      <div class="stat">
+        <span class="num">40</span>
+        <span class="desc">개까지 붙는 화살표. 처음에는 상자 하나로 시작합니다</span>
+      </div>
+      <div class="stat">
+        <span class="num">5개 국어</span>
+        <span class="desc">한국어 · English · 日本語 · 简体中文 · 繁體中文</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>화면</h2>
+    <p class="section-lead">인터넷 없이도 되고, 계정도 필요 없습니다.</p>
+
+    <div class="shots">
+      <figure>
+        <img src="assets/home.png" alt="레벨을 고르는 첫 화면" loading="lazy">
+        <figcaption>레벨 고르기</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/play.png" alt="여러 상자를 붙인 덩어리에서 화살표를 빼내는 화면" loading="lazy">
+        <figcaption>퍼즐 판</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/daily.png" alt="달력으로 지난 날짜를 다시 하는 데일리 챌린지 화면" loading="lazy">
+        <figcaption>데일리 챌린지</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/settings.png" alt="소리·진동·회전 속도를 고르는 설정 화면" loading="lazy">
+        <figcaption>설정</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>판을 채우는 것들</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">📅</div>
+        <h3>매일 새 판</h3>
+        <p>날짜가 씨앗이라 그날은 누구에게나 같은 판입니다. 달력에서 지난 날도 다시 할 수 있고, 한 달에 열흘·스무날·전부를 채우면 트로피를 받습니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🔥</div>
+        <h3>익스트림</h3>
+        <p>여섯 면 7×7 칸에 화살표 스물몇 개. 움직일 수 있는 것은 늘 하나뿐이라, 돌리고 또 돌려 그 하나를 찾습니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🧭</div>
+        <h3>축 나침반</h3>
+        <p>X·Y·Z 를 누르면 그 축이 정면으로 돌아옵니다. 뒷면을 확인하려고 손가락으로 헤맬 일이 없습니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🎨</div>
+        <h3>상자 색</h3>
+        <p>별을 모으면 크림·나무·흑백·네온 네 가지 상자가 차례로 열립니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🎵</div>
+        <h3>이어 빼는 맛</h3>
+        <p>막히지 않고 연달아 빼내면 소리가 한 음씩 올라갑니다. 몇 개나 이었는지 화면에 뜹니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">❤️</div>
+        <h3>생명 세 개</h3>
+        <p>막힌 화살표를 누르면 하나 잃습니다. 다 잃어도 이어 하거나 처음부터 다시 할 수 있습니다.</p>
+      </article>
+    </div>
+
+    <h3 style="margin-top:36px; font-size:.8rem; letter-spacing:.12em; color:var(--muted)">막히면 쓰는 것들</h3>
+    <div class="helpers">
+      <span>힌트</span>
+      <span>건너뛰기</span>
+      <span>회전 속도 조절</span>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt cta">
+  <div class="wrap">
+    <h2>출시되면 알려드릴게요.</h2>
+    <p class="section-lead" style="margin-inline:auto">
+      지금은 내부 테스트 중입니다. 한 판이 짧아서 잠깐씩 꺼내 풀기 좋습니다.
+    </p>
+    <a class="btn" href="mailto:yamoda24@gmail.com?subject=Arrow%20Box%20%EC%B6%9C%EC%8B%9C%20%EC%95%8C%EB%A6%BC">
+      출시 알림 신청
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7M7 7h10v10"/>
+      </svg>
+    </a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><a href="privacy-policy.html">개인정보처리방침</a></p>
+    <p>&copy; <span id="year"></span> Smart it · <a href="../">포트폴리오</a></p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

@@ -59,6 +59,18 @@ const PROJECTS = [
     ]
   },
   {
+    title: "Arrow Box",
+    category: "게임",
+    desc: "상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 머리가 가리키는 쪽으로 " +
+          "미끄러져 나가고, 앞을 다른 화살표가 막고 있으면 튕깁니다. 판을 거꿘로 " +
+          "만들어 막다른 길이 없으니, 순서만 찾으면 됩니다.",
+    tags: ["React", "TypeScript", "three.js", "Capacitor"],
+    thumb: "assets/images/arrow-box.png",
+    links: [
+      { label: "소개 페이지", url: "arrow-box/" }
+    ]
+  },
+  {
     title: "릴 던전",
     category: "게임",
     desc: "5×4 릴을 굴려 페이라인이 서면 배당표만큼 보스를 때리는 슬롯머신 " +
