@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>숨은그림 찾기 — 큼직한 그림, 서두르지 않는 숨은그림찾기</title>
+<meta name="description" content="따뜻한 손그림 속에서 물건을 찾는 숨은그림찾기. 물건이 크고 또렷해서 눈이 편하고, 시간이 다 되어도 실패하지 않습니다. 방 스무 곳을 돌며 판마다 다른 물건을 찾습니다.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="숨은그림 찾기 — 큼직한 그림, 서두르지 않는 숨은그림찾기">
+<meta property="og:description" content="따뜻한 손그림 속에서 물건을 찾는 숨은그림찾기. 시간이 다 되어도 실패하지 않습니다.">
+<meta property="og:url" content="https://modamobs.github.io/hiddenfind/">
+<meta property="og:image" content="https://modamobs.github.io/assets/images/hiddenfind.png">
+
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../games/game.css">
+
+<style>
+  /* 스크린샷 */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .shots figure { margin: 0; }
+  .shots img {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+  .shots figcaption {
+    margin-top: 10px;
+    font-size: .86rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* 이 게임의 핵심 한 줄 */
+  .pull {
+    margin: 28px 0 0;
+    padding: 20px 24px;
+    border-left: 3px solid var(--game-accent);
+    background: hsl(var(--game-hue) 60% 50% / .08);
+    border-radius: 0 12px 12px 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--heading);
+    max-width: 52ch;
+  }
+
+  /* 장면 이름 */
+  .rooms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-top: 6px;
+    font-size: .92rem;
+  }
+  .rooms span {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: hsl(var(--game-hue) 60% 50% / .12);
+    color: var(--heading);
+  }
+</style>
+</head>
+
+<!-- 볕 드는 방 — 따뜻한 크림에 민트 -->
+<body style="--game-accent:#2fae7d; --game-accent2:#a9e3c6; --game-hue:158">
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="back-link" href="../">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6"/>
+      </svg>
+      포트폴리오
+    </a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">숨은그림찾기</p>
+
+    <div class="icon-slot">
+      <img src="assets/icon.png" alt="숨은그림 찾기 앱 아이콘">
+    </div>
+
+    <h1 class="title">숨은그림 찾기</h1>
+
+    <p class="subhead">
+      따뜻한 손그림 속에서<br>
+      숨은 물건을 찾습니다.
+    </p>
+
+    <div class="status-note">
+      <span class="status-dot" aria-hidden="true"></span>
+      Google Play 출시 준비 중
+    </div>
+  </div>
+</header>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>크게 그렸습니다.<br>확대하지 않아도 보입니다.</h2>
+    <p class="section-lead">
+      주방, 거실, 시장처럼 정겨운 장면 하나가 화면에 다 들어옵니다.
+      아래 목록에 나온 물건을 그림 속에서 찾아 누르면 됩니다.
+      물건이 크고 또렷해서 눈을 가늘게 뜨지 않아도 되고,
+      더 자세히 보고 싶으면 두 손가락으로 키우거나 끌어서 봅니다.
+    </p>
+
+    <p class="pull">시간이 다 되어도 실패하지 않습니다. 시계는 별을 매길 때만 씁니다.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>같은 방에 와도<br>찾을 것이 달라집니다.</h2>
+    <p class="section-lead">
+      방 스무 곳을 차례로 돕니다. 한 바퀴를 돌아 같은 장면이 다시 나와도
+      그때는 다른 물건을 찾습니다. 판 번호가 같으면 언제나 같은 판이라,
+      다시 하기를 눌러도 방금 그 판이 그대로 나옵니다.
+    </p>
+
+    <div class="stat-row" style="margin-top:28px">
+      <div class="stat">
+        <span class="num">20곳</span>
+        <span class="desc">주방부터 캠핑장까지 손으로 그린 방</span>
+      </div>
+      <div class="stat">
+        <span class="num">900여 개</span>
+        <span class="desc">방마다 숨겨 둔 물건. 한 판에 스무 개를 찾습니다</span>
+      </div>
+      <div class="stat">
+        <span class="num">5개 국어</span>
+        <span class="desc">한국어 · 영어 · 일본어 · 중국어 간체 · 번체</span>
+      </div>
+    </div>
+
+    <h3 style="margin-top:36px; font-size:.8rem; letter-spacing:.12em; color:var(--muted)">가 보게 되는 곳</h3>
+    <div class="rooms">
+      <span>주방</span><span>거실</span><span>시장</span><span>안방</span><span>마당</span>
+      <span>카페</span><span>욕실</span><span>서재</span><span>베란다</span><span>바느질방</span>
+      <span>꽃집</span><span>빵집</span><span>아이방</span><span>미용실</span><span>떡집</span>
+      <span>반찬가게</span><span>문구점</span><span>한복집</span><span>온실</span><span>캠핑장</span>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>화면</h2>
+    <p class="section-lead">서두르지 않고, 한 판씩 편하게 찾는 게임입니다.</p>
+
+    <div class="shots">
+      <figure>
+        <img src="assets/home.jpg" alt="스무 곳의 장면이 늘어선 장면 고르기 화면" loading="lazy">
+        <figcaption>장면 고르기</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/kitchen.jpg" alt="주방 장면에서 물건을 찾는 화면" loading="lazy">
+        <figcaption>주방</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/market.jpg" alt="시장 장면에서 물건을 찾는 화면" loading="lazy">
+        <figcaption>시장</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>편하게 만든 것들</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🔍</div>
+        <h3>막히면 힌트</h3>
+        <p>판마다 한 번은 그냥 씁니다. 그 뒤로는 짧은 광고를 보고 더 받거나, 가게에서 묶음으로 살 수 있습니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">⏳</div>
+        <h3>시간에 안 쫓깁니다</h3>
+        <p>시계가 0이 되어도 계속 찾을 수 있습니다. 걸린 시간은 별 개수에만 영향을 줍니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">⭐</div>
+        <h3>별로 남는 기록</h3>
+        <p>판마다 별을 최고 세 개까지 받습니다. 아쉬운 판은 다시 해서 채울 수 있습니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">📴</div>
+        <h3>로그인도, 인터넷도</h3>
+        <p>계정을 만들지 않습니다. 진행 상황은 기기 안에만 저장되고, 광고를 빼면 인터넷 없이도 놉니다.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt cta">
+  <div class="wrap">
+    <h2>출시되면 알려드릴게요.</h2>
+    <p class="section-lead" style="margin-inline:auto">
+      큰 그림으로 눈 편하게, 짬짬이 한 판씩 하고 싶은 분께 맞습니다.
+      어릴 적 숨은그림찾기가 그리웠다면 더 그렇습니다.
+    </p>
+    <a class="btn" href="mailto:yamoda24@gmail.com?subject=%EC%88%A8%EC%9D%80%EA%B7%B8%EB%A6%BC%20%EC%B0%BE%EA%B8%B0%20%EC%B6%9C%EC%8B%9C%20%EC%95%8C%EB%A6%BC">
+      출시 알림 신청
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7M7 7h10v10"/>
+      </svg>
+    </a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><a href="privacy-policy.html">개인정보처리방침</a></p>
+    <p>&copy; <span id="year"></span> Smart it · <a href="../">포트폴리오</a></p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
