@@ -83,6 +83,18 @@ const PROJECTS = [
     ]
   },
   {
+    title: "숨은그림 찾기",
+    category: "게임",
+    desc: "따뜻한 손그림 속에서 물건을 찾는 숨은그림찾기. 물건이 크고 또렷해서 확대하지 않아도 " +
+          "보이고, 시간이 다 되어도 실패하지 않습니다. 방 스무 곳을 돌며, 같은 장면에 다시 와도 " +
+          "그때는 다른 물건을 찾습니다.",
+    tags: ["React", "TypeScript", "Vite", "Capacitor"],
+    thumb: "assets/images/hiddenfind.png",
+    links: [
+      { label: "소개 페이지", url: "hiddenfind/" }
+    ]
+  },
+  {
     title: "문명 2048",
     category: "게임",
     desc: "같은 건물 둘을 붙이면 한 단계 위 건물이 되는 2048 퍼즐. 보통의 2048과 " +
