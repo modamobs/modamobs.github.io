@@ -198,49 +198,5 @@ const PROJECTS = [
     links: [
       { label: "서비스 바로가기", url: "https://funny-image-voice.vercel.app/" }
     ]
-  },
-  {
-    title: "DragonFly",
-    category: "게임",
-    desc: "좌우로 움직이며 미사일을 자동 연사하는 세로 스크롤 슈팅. " +
-          "적을 처치해 모은 코인이 2개 쌓일 때마다 미사일이 한 단계씩 강해집니다.",
-    tags: ["Unity", "C#", "2D 슈팅"],
-    thumb: "",
-    links: [
-      { label: "GitHub 저장소", url: "https://github.com/modamobs/DragonFly" }
-    ]
-  },
-  {
-    title: "Pin",
-    category: "게임",
-    desc: "회전 속도와 방향이 수시로 바뀌는 원반에 핀을 꽂는 타이밍 게임. " +
-          "목표 개수를 모두 꽂으면 클리어하고, 이미 꽂힌 핀에 부딪히면 실패합니다.",
-    tags: ["Unity", "C#", "캐주얼"],
-    thumb: "",
-    links: [
-      { label: "GitHub 저장소", url: "https://github.com/modamobs/Pin" }
-    ]
-  },
-  {
-    title: "Dodge",
-    category: "게임",
-    desc: "사방의 발사대가 플레이어를 조준해 총알을 쏘는 3D 생존 게임. " +
-          "불규칙한 발사 간격을 읽어 피하면서 생존 시간 최고 기록을 겨룹니다.",
-    tags: ["Unity", "C#", "3D", "생존"],
-    thumb: "",
-    links: [
-      { label: "GitHub 저장소", url: "https://github.com/modamobs/Dodge" }
-    ]
-  },
-  {
-    title: "MediCheck",
-    category: "앱",
-    desc: "카메라로 찍은 성분표를 OCR로 읽어, 선택한 질환 기준에 맞춰 " +
-          "적절·주의·부적절을 판정하는 안드로이드 앱. 분석 기록은 기기 안에 저장됩니다.",
-    tags: ["Kotlin", "Jetpack Compose", "ML Kit OCR", "Room"],
-    thumb: "",
-    links: [
-      { label: "GitHub 저장소", url: "https://github.com/modamobs/MediCheck" }
-    ]
   }
 ];
