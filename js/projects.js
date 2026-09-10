@@ -59,6 +59,27 @@ const PROJECTS = [
     ]
   },
   {
+    title: "클래식 스도쿠",
+    category: "게임",
+    featured: true,
+    desc: "가로줄·세로줄·3×3 상자마다 1부터 9까지 한 번씩 놓는 스도쿠. 여섯 난이도와 " +
+          "날마다 새로 열리는 데일리 판을 담았고, 모든 판은 답이 하나뿐이라 찍지 않고 " +
+          "논리만으로 끝까지 풀립니다.",
+    highlights: [
+      "브라우저에서 설치도 로그인도 없이 바로 플레이",
+      "여섯 난이도 · 데일리 판과 월간 트로피 · 같은 판을 겨루는 도전 코드",
+      "Google Play 출시, 토스 미니앱으로도 서비스 중"
+    ],
+    tags: ["React", "TypeScript", "Vite", "Capacitor", "토스 미니앱"],
+    thumb: "assets/images/sudoku.png",
+    links: [
+      // 첫 번째 링크가 카드 전체 클릭 대상입니다.
+      { label: "소개 페이지", url: "sudoku/" },
+      { label: "바로 플레이", url: "sudoku/play/" },
+      { label: "Google Play", url: "https://play.google.com/store/apps/details?id=com.mobs.sudoku" }
+    ]
+  },
+  {
     title: "Arrow Box",
     category: "게임",
     desc: "상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 머리가 가리키는 쪽으로 " +
