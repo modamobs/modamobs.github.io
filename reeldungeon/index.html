@@ -11,7 +11,7 @@
 <meta property="og:title" content="릴 던전 — 슬롯머신 로그라이크">
 <meta property="og:description" content="심볼을 굴려 아군을 소환하라. 릴을 굴려 보스를 때리는 엔들리스 로그라이크.">
 <meta property="og:url" content="https://modamobs.github.io/reeldungeon/">
-<meta property="og:image" content="https://modamobs.github.io/reeldungeon/assets/icon.png">
+<meta property="og:image" content="https://modamobs.github.io/assets/images/reeldungeon.png">
 
 <link rel="icon" type="image/png" href="assets/icon.png">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -19,6 +19,16 @@
 <link rel="stylesheet" href="../games/game.css">
 
 <style>
+  /* 머리 배경 — 게임 안 돌던전 무대와 몬스터들 */
+  .hero {
+    background: #0d0f16 url("assets/hero.jpg") center bottom / cover no-repeat;
+  }
+  .hero::before { display: none; }
+  .hero .title, .hero .subhead, .hero .eyebrow {
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .8);
+  }
+  .hero .subhead { color: #d8dce6; }
+
   /* 픽셀 아트 아이콘은 부드럽게 늘리면 뭉개집니다 */
   .icon-slot img { image-rendering: pixelated; }
 
