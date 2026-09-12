@@ -36,60 +36,105 @@
 <body>
 
 <h1>릴 던전(Reel Dungeon) 개인정보 처리방침</h1>
-<p class="meta">시행일: 2026년 8월 31일 · 최종 수정일: 2026년 8월 31일</p>
+<p class="meta">시행일: 2026년 8월 31일 · 최종 수정일: 2026년 9월 13일</p>
 
-<p>릴 던전(패키지 <code>com.mobs.reel_dungeon</code>, 이하 "본 게임")은 이용자를
-식별할 수 있는 정보를 수집하지 않습니다. 기록과 설정은 기기 안에만 저장되며
-서버로 전송되지 않습니다. 다만 본 게임에 표시되는 광고를 위해 Google AdMob이
-일부 정보를 수집합니다.</p>
+<p>릴 던전(패키지 <code>com.mobs.reel_dungeon</code>, 이하 "본 게임")은 회원 가입 없이
+즐길 수 있습니다. 다만 모든 플레이어가 함께 쓰는 <strong>전체 기록판</strong>이 있어,
+게임을 켜면 익명 계정이 만들어지고 기록이 서버에 올라갑니다. 본 방침은 어떤 정보가
+어디로 가고 누가 볼 수 있는지 설명합니다.</p>
 
 <h2>1. 개발자가 직접 수집하는 정보</h2>
 
-<p><strong>없습니다.</strong> 본 게임은 회원 가입이 없고, 계정도 로그인도 요구하지
-않습니다. 개발자는 이용자를 식별할 수 있는 어떤 정보도 전달받지 않으며, 개발자가
-운영하는 서버 자체가 없습니다. 분석 도구도 넣지 않았습니다.</p>
+<p>본 게임은 회원 가입이 없고 이메일이나 비밀번호를 받지 않습니다. 개발자가 받는 정보는
+기록판에 올라가는 기록(3항)과 게임 개선을 위한 사용 통계(5항)입니다.</p>
 
-<p>이름, 주소, 전화번호, 생년월일, 결제 수단 정보를 수집하지 않습니다.
-위치·연락처·사진·카메라·마이크·저장소에도 접근하지 않습니다. 본 게임이 요청하는
-권한은 광고를 불러오기 위한 <code>INTERNET</code> 하나뿐입니다.</p>
+<p>주소, 전화번호, 생년월일, 결제 수단 정보는 어떤 경우에도 수집하지 않습니다.
+위치·연락처·사진·카메라·마이크에도 접근하지 않습니다.</p>
 
 <h2>2. 기기 안에만 저장되는 정보</h2>
 
-<p>아래 정보는 기기 내부 저장소에만 남고 외부로 전송되지 않습니다. 개발자를 포함한
-누구도 외부에서 열람할 수 없으며, 앱을 삭제하면 함께 지워집니다.</p>
+<p>아래 정보는 기기 내부 저장소에만 남고 외부로 전송되지 않으며, 앱을 삭제하면 함께
+지워집니다.</p>
 
 <div class="wrap">
 <table>
   <tr><th>구분</th><th>항목</th></tr>
+  <tr><td>기록</td><td>최고 도달 기록, 직전 최고 기록, 플레이 횟수</td></tr>
+  <tr><td>진행도</td><td>보유 파편, 해금 목록, 슬롯 확장 여부, 부적 레벨과 시작 부적</td></tr>
+  <tr><td>일일 퀘스트</td><td>퀘스트 날짜, 진행도, 보상 수령 여부</td></tr>
+  <tr><td>설정</td><td>스핀 연출 방식, 릴 속도, 게임 속도, 효과음·배경음·진동 사용 여부</td></tr>
+  <tr><td>광고 카운터</td><td>보상형 광고 시청 횟수</td></tr>
+</table>
+</div>
+
+<h2>3. 전체 기록판 — Google Firebase</h2>
+
+<p>게임을 켜면 이용자에게 묻지 않고 <strong>익명 계정</strong>이 Google Firebase에 만들어져
+무작위 사용자 ID가 부여됩니다. 이 ID로 아래 기록이 Firebase(Cloud Firestore)에
+보관됩니다.</p>
+
+<div class="wrap">
+<table>
+  <tr><th>항목</th><th>설명</th></tr>
+  <tr><td>최고 도달 라운드</td><td>기록판 순위를 정하는 값</td></tr>
+  <tr><td>플레이 횟수</td><td>지금까지 시작한 판 수</td></tr>
+  <tr><td>갱신 시각</td><td>기록이 마지막으로 바뀐 때</td></tr>
+  <tr><td>표시 이름</td><td>Google Play 게임즈에 로그인한 경우에만. Play 게임즈 표시 이름(최대 24자)</td></tr>
+</table>
+</div>
+
+<p><strong>기록판의 내용은 다른 플레이어에게 공개됩니다.</strong> 상위 기록의 순위,
+최고 도달 라운드, 플레이 횟수, 표시 이름을 누구나 게임 안에서 볼 수 있습니다.
+Play 게임즈에 로그인하지 않았다면 이름 대신 사용자 ID로 만든 별명이 표시됩니다.</p>
+
+<p>전송은 암호화되며, 기록은 보안 규칙에 따라 본인 계정만 쓸 수 있습니다.</p>
+
+<h2>4. Google Play 게임즈 로그인 (안드로이드)</h2>
+
+<p>안드로이드에서 Google Play 게임즈에 로그인되어 있으면, 그 계정이 3항의 익명 계정에
+연결됩니다. 그래서 기기를 바꾸거나 앱을 다시 설치해도 같은 기록을 이어 갑니다.
+이때 Play 게임즈 표시 이름이 기록판에 쓰이고, 최고 기록이 Play 게임즈 리더보드에도
+제출됩니다.</p>
+
+<p>로그인은 Google이 처리하며 개발자는 이메일 주소를 받지 않습니다. Play 게임즈의 정보
+처리는 <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google 개인정보처리방침</a>을 따릅니다.</p>
+
+<h2>5. 사용 통계 — Google Firebase Analytics</h2>
+
+<p>어디서 막히고 무엇이 쓰이는지 알아서 게임을 고치기 위해, 안드로이드 앱과 웹 버전은
+Google <strong>Firebase Analytics</strong>로 사용 통계를 보냅니다.</p>
+
+<div class="wrap">
+<table>
+  <tr><th>보내는 것</th><th>내용</th></tr>
   <tr>
-    <td>기록</td>
-    <td>최고 도달 기록, 직전 최고 기록, 플레이 횟수</td>
+    <td>게임 진행 이벤트</td>
+    <td>판의 시작과 끝, 도달 라운드와 그 판의 유물·강화·스핀 구성, 부적 선택과 아이템
+    사용, 광고 시청 결과, 로그인 방식(Play 게임즈 또는 게스트), 안내 진행, 기록판 열람.
+    같은 판의 이벤트를 묶기 위한 판 식별값이 함께 붙습니다</td>
   </tr>
   <tr>
-    <td>진행도</td>
-    <td>보유 파편, 해금 목록, 슬롯 확장 여부, 부적 레벨과 시작 부적</td>
+    <td>Firebase가 자동으로 수집하는 정보</td>
+    <td>앱 인스턴스 ID, 광고 ID(기기에서 허용된 경우), 기기 모델·OS 버전,
+    IP 주소로 추정한 대략적인 지역, 앱 설치 경로, 앱 사용 시간</td>
   </tr>
   <tr>
-    <td>일일 퀘스트</td>
-    <td>퀘스트 날짜, 진행도, 보상 수령 여부</td>
-  </tr>
-  <tr>
-    <td>설정</td>
-    <td>스핀 연출 방식, 릴 속도, 게임 속도, 효과음·배경음·진동 사용 여부</td>
-  </tr>
-  <tr>
-    <td>광고 카운터</td>
-    <td>보상형 광고 시청 횟수</td>
+    <td>광고 관련</td>
+    <td>AdMob이 광고 노출과 수익 정보를 Analytics로 보냅니다</td>
   </tr>
 </table>
 </div>
 
-<h2>3. 광고</h2>
+<p>개발자가 보내는 이벤트에는 <strong>이름이나 이메일이 들어가지 않습니다.</strong>
+수집된 정보는 Google이
+<a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer">Firebase 개인정보 보호 정책</a>에 따라
+처리합니다.</p>
+
+<h2>6. 광고</h2>
 
 <p>본 게임은 Google AdMob을 통해 배너 광고, 전면 광고, 보상형 동영상 광고를
 제공합니다. AdMob은 광고 게재와 성과 측정을 위해 광고 식별자(Advertising ID),
-기기 정보, 대략적인 위치(IP 주소 기반) 등을 수집·이용할 수 있습니다. 이 수집은
-Google의 방침에 따라 이루어지며, 개발자는 해당 정보를 전달받지 않습니다.</p>
+기기 정보, 대략적인 위치(IP 주소 기반) 등을 수집·이용할 수 있습니다.</p>
 
 <ul>
   <li>Google 광고 정책:
@@ -98,58 +143,75 @@ Google의 방침에 따라 이루어지며, 개발자는 해당 정보를 전달
     Android: 설정 → 개인정보 보호 → 광고 → 광고 ID 삭제</li>
 </ul>
 
-<h2>4. 제3자 제공</h2>
+<h2>7. 앱이 요구하는 권한</h2>
 
-<p>개발자는 어떤 정보도 제3자에게 판매하거나 제공하지 않습니다.
-위 광고 사업자의 수집은 해당 사업자의 방침에 따릅니다.</p>
+<div class="wrap">
+<table>
+  <tr><th>권한</th><th>쓰이는 곳</th></tr>
+  <tr><td><code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code></td><td>기록판, 사용 통계 전송, 광고</td></tr>
+  <tr><td><code>AD_ID</code>, <code>ACCESS_ADSERVICES_*</code></td><td>광고 ID와 광고 측정(광고 SDK·Firebase)</td></tr>
+  <tr><td><code>BIND_GET_INSTALL_REFERRER_SERVICE</code></td><td>앱을 어디서 설치했는지 확인(Firebase)</td></tr>
+  <tr><td><code>READ_GSERVICES</code></td><td>Google Play 서비스 연동(Play 게임즈·Firebase)</td></tr>
+  <tr><td><code>WAKE_LOCK</code>, <code>FOREGROUND_SERVICE</code></td><td>SDK가 통계·광고 데이터를 모아 보내는 작업</td></tr>
+</table>
+</div>
 
-<h2>5. 아동</h2>
+<h2>8. 제3자 제공</h2>
+
+<p>개발자는 어떤 정보도 판매하지 않습니다. 위에 적은 Google 서비스(Firebase, Play 게임즈,
+AdMob)가 각자의 방침에 따라 정보를 처리하며, 그 밖의 제3자에게는 제공하지 않습니다.
+다만 3항의 기록판 정보는 게임 안에서 다른 플레이어에게 공개됩니다.</p>
+
+<h2>9. 아동</h2>
 
 <p>본 게임은 만 13세 미만 아동을 주 대상으로 하지 않으며, 아동의 개인정보를
 고의로 수집하지 않습니다.</p>
 
-<h2>6. 정보 삭제</h2>
+<h2>10. 정보 삭제</h2>
 
-<p>앱을 삭제하면 기기에 저장된 모든 기록과 설정이 함께 삭제됩니다.</p>
+<ul>
+  <li><strong>기기 안의 정보</strong> — 앱을 삭제하면 모든 기록과 설정이 함께 지워집니다.</li>
+  <li><strong>기록판 기록</strong> — 앱 안에서 지우는 기능은 아직 없습니다. 아래 문의 이메일로
+    요청해 주시면 확인 후 30일 이내에 기록과 익명 계정을 삭제합니다. 게임 안 기록판에
+    보이는 이름이나 순위를 함께 알려 주시면 빨리 찾을 수 있습니다.</li>
+  <li><strong>사용 통계</strong> — 앱 인스턴스 ID로 묶이며, Google Analytics에 설정된 보관
+    기간이 지나면 삭제됩니다.</li>
+  <li><strong>Play 게임즈 정보</strong> — Google Play 게임즈 설정에서 이 게임의 데이터를
+    삭제할 수 있습니다.</li>
+</ul>
 
-<p>개발자가 보관하는 이용자 정보가 없으므로, 개발자 쪽에서 열람·정정·삭제할 대상도
-없습니다. Google이 광고를 위해 수집하는 정보는 위에 링크한 Google 방침을 따릅니다.</p>
-
-<h2>7. 방침 변경</h2>
+<h2>11. 방침 변경</h2>
 
 <p>내용이 바뀌면 이 문서 상단의 최종 수정일을 갱신합니다.</p>
 
-<h2>8. 문의</h2>
+<h2>12. 문의</h2>
 
-<p>본 방침에 관한 문의는 아래로 보내 주세요.<br>
+<p>본 방침에 관한 문의와 삭제 요청은 아래로 보내 주세요.<br>
 <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
 
 <hr>
 
 <h1>Reel Dungeon Privacy Policy</h1>
-<p class="meta">Effective: 31 August 2026 · Last updated: 31 August 2026</p>
+<p class="meta">Effective: 31 August 2026 · Last updated: 13 September 2026</p>
 
-<p>Reel Dungeon (package <code>com.mobs.reel_dungeon</code>, "the Game") does not
-collect information that identifies you. Your records and settings are stored only
-on your device and are never sent to a server. Google AdMob does collect some
-information in order to serve the ads shown in the Game.</p>
+<p>Reel Dungeon (package <code>com.mobs.reel_dungeon</code>, "the Game") can be played
+without signing up. It does have a <strong>global leaderboard</strong> shared by all
+players, so an anonymous account is created when you open the Game and your records are
+sent to a server. This policy explains what goes where and who can see it.</p>
 
 <h2>1. Information the developer collects</h2>
 
-<p><strong>None.</strong> The Game has no sign-up, no account and no login. The
-developer receives no identifying information, operates no server, and has not
-included any analytics tooling.</p>
+<p>The Game has no sign-up and never asks for an email address or password. What the
+developer receives is the leaderboard record (section 3) and usage statistics used to
+improve the Game (section 5).</p>
 
-<p>We do not collect your name, address, phone number, date of birth or payment
-details, and the Game does not access your location, contacts, photos, camera,
-microphone or storage. The only permission the Game requests is
-<code>INTERNET</code>, which is needed to load ads.</p>
+<p>We never collect your address, phone number, date of birth or payment details, and
+the Game does not access your location, contacts, photos, camera or microphone.</p>
 
 <h2>2. Information stored on your device</h2>
 
-<p>The following stays in your device's local storage and is never transmitted.
-Nobody, including the developer, can read it remotely, and it is removed when you
-uninstall the Game.</p>
+<p>The following stays in your device's local storage, is never transmitted, and is
+removed when you uninstall the Game.</p>
 
 <div class="wrap">
 <table>
@@ -162,13 +224,76 @@ uninstall the Game.</p>
 </table>
 </div>
 
-<h2>3. Advertising</h2>
+<h2>3. Global leaderboard — Google Firebase</h2>
+
+<p>When you open the Game, an <strong>anonymous account</strong> is created on Google
+Firebase without asking you, and given a random user ID. The records below are stored
+under that ID in Firebase (Cloud Firestore).</p>
+
+<div class="wrap">
+<table>
+  <tr><th>Item</th><th>Details</th></tr>
+  <tr><td>Best round reached</td><td>Used to rank the leaderboard</td></tr>
+  <tr><td>Number of runs</td><td>How many runs you have started</td></tr>
+  <tr><td>Updated time</td><td>When the record last changed</td></tr>
+  <tr><td>Display name</td><td>Only if you are signed in to Google Play Games: your Play Games display name (up to 24 characters)</td></tr>
+</table>
+</div>
+
+<p><strong>Leaderboard entries are visible to other players.</strong> Anyone in the Game
+can see the rank, best round, number of runs and display name of top records. If you are
+not signed in to Play Games, a nickname generated from your user ID is shown instead of a
+name.</p>
+
+<p>Transfers are encrypted, and security rules allow only your own account to write your
+record.</p>
+
+<h2>4. Google Play Games sign-in (Android)</h2>
+
+<p>On Android, if you are signed in to Google Play Games, that account is linked to the
+anonymous account in section 3, so your records carry over when you change devices or
+reinstall. Your Play Games display name is then used on the leaderboard, and your best
+record is also submitted to the Play Games leaderboard.</p>
+
+<p>Sign-in is handled by Google and the developer does not receive your email address.
+Play Games data is governed by the
+<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</p>
+
+<h2>5. Usage statistics — Google Firebase Analytics</h2>
+
+<p>To learn where players get stuck and what they use, the Android app and the web version
+send usage statistics to Google <strong>Firebase Analytics</strong>.</p>
+
+<div class="wrap">
+<table>
+  <tr><th>What is sent</th><th>Details</th></tr>
+  <tr>
+    <td>Gameplay events</td>
+    <td>Run start and end, round reached and that run's relics, upgrades and spins, charm
+    picks and item use, ad outcomes, sign-in method (Play Games or guest), tutorial
+    progress and leaderboard views, with a run identifier that groups events from the same run</td>
+  </tr>
+  <tr>
+    <td>Collected automatically by Firebase</td>
+    <td>App instance ID, advertising ID (where the device allows it), device model and OS
+    version, approximate region inferred from IP address, install source, time spent in the app</td>
+  </tr>
+  <tr>
+    <td>Advertising</td>
+    <td>AdMob reports ad impressions and revenue to Analytics</td>
+  </tr>
+</table>
+</div>
+
+<p>The events the developer sends <strong>never include your name or email address.</strong>
+Google processes this data under the
+<a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer">Firebase privacy policy</a>.</p>
+
+<h2>6. Advertising</h2>
 
 <p>The Game shows banner, interstitial and rewarded video ads through Google AdMob.
-To serve and measure those ads, AdMob may collect and use your advertising
-identifier, device information and approximate location (derived from IP address).
-This collection is governed by Google's own policies, and the developer does not
-receive that data.</p>
+To serve and measure those ads, AdMob may collect and use your advertising identifier,
+device information and approximate location (derived from IP address).</p>
 
 <ul>
   <li>Google advertising policies:
@@ -177,31 +302,51 @@ receive that data.</p>
     Android: Settings → Privacy → Ads → Delete advertising ID</li>
 </ul>
 
-<h2>4. Sharing with third parties</h2>
+<h2>7. Permissions</h2>
 
-<p>The developer does not sell or share any information with third parties.
-Collection by the advertising provider above is governed by that provider's policy.</p>
+<div class="wrap">
+<table>
+  <tr><th>Permission</th><th>Used for</th></tr>
+  <tr><td><code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code></td><td>Leaderboard, sending usage statistics, ads</td></tr>
+  <tr><td><code>AD_ID</code>, <code>ACCESS_ADSERVICES_*</code></td><td>Advertising ID and ad measurement (ads SDK, Firebase)</td></tr>
+  <tr><td><code>BIND_GET_INSTALL_REFERRER_SERVICE</code></td><td>Checking where the app was installed from (Firebase)</td></tr>
+  <tr><td><code>READ_GSERVICES</code></td><td>Google Play services integration (Play Games, Firebase)</td></tr>
+  <tr><td><code>WAKE_LOCK</code>, <code>FOREGROUND_SERVICE</code></td><td>SDK tasks that batch and send statistics and ad data</td></tr>
+</table>
+</div>
 
-<h2>5. Children</h2>
+<h2>8. Sharing with third parties</h2>
+
+<p>The developer does not sell any information. The Google services named above
+(Firebase, Play Games, AdMob) process data under their own policies, and nothing is given
+to any other third party. Leaderboard entries in section 3 are, however, visible to other
+players in the Game.</p>
+
+<h2>9. Children</h2>
 
 <p>The Game is not directed primarily at children under 13, and does not knowingly
 collect personal information from children.</p>
 
-<h2>6. Deleting your data</h2>
+<h2>10. Deleting your data</h2>
 
-<p>Uninstalling the Game removes every record and setting stored on your device.</p>
+<ul>
+  <li><strong>On your device</strong> — uninstalling the Game removes every record and setting.</li>
+  <li><strong>Leaderboard record</strong> — there is no in-app option yet. Email us at the
+    address below and we will delete your record and anonymous account within 30 days of
+    confirming the request. Including the name or rank shown on the leaderboard helps us
+    find it quickly.</li>
+  <li><strong>Usage statistics</strong> — tied to an app instance ID and deleted once the
+    retention period set in Google Analytics passes.</li>
+  <li><strong>Play Games data</strong> — delete this game's data from Google Play Games settings.</li>
+</ul>
 
-<p>Because the developer holds no user data, there is nothing to access, correct or
-delete on our side. For advertising data collected by Google, please refer to the
-Google policy linked above.</p>
-
-<h2>7. Changes</h2>
+<h2>11. Changes</h2>
 
 <p>If this policy changes, the date at the top of this section is updated.</p>
 
-<h2>8. Contact</h2>
+<h2>12. Contact</h2>
 
-<p>For questions about this policy, please write to<br>
+<p>For questions about this policy or deletion requests, please write to<br>
 <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
 
 </body>
