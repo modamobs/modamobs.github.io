@@ -98,7 +98,7 @@ const PROJECTS = [
           "로그라이크. 스핀 다섯 번 안에 라운드 목표를 넘기면 클리어하고, " +
           "다섯 칸뿐인 유물을 무엇으로 채울지가 판을 가릅니다.",
     tags: ["Flutter", "Dart", "로그라이크"],
-    thumb: "",
+    thumb: "assets/images/reeldungeon.png",
     links: [
       { label: "소개 페이지", url: "reeldungeon/" }
     ]
