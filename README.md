@@ -1,6 +1,13 @@
 # MyWebsite
 
-개인 포트폴리오 홈페이지. 순수 HTML / CSS / JavaScript로 만들어 빌드 과정이 없습니다.
+modamobs.github.io. 순수 HTML / CSS / JavaScript로 만들어 빌드 과정이 없습니다.
+
+- `/` — **게임 포털**. 만든 게임을 브라우저에서 바로 플레이합니다.
+- `/about/` — 개인 포트폴리오 (원래 `/` 에 있던 페이지)
+- `/<게임>/` — 게임별 소개 페이지 + 개인정보처리방침 (**주소 바꾸지 마세요**,
+  Google Play 스토어 등록정보에 이 주소들이 걸려 있습니다)
+- `/<게임>/play/` — 게임 웹 빌드
+- `/app-ads.txt` — AdMob 크롤러가 읽는 파일. 루트에서 옮기면 안 됩니다.
 
 ## 디자인
 
@@ -50,16 +57,20 @@ python -m http.server 8000
 
 | 무엇을 | 어디를 |
 |---|---|
+| 게임 추가 / 수정 | `js/games.js`의 `GAMES` 배열 |
+| 포털 문구 / 히어로 | `index.html` |
 | 프로젝트 추가 / 수정 | `js/projects.js`의 `PROJECTS` 배열 |
-| 자기소개 문구 | `index.html`의 `#about` 섹션 |
-| 기술 스택 태그 | `index.html`의 `.about-skills` |
-| 연락처 | `index.html`의 `#contact` 섹션 |
-| 색상 / 폰트 | `css/style.css` 최상단의 `:root` 변수 |
+| 자기소개 문구 | `about/index.html`의 `#about` 섹션 |
+| 연락처 | `about/index.html`의 `#contact` 섹션 |
+| 색상 / 폰트 | `css/portal.css`, `css/style.css` 최상단의 `:root` 변수 |
 
 프로젝트 분류(`category`) 필터 버튼은 데이터에 있는 값으로 자동 생성됩니다.
 새 분류를 쓰면 버튼도 자동으로 늘어납니다.
 
 ## 배포
 
-아직 배포 전입니다. 저장소가 private이므로 GitHub Pages를 쓰려면 public 전환이
-필요하고, private을 유지하려면 Cloudflare Pages 또는 Vercel을 사용합니다.
+GitHub Pages (`modamobs.github.io`). `pages` 리모트로 push 하면 반영됩니다.
+
+```bash
+git push pages main
+```

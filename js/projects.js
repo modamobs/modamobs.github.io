@@ -9,7 +9,7 @@
      desc       : 한두 문장 설명                        (필수)
      tags       : 사용 기술 배열                        (선택)
      thumb      : 썸네일 이미지 경로                    (선택, 없으면 이니셜 썸네일 표시)
-                  예) "assets/images/crosssum.png"
+                  예) "/assets/images/crosssum.png"
      links      : [{ label: "버튼 이름", url: "주소" }]  (선택)
                   첫 번째 링크가 카드 전체 클릭 대상이 됩니다.
      featured   : true면 "대표 프로젝트"로 큰 카드에 표시 (선택, 2~3개 권장)
@@ -32,11 +32,11 @@ const PROJECTS = [
       "Google Play 출시 — 게스트로 바로 시작하고 구글 계정에 기록 연결"
     ],
     tags: ["Unity", "C#", "퍼즐", "실시간 대전"],
-    thumb: "assets/images/crosssum.png",
+    thumb: "/assets/images/crosssum.png",
     links: [
       // 첫 번째 링크가 카드 전체 클릭 대상입니다.
       // 같은 사이트 안의 페이지는 상대 경로로 두면 같은 탭에서 열립니다.
-      { label: "소개 페이지", url: "crosssum/" },
+      { label: "소개 페이지", url: "/crosssum/" },
       { label: "Google Play", url: "https://play.google.com/store/apps/details?id=com.mobs.crosssum" }
     ]
   },
@@ -71,11 +71,11 @@ const PROJECTS = [
       "Google Play 출시, 토스 미니앱으로도 서비스 중"
     ],
     tags: ["React", "TypeScript", "Vite", "Capacitor", "토스 미니앱"],
-    thumb: "assets/images/sudoku.png",
+    thumb: "/assets/images/sudoku.png",
     links: [
       // 첫 번째 링크가 카드 전체 클릭 대상입니다.
-      { label: "소개 페이지", url: "sudoku/" },
-      { label: "바로 플레이", url: "sudoku/play/" },
+      { label: "소개 페이지", url: "/sudoku/" },
+      { label: "바로 플레이", url: "/sudoku/play/" },
       { label: "Google Play", url: "https://play.google.com/store/apps/details?id=com.mobs.sudoku" }
     ]
   },
@@ -86,9 +86,9 @@ const PROJECTS = [
           "미끄러져 나가고, 앞을 다른 화살표가 막고 있으면 튕깁니다. 판을 거꿘로 " +
           "만들어 막다른 길이 없으니, 순서만 찾으면 됩니다.",
     tags: ["React", "TypeScript", "three.js", "Capacitor"],
-    thumb: "assets/images/arrow-box.png",
+    thumb: "/assets/images/arrow-box.png",
     links: [
-      { label: "소개 페이지", url: "arrow-box/" }
+      { label: "소개 페이지", url: "/arrow-box/" }
     ]
   },
   {
@@ -98,9 +98,9 @@ const PROJECTS = [
           "로그라이크. 스핀 다섯 번 안에 라운드 목표를 넘기면 클리어하고, " +
           "다섯 칸뿐인 유물을 무엇으로 채울지가 판을 가릅니다.",
     tags: ["Flutter", "Dart", "로그라이크"],
-    thumb: "assets/images/reeldungeon.png",
+    thumb: "/assets/images/reeldungeon.png",
     links: [
-      { label: "소개 페이지", url: "reeldungeon/" }
+      { label: "소개 페이지", url: "/reeldungeon/" }
     ]
   },
   {
@@ -110,9 +110,9 @@ const PROJECTS = [
           "요리 한 접시가 완성되고, 배운 요리로 손님 주문을 받습니다. 트레이가 " +
           "일곱 칸뿐이라 무엇을 먼저 집을지가 실력이 됩니다.",
     tags: ["React", "TypeScript", "Vite", "Capacitor"],
-    thumb: "assets/images/tilefeast.png",
+    thumb: "/assets/images/tilefeast.png",
     links: [
-      { label: "소개 페이지", url: "tilefeast/" }
+      { label: "소개 페이지", url: "/tilefeast/" }
     ]
   },
   {
@@ -122,9 +122,9 @@ const PROJECTS = [
           "보이고, 시간이 다 되어도 실패하지 않습니다. 방 스무 곳을 돌며, 같은 장면에 다시 와도 " +
           "그때는 다른 물건을 찾습니다.",
     tags: ["React", "TypeScript", "Vite", "Capacitor"],
-    thumb: "assets/images/hiddenfind.png",
+    thumb: "/assets/images/hiddenfind.png",
     links: [
-      { label: "소개 페이지", url: "hiddenfind/" }
+      { label: "소개 페이지", url: "/hiddenfind/" }
     ]
   },
   {
@@ -134,9 +134,9 @@ const PROJECTS = [
           "달리 판이 끝나도 점수가 재건 자재로 남아, 내 도시의 빈 부지를 하나씩 " +
           "복원해 나갑니다. 2에서 4096까지 열두 단계의 건물이 있습니다.",
     tags: ["React", "TypeScript", "Vite", "Capacitor"],
-    thumb: "assets/images/mergecity.png",
+    thumb: "/assets/images/mergecity.png",
     links: [
-      { label: "소개 페이지", url: "mergecity/" }
+      { label: "소개 페이지", url: "/mergecity/" }
     ]
   },
   {
@@ -146,10 +146,10 @@ const PROJECTS = [
           "영역마다 정확히 한 마리, 대각선으로도 붙을 수 없습니다. 찍기 없이 " +
           "논리만으로 푸는 200판을 담았고, 정답 유일성은 전부 검증했습니다.",
     tags: ["Flutter", "Dart", "Python", "논리 퍼즐"],
-    thumb: "assets/images/dailyfarm.png",
+    thumb: "/assets/images/dailyfarm.png",
     links: [
       // 같은 사이트 안의 페이지는 상대 경로로 두면 같은 탭에서 열립니다.
-      { label: "소개 페이지", url: "dailyfarm/" }
+      { label: "소개 페이지", url: "/dailyfarm/" }
     ]
   },
   {
@@ -161,7 +161,7 @@ const PROJECTS = [
     tags: ["Unity", "C#", "방치형 RPG"],
     thumb: "",
     links: [
-      { label: "소개 페이지", url: "swordgirl/" }
+      { label: "소개 페이지", url: "/swordgirl/" }
     ]
   },
   {
@@ -173,7 +173,7 @@ const PROJECTS = [
     tags: ["Unity", "C#", "강화"],
     thumb: "",
     links: [
-      { label: "소개 페이지", url: "upgradekim/" }
+      { label: "소개 페이지", url: "/upgradekim/" }
     ]
   },
   {
