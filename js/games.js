@@ -99,6 +99,7 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/rocketescape/play/",
+    about: "/rocketescape/",
     thumb: "/assets/images/rocketescape.png",
     accent: "#ff8c3a",
     portrait: true
