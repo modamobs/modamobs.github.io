@@ -103,6 +103,18 @@ const GAMES = [
     accent: "#ff8c3a",
     portrait: true
   },
+  {
+    slug: "gusul",
+    title: "구슬 땅따먹기",
+    desc: "구슬을 당겨 튕기고, 지나온 길 안쪽을 내 땅으로. 봇 넷과 겨루는 서바이벌부터 턴제 클래식까지.",
+    genres: ["캐주얼", "아케이드"],
+    status: "web",
+    playable: true,
+    play: "/gusul/play/",
+    thumb: "/assets/images/gusul.png",
+    accent: "#38b6f5",
+    portrait: true
+  },
 
   /* ── 앱으로만 플레이 ───────────────────────────── */
   {
