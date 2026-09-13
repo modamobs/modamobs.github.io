@@ -91,6 +91,18 @@ const GAMES = [
     accent: "#bfe7ff",
     portrait: true
   },
+  {
+    slug: "rocketescape",
+    title: "로켓 탈출",
+    desc: "연료를 넣고 쏘아 올린 로켓이 터지기 전에 탈출합니다. 흔들림과 연기, 전조를 읽고 한 발 먼저 빠지세요.",
+    genres: ["캐주얼", "타이밍"],
+    status: "web",
+    playable: true,
+    play: "/rocketescape/play/",
+    thumb: "/assets/images/rocketescape.png",
+    accent: "#ff8c3a",
+    portrait: true
+  },
 
   /* ── 앱으로만 플레이 ───────────────────────────── */
   {
