@@ -35,12 +35,13 @@
 <body>
 
 <h1>로켓 탈출 개인정보 처리방침</h1>
-<p class="meta">시행일: 2026년 9월 14일 (서버 기능 추가: 로그인·클라우드 저장·순위표·구매 확인)</p>
+<p class="meta">시행일: 2026년 9월 15일 (사용 통계·오류 보고 추가: Google Analytics for Firebase, Firebase Crashlytics)</p>
 
 <p>로켓 탈출(패키지 <code>com.mobs.rocketescape</code>, 이하 "본 게임")은 가입 없이 바로 시작합니다.
 처음 실행할 때 이름이나 연락처 없이 <strong>익명 계정</strong>이 자동으로 만들어지고, 원하면 설정에서
 구글 계정을 연결할 수 있습니다. 서버는 Google Firebase를 씁니다. 안드로이드 앱의 광고는 Google AdMob이,
-결제는 Google Play가 처리합니다. 본 게임은 사용 통계·분석 도구를 쓰지 않습니다.</p>
+결제는 Google Play가 처리합니다. 게임을 고치기 위해 사용 통계(Google Analytics for Firebase)와
+오류 보고(Firebase Crashlytics)를 씁니다.</p>
 
 <h2>1. 수집하는 정보와 목적</h2>
 
@@ -63,9 +64,9 @@
     <td>클라우드 저장. 두 기기의 진행이 다를 때 어느 쪽을 쓸지 고르게 하기</td>
   </tr>
   <tr>
-    <td>순위표 이름(닉네임), 최고 탈출 배수, 탄 로켓 종류, 기록 시각</td>
+    <td>순위표 이름(닉네임), 최고 탈출 배수, 한 판에 회수한 최고 연료, 탄 로켓 종류, 기록 시각</td>
     <td>자기 최고 기록을 넘었을 때, 이름을 바꿀 때</td>
-    <td>이번 주·전체 순위표. <strong>다른 이용자에게 공개됩니다.</strong> 이름을 정하지 않으면 "파일럿1234" 같은 이름이 붙습니다.</td>
+    <td>이번 주·전체·한 판 최고 순위표. <strong>다른 이용자에게 공개됩니다.</strong> 이름을 정하지 않으면 "파일럿1234" 같은 이름이 붙습니다.</td>
   </tr>
   <tr>
     <td>기록 제출 시각과 횟수</td>
@@ -81,6 +82,18 @@
     <td>앱 무결성 확인 결과 (Firebase App Check, Google Play Integrity)</td>
     <td>서버에 접속할 때</td>
     <td>변조된 앱·자동화 도구의 접근 막기</td>
+  </tr>
+  <tr>
+    <td>사용 통계: 앱 설치마다 만든 무작위 ID(앱 인스턴스 ID), 게임 안 행동(판 시작·끝, 탈출 배수, 넣은·회수한 연료,
+    로켓 종류, 연 화면, 미션·발견·보상, 연료로 산 항목, 인앱 구매 여부), 기기 종류·OS·언어·앱 버전, IP 주소로 추정한 국가·지역</td>
+    <td>앱을 쓰는 동안 (안드로이드 앱, 웹 버전)</td>
+    <td>이용자 수·재방문율 확인, 난이도·밸런스 조정, 어떤 기능이 쓰이는지 파악.
+    계정 ID·닉네임·이메일은 보내지 않으며, 광고 목적으로 쓰지 않습니다.</td>
+  </tr>
+  <tr>
+    <td>오류 보고: 앱이 멈추거나 오류가 났을 때의 오류 내용, 기기 종류·OS·앱 버전·메모리 상태, 설치마다 만든 무작위 ID</td>
+    <td>오류가 났을 때 (안드로이드 앱)</td>
+    <td>앱 오류 고치기</td>
   </tr>
 </table>
 </div>
@@ -106,6 +119,8 @@
 앱을 쓸 수 없는 경우의 요청 방법은 <a href="delete-account.html">계정 삭제 안내</a>에 있습니다.
 기기 안의 진행은 앱을 삭제하거나 브라우저 사이트 데이터를 지우면 함께 지워집니다.
 Google Play의 결제 기록은 Google이 자체 방침에 따라 보관합니다.</p>
+<p>사용 통계와 오류 보고는 계정과 연결하지 않으므로 계정 삭제로 지워지지 않고, 사용 통계는 <strong>최대 14개월</strong>,
+오류 보고는 <strong>90일</strong>이 지나면 자동으로 삭제됩니다. 앱을 삭제하면 앱 인스턴스 ID도 사라져 이후 기록과 이어지지 않습니다.</p>
 
 <h2>4. 처리를 맡기는 곳과 국외 이전</h2>
 
@@ -123,6 +138,12 @@ Google Play의 결제 기록은 Google이 자체 방침에 따라 보관합니�
     <td>구매 토큰, 상품</td>
     <td>결제 처리, 구매 확인</td>
     <td>Google 데이터센터</td>
+  </tr>
+  <tr>
+    <td>Google LLC — Google Analytics for Firebase, Firebase Crashlytics</td>
+    <td>1항의 사용 통계·오류 보고</td>
+    <td>이용 분석, 오류 수정</td>
+    <td>Google 데이터센터 (미국 등)</td>
   </tr>
   <tr>
     <td>Google LLC — AdMob (안드로이드 앱)</td>
@@ -167,7 +188,7 @@ Google Play의 결제 기록은 Google이 자체 방침에 따라 보관합니�
 <h2>7. 웹 버전</h2>
 
 <p><a href="https://modamobs.github.io/rocketescape/">modamobs.github.io</a>의 웹 버전에는 <strong>광고와 결제가 없습니다.</strong>
-로그인·클라우드 저장·순위표는 앱과 같이 Firebase를 씁니다(1~4항). 페이지는 GitHub Pages가 제공하며, 게임 실행 파일과
+로그인·클라우드 저장·순위표·사용 통계는 앱과 같이 Firebase를 씁니다(1~4항). 사용 통계를 위해 브라우저에 쿠키(<code>_ga</code> 등)가 저장될 수 있습니다. 페이지는 GitHub Pages가 제공하며, 게임 실행 파일과
 글꼴 일부를 Google(<code>www.gstatic.com</code>, <code>fonts.gstatic.com</code>)과 jsDelivr(<code>cdn.jsdelivr.net</code>)에서 받습니다.
 이 과정에서 각 회사는 일반적인 웹 접속처럼 IP 주소와 브라우저 정보를 받을 수 있습니다
 (<a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub</a>,
@@ -191,7 +212,8 @@ Google Play의 결제 기록은 Google이 자체 방침에 따라 보관합니�
 <h2>11. 안전성 확보</h2>
 
 <p>서버 데이터는 접근 규칙으로 보호되어 본인의 저장과 구매 목록은 본인 계정만 읽을 수 있고, 순위표·구매 기록·닉네임은 서버만 쓸 수 있습니다.
-구매 토큰은 원문 대신 해시로 보관합니다. 모든 통신은 TLS로 암호화됩니다.</p>
+구매 토큰은 원문 대신 해시로 보관합니다. 모든 통신은 TLS로 암호화됩니다.
+사용 통계는 개발자만 Firebase 콘솔에서 모아 본 형태(집계)로 확인합니다.</p>
 
 <h2>12. 방침의 변경</h2>
 
@@ -204,12 +226,12 @@ Google Play의 결제 기록은 Google이 자체 방침에 따라 보관합니�
 <hr>
 
 <h1>Rocket Escape Privacy Policy</h1>
-<p class="meta">Effective: September 14, 2026 (server features added: sign-in, cloud save, leaderboard, purchase verification)</p>
+<p class="meta">Effective: September 15, 2026 (usage analytics and crash reporting added: Google Analytics for Firebase, Firebase Crashlytics)</p>
 
 <p>Rocket Escape (package <code>com.mobs.rocketescape</code>, "the Game") needs no sign-up. On first launch an
 <strong>anonymous account</strong> is created automatically, with no name or contact details; you can link a Google account in Settings if you want.
 The Game's server runs on Google Firebase. Ads in the Android app are served by Google AdMob and payments are handled by Google Play.
-The Game uses no analytics tools.</p>
+To improve the Game we use usage analytics (Google Analytics for Firebase) and crash reporting (Firebase Crashlytics).</p>
 
 <h2>1. What we collect and why</h2>
 <div class="wrap">
@@ -218,10 +240,12 @@ The Game uses no analytics tools.</p>
   <tr><td>Anonymous account ID (random string)</td><td>Automatically on first launch</td><td>Tie cloud saves, leaderboard records and purchases to your account</td></tr>
   <tr><td>Google account identifier, e-mail address, name, profile photo URL</td><td>Only if you tap <strong>Link Google account</strong></td><td>Sign-in so the same progress loads on other devices and on the web. Your name (or e-mail) is shown only to you, never to other players.</td></tr>
   <tr><td>Game progress (see section 2) and a random per-device number</td><td>While playing, at most every 90 seconds, and when the app closes</td><td>Cloud save, and letting you choose when two devices disagree</td></tr>
-  <tr><td>Leaderboard name, best escape multiplier, rocket type, time of the record</td><td>When you beat your best, or change your name</td><td>Weekly and all-time leaderboards. <strong>Visible to other players.</strong> Without a chosen name you appear as e.g. "파일럿1234".</td></tr>
+  <tr><td>Leaderboard name, best escape multiplier, most fuel brought back in one round, rocket type, time of the record</td><td>When you beat your best, or change your name</td><td>Weekly, all-time and best-haul leaderboards. <strong>Visible to other players.</strong> Without a chosen name you appear as e.g. "Pilot1234".</td></tr>
   <tr><td>Times and counts of record submissions</td><td>When a record is submitted</td><td>Filtering out tampered records</td></tr>
   <tr><td>Purchase token (stored as a hash), order ID, product, test-purchase flag, list of owned products</td><td>When you buy or restore a purchase in the Android app</td><td>Verifying the purchase with Google Play and granting or restoring it</td></tr>
   <tr><td>App integrity results (Firebase App Check, Google Play Integrity)</td><td>When the app contacts the server</td><td>Blocking modified apps and bots</td></tr>
+  <tr><td>Usage analytics: a random per-install ID (app instance ID), in-game actions (round start/end, escape multiplier, fuel loaded and brought back, rocket type, screens opened, missions, discoveries, rewards, items bought with fuel, whether in-app purchases happened), device model, OS, language, app version, country/region inferred from IP address</td><td>While you use the app (Android app and web version)</td><td>Counting players and return rates, tuning difficulty and balance, seeing which features are used. No account ID, name or e-mail is sent, and it is not used for advertising.</td></tr>
+  <tr><td>Crash reports: error details when the app crashes or hits an error, device model, OS, app version, memory state, a random per-install ID</td><td>When an error occurs (Android app)</td><td>Fixing app errors</td></tr>
 </table>
 </div>
 <p>We never ask for phone numbers, postal addresses, dates of birth or payment details, and we do not access location, contacts, photos, camera or microphone.</p>
@@ -242,6 +266,8 @@ The Game uses no analytics tools.</p>
 immediately and permanently deletes your cloud save, leaderboard records, name, purchase verification records and sign-in account.
 If you cannot use the app, see <a href="delete-account.html">how to request deletion</a>. Progress on the device is removed when you uninstall
 the app or clear the site data in your browser. Google keeps Google Play payment records under its own policies.</p>
+<p>Usage analytics and crash reports are not linked to your account, so deleting your account does not remove them; analytics data is deleted automatically after
+<strong>at most 14 months</strong> and crash reports after <strong>90 days</strong>. Uninstalling the app discards the app instance ID, so later data is not linked to it.</p>
 
 <h2>4. Processors and international transfer</h2>
 <div class="wrap">
@@ -249,6 +275,7 @@ the app or clear the site data in your browser. Google keeps Google Play payment
   <tr><th>Recipient</th><th>Data</th><th>Purpose</th><th>Location</th></tr>
   <tr><td>Google LLC — Firebase (Authentication, Cloud Firestore, Cloud Functions, App Check)</td><td>All server data in section 1</td><td>Running sign-in, cloud save, leaderboards and purchase verification</td><td>Database and server functions in South Korea (Seoul region). Sign-in data may be stored in Google data centers worldwide, including the United States.</td></tr>
   <tr><td>Google LLC — Google Play Billing, Google Play Developer API</td><td>Purchase token, product</td><td>Payment processing, purchase verification</td><td>Google data centers</td></tr>
+  <tr><td>Google LLC — Google Analytics for Firebase, Firebase Crashlytics</td><td>Usage analytics and crash reports in section 1</td><td>Usage analysis, fixing errors</td><td>Google data centers, including the United States</td></tr>
   <tr><td>Google LLC — AdMob (Android app)</td><td>See section 5</td><td>Advertising</td><td>Google data centers</td></tr>
 </table>
 </div>
@@ -278,7 +305,7 @@ In-game fuel is not sold.</p>
 
 <h2>7. Web version</h2>
 <p>The web version at <a href="https://modamobs.github.io/rocketescape/">modamobs.github.io</a> has <strong>no ads and no payments.</strong>
-Sign-in, cloud save and leaderboards use Firebase as in sections 1–4. The page is served by GitHub Pages, and some runtime files and fonts
+Sign-in, cloud save, leaderboards and usage analytics use Firebase as in sections 1–4; analytics may store cookies such as <code>_ga</code> in your browser. The page is served by GitHub Pages, and some runtime files and fonts
 are loaded from Google (<code>www.gstatic.com</code>, <code>fonts.gstatic.com</code>) and jsDelivr (<code>cdn.jsdelivr.net</code>), which may
 receive your IP address and browser information as with any web request
 (<a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub</a>,
@@ -298,7 +325,7 @@ children under 13 and will delete it if we learn of it.</p>
 
 <h2>11. Security</h2>
 <p>Server data is protected by access rules: only your own account can read your save and owned products, and only the server can write
-leaderboards, purchase records and names. Purchase tokens are stored as hashes. All communication is encrypted with TLS.</p>
+leaderboards, purchase records and names. Purchase tokens are stored as hashes. All communication is encrypted with TLS. The developer views usage analytics only in aggregated form in the Firebase console.</p>
 
 <h2>12. Changes</h2>
 <p>When this policy changes, this page is updated together with the effective date.</p>
