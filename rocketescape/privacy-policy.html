@@ -35,36 +35,110 @@
 <body>
 
 <h1>로켓 탈출 개인정보 처리방침</h1>
-<p class="meta">시행일: 2026년 9월 14일 (결제 항목 추가)</p>
+<p class="meta">시행일: 2026년 9월 14일 (서버 기능 추가: 로그인·클라우드 저장·순위표·구매 확인)</p>
 
-<p>로켓 탈출(패키지 <code>com.mobs.rocketescape</code>, 이하 "본 게임")은 로그인 없이 즐길 수
-있으며, 게임 진행 상황은 기기 안에만 저장됩니다. 안드로이드 앱에 표시되는 광고를 위해
-Google AdMob이 일부 정보를 수집합니다. 본 게임은 사용 통계·분석 도구를 쓰지 않으며,
-광고 제거와 외형 로켓 구매는 Google Play 결제로 처리됩니다.</p>
+<p>로켓 탈출(패키지 <code>com.mobs.rocketescape</code>, 이하 "본 게임")은 가입 없이 바로 시작합니다.
+처음 실행할 때 이름이나 연락처 없이 <strong>익명 계정</strong>이 자동으로 만들어지고, 원하면 설정에서
+구글 계정을 연결할 수 있습니다. 서버는 Google Firebase를 씁니다. 안드로이드 앱의 광고는 Google AdMob이,
+결제는 Google Play가 처리합니다. 본 게임은 사용 통계·분석 도구를 쓰지 않습니다.</p>
 
-<h2>1. 개발자가 직접 수집하는 정보</h2>
+<h2>1. 수집하는 정보와 목적</h2>
 
-<p>본 게임은 <strong>로그인이나 회원가입을 요구하지 않습니다.</strong> 개발자는 이용자를
-식별할 수 있는 어떤 정보도 전달받지 않습니다. 이름, 이메일, 주소, 전화번호, 생년월일,
-결제 수단 정보를 수집하지 않으며 위치·연락처·사진·카메라·마이크에 접근하지 않습니다.</p>
+<div class="wrap">
+<table>
+  <tr><th>항목</th><th>언제</th><th>목적</th></tr>
+  <tr>
+    <td>익명 계정 ID (무작위 문자열)</td>
+    <td>처음 실행할 때 자동</td>
+    <td>클라우드 저장, 순위표 기록, 구매를 이 계정에 묶기</td>
+  </tr>
+  <tr>
+    <td>구글 계정 식별자, 이메일 주소, 이름, 프로필 사진 주소</td>
+    <td>설정에서 <strong>구글 계정 연결</strong>을 눌렀을 때만</td>
+    <td>다른 기기·웹에서 같은 진행을 불러오기 위한 로그인. 게임 화면에는 이름(또는 이메일)만 본인에게 보이고 다른 이용자에게 공개하지 않습니다.</td>
+  </tr>
+  <tr>
+    <td>게임 진행 (2항의 목록), 기기마다 만든 무작위 기기 번호</td>
+    <td>플레이하는 동안 최대 90초마다, 앱을 닫을 때</td>
+    <td>클라우드 저장. 두 기기의 진행이 다를 때 어느 쪽을 쓸지 고르게 하기</td>
+  </tr>
+  <tr>
+    <td>순위표 이름(닉네임), 최고 탈출 배수, 탄 로켓 종류, 기록 시각</td>
+    <td>자기 최고 기록을 넘었을 때, 이름을 바꿀 때</td>
+    <td>이번 주·전체 순위표. <strong>다른 이용자에게 공개됩니다.</strong> 이름을 정하지 않으면 "파일럿1234" 같은 이름이 붙습니다.</td>
+  </tr>
+  <tr>
+    <td>기록 제출 시각과 횟수</td>
+    <td>기록을 올릴 때</td>
+    <td>조작된 기록 걸러내기</td>
+  </tr>
+  <tr>
+    <td>구매 토큰(암호화 해시로 보관), 주문 번호, 상품, 테스트 구매 여부, 구매한 상품 목록</td>
+    <td>안드로이드 앱에서 구매하거나 구매를 복원할 때</td>
+    <td>Google Play에 구매가 진짜인지 확인하고 상품을 지급·복원하기</td>
+  </tr>
+  <tr>
+    <td>앱 무결성 확인 결과 (Firebase App Check, Google Play Integrity)</td>
+    <td>서버에 접속할 때</td>
+    <td>변조된 앱·자동화 도구의 접근 막기</td>
+  </tr>
+</table>
+</div>
 
-<h2>2. 기기 안에만 저장되는 정보</h2>
+<p>이메일을 먼저 묻거나 전화번호, 주소, 생년월일, 결제 수단 정보를 받지 않으며 위치·연락처·사진·카메라·마이크에 접근하지 않습니다.</p>
 
-<p>아래 정보는 기기 내부 저장소(웹 버전은 브라우저 저장소)에만 남고 외부로 전송되지 않습니다.
-개발자를 포함한 누구도 볼 수 없으며, 앱을 삭제하거나 브라우저 사이트 데이터를 지우면 함께 삭제됩니다.</p>
+<h2>2. 게임 진행에 들어 있는 것</h2>
 
+<p>기기 안(웹 버전은 브라우저 저장소)에 저장되고, 1항과 같이 클라우드에도 저장됩니다.</p>
 <ul>
   <li>보유한 연료, 라운드 수, 최근 폭발 지점 기록(최대 60개)</li>
   <li>보유한 로켓, 기체마다의 강화 단계, 도장, 예비 부스터 개수</li>
   <li>넣을 연료 단계, 탈출 예약 배수, 효과음 설정</li>
-  <li>플레이 통계: 플레이 횟수, 탈출 성공 횟수, 넣은 연료와 되찾은 연료, 최고 기록, 전조를 읽거나 속은 횟수</li>
-  <li>마지막으로 보상형 광고를 본 시각(다음 보급까지 남은 시간 계산용)</li>
-  <li>광고 제거와 외형 로켓을 구매했는지 여부</li>
+  <li>플레이 통계, 발견한 우주 구역, 오늘의 미션 진행, 연속 출석 일수</li>
+  <li>마지막으로 보상형 광고를 본 시각, 광고 제거와 외형 로켓 구매 여부</li>
 </ul>
+<p>게임 안의 연료는 현금 가치가 없으며 다른 이용자에게 옮기거나 현금·상품으로 바꿀 수 없습니다.</p>
 
-<p>게임 안의 연료는 현금 가치가 없으며, 외부로 전송되거나 다른 이용자에게 옮겨지지 않습니다.</p>
+<h2>3. 보관 기간과 삭제</h2>
 
-<h2>3. 광고(Google AdMob)가 수집하는 정보</h2>
+<p>1항의 서버 정보는 <strong>계정을 삭제할 때까지</strong> 보관합니다. 게임의 <strong>설정 → 계정 → 계정 삭제</strong>를
+누르면 클라우드 저장, 순위표 기록, 닉네임, 구매 확인 기록, 로그인 계정이 곧바로 지워지며 되돌릴 수 없습니다.
+앱을 쓸 수 없는 경우의 요청 방법은 <a href="delete-account.html">계정 삭제 안내</a>에 있습니다.
+기기 안의 진행은 앱을 삭제하거나 브라우저 사이트 데이터를 지우면 함께 지워집니다.
+Google Play의 결제 기록은 Google이 자체 방침에 따라 보관합니다.</p>
+
+<h2>4. 처리를 맡기는 곳과 국외 이전</h2>
+
+<div class="wrap">
+<table>
+  <tr><th>받는 곳</th><th>항목</th><th>목적</th><th>위치</th></tr>
+  <tr>
+    <td>Google LLC — Firebase (Authentication, Cloud Firestore, Cloud Functions, App Check)</td>
+    <td>1항의 서버 정보 전부</td>
+    <td>로그인, 클라우드 저장, 순위표, 구매 확인 서버 운영</td>
+    <td>데이터베이스·서버 함수는 대한민국(서울 리전). 로그인 정보는 Google의 전 세계 데이터센터(미국 등)에 저장될 수 있습니다.</td>
+  </tr>
+  <tr>
+    <td>Google LLC — Google Play 결제, Google Play Developer API</td>
+    <td>구매 토큰, 상품</td>
+    <td>결제 처리, 구매 확인</td>
+    <td>Google 데이터센터</td>
+  </tr>
+  <tr>
+    <td>Google LLC — AdMob (안드로이드 앱)</td>
+    <td>5항 참고</td>
+    <td>광고</td>
+    <td>Google 데이터센터</td>
+  </tr>
+</table>
+</div>
+
+<p>정보는 앱을 쓰는 동안 암호화된 네트워크(TLS)로 전송됩니다. 국외 이전을 원하지 않으면 구글 계정을 연결하지 않거나 계정을 삭제할 수 있습니다.
+다만 익명 계정도 서버 기능을 위해 Firebase를 거칩니다. Google의 처리 방식은
+<a href="https://firebase.google.com/support/privacy">Firebase 개인정보 보호</a>와
+<a href="https://policies.google.com/privacy">Google 개인정보처리방침</a>에서 확인할 수 있습니다.</p>
+
+<h2>5. 광고(Google AdMob)가 수집하는 정보</h2>
 
 <p>안드로이드 앱은 Google AdMob을 통해 전면 광고와 보상형 광고를 표시합니다. 광고를 위해 Google이
 아래 정보를 수집·처리할 수 있습니다. 개발자는 이 정보를 받지 않습니다.</p>
@@ -79,85 +153,110 @@ Google AdMob이 일부 정보를 수집합니다. 본 게임은 사용 통계·�
 </table>
 </div>
 
-<p>Android 기기에서는 이 처리가 Google Play 서비스와 Android 광고 개인정보 보호 기능(광고 주제·측정)을
-통해 이루어질 수 있습니다. Google의 처리 방식은 <a href="https://policies.google.com/privacy">Google 개인정보처리방침</a>과
-<a href="https://policies.google.com/technologies/partner-sites">Google 파트너 사이트·앱에서의 데이터 사용</a>에서
-확인할 수 있습니다. 광고 ID는 기기 설정(Google → 광고 또는 개인정보 보호 → 광고)에서 직접 재설정하거나 삭제할 수 있습니다.</p>
+<p>자세한 내용은 <a href="https://policies.google.com/technologies/partner-sites">Google 파트너 사이트·앱에서의 데이터 사용</a>에서
+확인할 수 있습니다. 광고 ID는 기기 설정(Google → 광고 또는 개인정보 보호 → 광고)에서 재설정하거나 삭제할 수 있습니다.</p>
 
-<h2>4. 웹 버전</h2>
-
-<p><a href="https://modamobs.github.io/rocketescape/">modamobs.github.io</a>에서 플레이하는 웹 버전에는
-<strong>광고가 없습니다.</strong> 진행 상황은 2항과 같이 브라우저 저장소에만 남습니다.
-페이지는 GitHub Pages가 제공하며, 게임 실행 파일과 글꼴 일부를 Google(<code>www.gstatic.com</code>,
-<code>fonts.gstatic.com</code>)과 jsDelivr(<code>cdn.jsdelivr.net</code>) 서버에서 받습니다. 이 과정에서
-각 회사는 일반적인 웹 접속과 마찬가지로 IP 주소와 브라우저 정보를 받을 수 있습니다.
-자세한 내용은 <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub 개인정보처리방침</a>,
-<a href="https://policies.google.com/privacy">Google 개인정보처리방침</a>,
-<a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">jsDelivr 개인정보처리방침</a>에서 확인할 수 있습니다.</p>
-
-<h2>5. 결제(Google Play 결제)</h2>
+<h2>6. 결제(Google Play 결제)</h2>
 
 <p>안드로이드 앱은 광고 제거와 외형 로켓(성능은 기본 로켓과 같고 겉모습만 다른 로켓)을 인앱 구매로 판매합니다.
-결제는 전적으로 <strong>Google Play</strong>가 처리하며, 카드 번호 등 결제 수단 정보는 개발자에게 전달되지 않습니다.
-앱은 Google Play를 통해 구매한 상품, 구매 시각, 결제 상태만 받아 기기 안에서 구매를 확인하고 복원하는 데 쓰며,
-개발자 서버로 보내지 않습니다. Google의 처리 방식은 <a href="https://policies.google.com/privacy">Google 개인정보처리방침</a>과
-<a href="https://payments.google.com/payments/apis-secure/get_legal_document?ldo=0&amp;ldt=privacynotice">Google 결제 개인정보 보호 고지</a>에서 확인할 수 있습니다.
+결제는 <strong>Google Play</strong>가 처리하며 카드 번호 등 결제 수단 정보는 개발자에게 전달되지 않습니다.
+앱은 구매 토큰을 개발자 서버(1·4항)로 보내 Google Play에 구매를 확인한 뒤 상품을 지급합니다.
+<a href="https://payments.google.com/payments/apis-secure/get_legal_document?ldo=0&amp;ldt=privacynotice">Google 결제 개인정보 보호 고지</a>도 확인해 주세요.
 게임 안의 연료는 판매하지 않습니다.</p>
 
-<h2>6. 앱 권한</h2>
+<h2>7. 웹 버전</h2>
 
-<p>안드로이드 앱은 광고를 불러오기 위한 인터넷·네트워크 상태 확인 권한, 광고 ID 권한, Google Play 결제 권한만 사용합니다.
+<p><a href="https://modamobs.github.io/rocketescape/">modamobs.github.io</a>의 웹 버전에는 <strong>광고와 결제가 없습니다.</strong>
+로그인·클라우드 저장·순위표는 앱과 같이 Firebase를 씁니다(1~4항). 페이지는 GitHub Pages가 제공하며, 게임 실행 파일과
+글꼴 일부를 Google(<code>www.gstatic.com</code>, <code>fonts.gstatic.com</code>)과 jsDelivr(<code>cdn.jsdelivr.net</code>)에서 받습니다.
+이 과정에서 각 회사는 일반적인 웹 접속처럼 IP 주소와 브라우저 정보를 받을 수 있습니다
+(<a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub</a>,
+<a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">jsDelivr</a>).</p>
+
+<h2>8. 앱 권한</h2>
+
+<p>안드로이드 앱은 인터넷·네트워크 상태 확인 권한, 광고 ID 권한, Google Play 결제 권한만 사용합니다.
 위치, 연락처, 사진·파일, 카메라, 마이크 권한은 요청하지 않습니다.</p>
 
-<h2>7. 아동</h2>
+<h2>9. 이용자의 권리</h2>
+
+<p>이용자는 언제든 순위표 이름을 바꾸거나(설정 또는 통계 → 이름 바꾸기) 계정과 서버 정보를 삭제할 수 있습니다.
+보관 중인 정보의 열람·정정·삭제·처리 정지를 원하면 아래 이메일로 요청해 주세요. 확인 뒤 지체 없이(늦어도 30일 안에) 처리하고 결과를 알려 드립니다.</p>
+
+<h2>10. 아동</h2>
 
 <p>본 게임은 만 13세 이상을 대상으로 하며 아동을 대상으로 만들어지지 않았습니다. 13세 미만 아동의
-개인정보를 의도적으로 수집하지 않습니다.</p>
+개인정보를 의도적으로 수집하지 않으며, 알게 되면 삭제합니다.</p>
 
-<h2>8. 보안과 보관</h2>
+<h2>11. 안전성 확보</h2>
 
-<p>개발자는 이용자의 개인정보를 서버에 보관하지 않으므로 유출될 서버 데이터가 없습니다.
-AdMob과의 통신과 웹 버전 파일 전송은 암호화(TLS)되어 이루어집니다.</p>
+<p>서버 데이터는 접근 규칙으로 보호되어 본인의 저장과 구매 목록은 본인 계정만 읽을 수 있고, 순위표·구매 기록·닉네임은 서버만 쓸 수 있습니다.
+구매 토큰은 원문 대신 해시로 보관합니다. 모든 통신은 TLS로 암호화됩니다.</p>
 
-<h2>9. 방침의 변경</h2>
+<h2>12. 방침의 변경</h2>
 
 <p>내용이 바뀌면 이 페이지를 갱신하고 시행일을 고칩니다.</p>
 
-<h2>10. 문의</h2>
+<h2>13. 문의 (개인정보 보호 책임자)</h2>
 
-<p>이메일: <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
+<p>Smart it · 이메일: <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
 
 <hr>
 
 <h1>Rocket Escape Privacy Policy</h1>
-<p class="meta">Effective: September 14, 2026 (payments section added)</p>
+<p class="meta">Effective: September 14, 2026 (server features added: sign-in, cloud save, leaderboard, purchase verification)</p>
 
-<p>Rocket Escape (package <code>com.mobs.rocketescape</code>, "the Game") requires no account.
-Your progress is stored only on your device. Google AdMob collects some information to show ads
-in the Android app. The Game uses no analytics tools. Remove Ads and cosmetic rocket purchases are processed by Google Play Billing.</p>
+<p>Rocket Escape (package <code>com.mobs.rocketescape</code>, "the Game") needs no sign-up. On first launch an
+<strong>anonymous account</strong> is created automatically, with no name or contact details; you can link a Google account in Settings if you want.
+The Game's server runs on Google Firebase. Ads in the Android app are served by Google AdMob and payments are handled by Google Play.
+The Game uses no analytics tools.</p>
 
-<h2>1. Information the developer collects</h2>
-<p>The Game has <strong>no sign-in and no sign-up.</strong> The developer receives no
-information that could identify you. We do not collect names, e-mail addresses, postal
-addresses, phone numbers, dates of birth or payment details, and we do not access
-location, contacts, photos, camera or microphone.</p>
+<h2>1. What we collect and why</h2>
+<div class="wrap">
+<table>
+  <tr><th>Data</th><th>When</th><th>Purpose</th></tr>
+  <tr><td>Anonymous account ID (random string)</td><td>Automatically on first launch</td><td>Tie cloud saves, leaderboard records and purchases to your account</td></tr>
+  <tr><td>Google account identifier, e-mail address, name, profile photo URL</td><td>Only if you tap <strong>Link Google account</strong></td><td>Sign-in so the same progress loads on other devices and on the web. Your name (or e-mail) is shown only to you, never to other players.</td></tr>
+  <tr><td>Game progress (see section 2) and a random per-device number</td><td>While playing, at most every 90 seconds, and when the app closes</td><td>Cloud save, and letting you choose when two devices disagree</td></tr>
+  <tr><td>Leaderboard name, best escape multiplier, rocket type, time of the record</td><td>When you beat your best, or change your name</td><td>Weekly and all-time leaderboards. <strong>Visible to other players.</strong> Without a chosen name you appear as e.g. "파일럿1234".</td></tr>
+  <tr><td>Times and counts of record submissions</td><td>When a record is submitted</td><td>Filtering out tampered records</td></tr>
+  <tr><td>Purchase token (stored as a hash), order ID, product, test-purchase flag, list of owned products</td><td>When you buy or restore a purchase in the Android app</td><td>Verifying the purchase with Google Play and granting or restoring it</td></tr>
+  <tr><td>App integrity results (Firebase App Check, Google Play Integrity)</td><td>When the app contacts the server</td><td>Blocking modified apps and bots</td></tr>
+</table>
+</div>
+<p>We never ask for phone numbers, postal addresses, dates of birth or payment details, and we do not access location, contacts, photos, camera or microphone.</p>
 
-<h2>2. Information stored only on your device</h2>
-<p>The following stays in the device's local storage (browser storage for the web version) and is never
-sent anywhere. It is removed when you uninstall the app or clear the site data in your browser.</p>
+<h2>2. What game progress contains</h2>
+<p>Stored on the device (browser storage for the web version) and, as described above, in the cloud:</p>
 <ul>
   <li>Fuel held, number of rounds, recent crash points (up to 60)</li>
-  <li>Rockets owned, upgrade levels per rocket, paint jobs, spare boosters</li>
+  <li>Rockets owned, upgrade levels, paint jobs, spare boosters</li>
   <li>Selected fuel amount, auto-escape multiplier, sound setting</li>
-  <li>Play statistics: rounds played, successful escapes, fuel loaded and recovered, best records, warnings read or missed</li>
-  <li>The time of the last rewarded ad (to count down to the next refuel)</li>
-  <li>Whether you purchased Remove Ads or cosmetic rockets</li>
+  <li>Play statistics, discovered space zones, today's mission progress, login streak</li>
+  <li>Time of the last rewarded ad, whether Remove Ads or cosmetic rockets were purchased</li>
 </ul>
-<p>In-game fuel has no cash value and is never transferred outside the Game or to other players.</p>
+<p>In-game fuel has no cash value and cannot be transferred to other players or exchanged for money or goods.</p>
 
-<h2>3. Information collected by ads (Google AdMob)</h2>
-<p>The Android app shows interstitial and rewarded ads through Google AdMob. To serve ads,
-Google may collect and process the following. The developer does not receive it.</p>
+<h2>3. Retention and deletion</h2>
+<p>Server data in section 1 is kept <strong>until you delete your account</strong>. <strong>Settings → Account → Delete account</strong> in the Game
+immediately and permanently deletes your cloud save, leaderboard records, name, purchase verification records and sign-in account.
+If you cannot use the app, see <a href="delete-account.html">how to request deletion</a>. Progress on the device is removed when you uninstall
+the app or clear the site data in your browser. Google keeps Google Play payment records under its own policies.</p>
+
+<h2>4. Processors and international transfer</h2>
+<div class="wrap">
+<table>
+  <tr><th>Recipient</th><th>Data</th><th>Purpose</th><th>Location</th></tr>
+  <tr><td>Google LLC — Firebase (Authentication, Cloud Firestore, Cloud Functions, App Check)</td><td>All server data in section 1</td><td>Running sign-in, cloud save, leaderboards and purchase verification</td><td>Database and server functions in South Korea (Seoul region). Sign-in data may be stored in Google data centers worldwide, including the United States.</td></tr>
+  <tr><td>Google LLC — Google Play Billing, Google Play Developer API</td><td>Purchase token, product</td><td>Payment processing, purchase verification</td><td>Google data centers</td></tr>
+  <tr><td>Google LLC — AdMob (Android app)</td><td>See section 5</td><td>Advertising</td><td>Google data centers</td></tr>
+</table>
+</div>
+<p>Data is sent over encrypted connections (TLS). See <a href="https://firebase.google.com/support/privacy">Privacy and Security in Firebase</a>
+and the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</p>
+
+<h2>5. Information collected by ads (Google AdMob)</h2>
+<p>The Android app shows interstitial and rewarded ads through Google AdMob. Google may collect and process the following; the developer does not receive it.</p>
 <div class="wrap">
 <table>
   <tr><th>Data</th><th>Purpose</th></tr>
@@ -167,44 +266,45 @@ Google may collect and process the following. The developer does not receive it.
   <tr><td>Diagnostics: device model, OS version, app performance</td><td>Analytics</td></tr>
 </table>
 </div>
-<p>On Android this may happen through Google Play services and Android's ad privacy features (ad topics and measurement).
-See the <a href="https://policies.google.com/privacy">Google Privacy Policy</a> and
-<a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps that use our services</a>.
-You can reset or delete your Advertising ID in your device settings (Google → Ads, or Privacy → Ads).</p>
+<p>See <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps that use our services</a>.
+You can reset or delete your Advertising ID in your device settings.</p>
 
-<h2>4. Web version</h2>
-<p>The web version played at <a href="https://modamobs.github.io/rocketescape/">modamobs.github.io</a> shows
-<strong>no ads.</strong> Progress stays in browser storage as described in section 2. The page is served by
-GitHub Pages, and some game runtime files and fonts are loaded from Google (<code>www.gstatic.com</code>,
-<code>fonts.gstatic.com</code>) and jsDelivr (<code>cdn.jsdelivr.net</code>). As with any web request, these
-companies may receive your IP address and browser information. See the
-<a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>,
-the <a href="https://policies.google.com/privacy">Google Privacy Policy</a> and the
-<a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">jsDelivr Privacy Policy</a>.</p>
-
-<h2>5. Payments (Google Play Billing)</h2>
-<p>The Android app sells Remove Ads and cosmetic rockets (same performance as the basic rocket, different look) as in-app purchases.
-Payment is handled entirely by <strong>Google Play</strong>; card numbers and other payment details are never shared with the developer.
-The app receives only the product purchased, the purchase time and the payment state from Google Play, and uses them on the device to
-confirm and restore purchases; they are not sent to any developer server. See the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>
-and the <a href="https://payments.google.com/payments/apis-secure/get_legal_document?ldo=0&amp;ldt=privacynotice">Google Payments Privacy Notice</a>.
+<h2>6. Payments (Google Play Billing)</h2>
+<p>The Android app sells Remove Ads and cosmetic rockets (same performance as the basic rocket, different look). Payment is handled by
+<strong>Google Play</strong>; card numbers and other payment details are never shared with the developer. The app sends the purchase token to the
+developer's server (sections 1 and 4), which verifies it with Google Play before granting the item. See also the
+<a href="https://payments.google.com/payments/apis-secure/get_legal_document?ldo=0&amp;ldt=privacynotice">Google Payments Privacy Notice</a>.
 In-game fuel is not sold.</p>
 
-<h2>6. App permissions</h2>
-<p>The Android app uses only internet and network-state permissions to load ads, the Advertising ID permission and the Google Play Billing permission.
+<h2>7. Web version</h2>
+<p>The web version at <a href="https://modamobs.github.io/rocketescape/">modamobs.github.io</a> has <strong>no ads and no payments.</strong>
+Sign-in, cloud save and leaderboards use Firebase as in sections 1–4. The page is served by GitHub Pages, and some runtime files and fonts
+are loaded from Google (<code>www.gstatic.com</code>, <code>fonts.gstatic.com</code>) and jsDelivr (<code>cdn.jsdelivr.net</code>), which may
+receive your IP address and browser information as with any web request
+(<a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub</a>,
+<a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">jsDelivr</a>).</p>
+
+<h2>8. App permissions</h2>
+<p>The Android app uses only internet and network-state permissions, the Advertising ID permission and the Google Play Billing permission.
 It does not request location, contacts, photos or files, camera or microphone.</p>
 
-<h2>7. Children</h2>
-<p>The Game is intended for users aged 13 and over and is not directed at children. We do not knowingly collect personal information from children under 13.</p>
+<h2>9. Your rights</h2>
+<p>You can change your leaderboard name or delete your account and server data at any time in the Game. To request access to, correction,
+deletion or restriction of your data, e-mail us below; we will act without delay and within 30 days at the latest.</p>
 
-<h2>8. Security and retention</h2>
-<p>The developer keeps no user data on any server, so there is no server-side data to be breached. Communication with AdMob and delivery of the web version are encrypted (TLS).</p>
+<h2>10. Children</h2>
+<p>The Game is intended for users aged 13 and over and is not directed at children. We do not knowingly collect personal information from
+children under 13 and will delete it if we learn of it.</p>
 
-<h2>9. Changes</h2>
+<h2>11. Security</h2>
+<p>Server data is protected by access rules: only your own account can read your save and owned products, and only the server can write
+leaderboards, purchase records and names. Purchase tokens are stored as hashes. All communication is encrypted with TLS.</p>
+
+<h2>12. Changes</h2>
 <p>When this policy changes, this page is updated together with the effective date.</p>
 
-<h2>10. Contact</h2>
-<p>E-mail: <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
+<h2>13. Contact</h2>
+<p>Smart it · E-mail: <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
 
 </body>
 </html>
