@@ -247,7 +247,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="srow"><span class="sl">소리</span><button type="button" class="tg" id="soundTg">켜짐</button></div>
     <div class="srow"><span class="sl">언어</span><button type="button" class="tg" id="langTg">한국어</button></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
-    <p class="fine">데이터는 이 기기에만 저장돼요. 회원가입·채팅 없음.<br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · v0.1</p>
+    <p class="fine">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.<br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · v0.1</p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
   </div>
 </div>
@@ -397,7 +397,7 @@ const EN={
   '켜짐':'On',
   '꺼짐':'Off',
   '온라인 서버':'Online server',
-  '데이터는 이 기기에만 저장돼요. 회원가입·채팅 없음.':'Everything stays on this device. No sign-up, no chat.',
+  '기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.':'Records stay on this device. No sign-up, no chat. Only anonymous usage stats are sent.',
   '개인정보 처리방침':'Privacy policy',
   '저장':'Save',
   '"친구와 온라인"을 누르면 접속':'Tap "Play online" to connect',
@@ -604,7 +604,7 @@ function iga(s){const c=s.charCodeAt(s.length-1);if(c>=0xAC00&&c<=0xD7A3)return 
 /* ---------- 분석 (GA4) ----------
    측정 ID 를 GA_ID 에 넣으면 켜진다. 비어 있으면 아무 데도 보내지 않고 버퍼에만 쌓는다.
    ?ga=G-XXXX 로 임시 덮어쓰기 가능. 닉네임 같은 사용자 입력은 절대 보내지 않는다. */
-const GA_ID='';
+const GA_ID='G-WTEQKNZ6GE';
 const analytics=(()=>{
   const buf=[];let ready=false,gtag=null;
   const platform=window.Capacitor?'app':(location.protocol==='file:'?'file':'web');
