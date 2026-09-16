@@ -245,6 +245,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <h2>설정</h2>
     <div class="srow"><span class="sl">이름</span><input id="nameIn" maxlength="10" autocomplete="off" spellcheck="false"></div>
     <div class="srow"><span class="sl">소리</span><button type="button" class="tg" id="soundTg">켜짐</button></div>
+    <div class="srow"><span class="sl">언어</span><button type="button" class="tg" id="langTg">한국어</button></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
     <p class="fine">데이터는 이 기기에만 저장돼요. 회원가입·채팅 없음.<br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · v0.1</p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
@@ -333,10 +334,228 @@ const CELL=24;let COLS=400,ROWS=400,W=COLS*CELL,H=ROWS*CELL,TOTAL=COLS*ROWS;
 const R=10,DECEL=0.22,MAXV=17,STOPV=0.3,PULL_MAX=150;
 const GROUND='#CFAC7B',OUT='#A88A5C',CHALK='#FFF7E6',INK='#2B1D0F';
 let owner=new Int16Array(TOTAL),visited=new Uint8Array(TOTAL),queue=new Int32Array(TOTAL);
-const BOT_NAMES=['구슬왕','돌멩이','왕눈이','짱구','유리알','쇠구슬','땅부자','새총','탱탱볼','말랑이','번개','딱지왕','개구리','알사탕','도토리','쫀득이','호빵','꼬북이','방울','팽이','제기','고무줄','비석','왕딱지'];
+/* ---------- 말: 한국어 · 영어 ----------
+   한국어 원문을 그대로 열쇠로 쓴다. 영어일 때만 EN 에서 찾아 바꾸고, 없으면 원문을 그대로 둔다.
+   - 마크업에 박힌 글: 시작할 때 sweep() 이 한 번 훑어 바꾼다 (본문 글월과 aria-label·placeholder).
+   - 만들어 붙이는 글: T('원문') / TF('{a} 원문', {a:…}) 로 감싼다.
+   ?lang=en 으로 임시로 볼 수 있고, 설정에서 고르면 저장한 뒤 새로 읽는다. */
+const LANG=(()=>{
+  const q=(new URLSearchParams(location.search).get('lang')||'').toLowerCase();
+  if(q==='ko'||q==='en')return q;
+  try{const v=localStorage.getItem('gusul-lang');if(v==='ko'||v==='en')return v;}catch(e){}
+  const ls=[navigator.language||''].concat(navigator.languages||[]);
+  return ls.some(l=>/^ko/i.test(l))?'ko':'en';   // 한국어 기기면 한국어, 아니면 영어
+})();
+const EN={
+  '구슬 땅따먹기':'Marble Land Grab',
+  '놀이터 · 땅따먹기':'Playground land grab',
+  '메인으로 나가기':'Back to menu',
+  '순위':'Ranks',
+  '구슬을 당겼다 놓기 · 3번 안에 내 땅으로':'Pull and release · get home in 3',
+  '혼자 (봇)':'Solo (bots)',
+  '손님':'Guest',
+  '이름 · 설정':'Name · Settings',
+  '5인 서바이벌':'5-Player Survival',
+  '60초 · 마지막까지 살아남기':'60s · last one standing',
+  '오늘의 도전':'Daily Challenge',
+  '매일 같은 판 · 점수 겨루기':'Same board every day · beat the score',
+  '클래식':'Classic',
+  '턴제 · 원조 규칙 · 친구와':'Turn-based · original rules · with a friend',
+  '무한 io':'Endless io',
+  '넓은 맵 · 봇 40마리 · 끝없이':'Big map · 40 bots · no end',
+  '상대':'Opponent',
+  '봇 2명':'2 bots',
+  '봇 1명':'1 bot',
+  '친구와 번갈아 (폰 하나)':'Pass and play (one phone)',
+  '장애물':'Obstacles',
+  '조금 · 돌·웅덩이·모래':'Some · rocks, puddles, sand',
+  '없음':'None',
+  '많이':'Many',
+  '시작':'Start',
+  '친구와 온라인':'Play online',
+  '미션':'Missions',
+  '구슬':'Marbles',
+  '규칙':'Rules',
+  '설정':'Settings',
+  '어떻게 하나요':'How to play',
+  '구슬을 당겼다 놓으면 튕겨 나간다.':'Pull the marble back and let go to flick it.',
+  '밖에 나갔다가':'Leave your land, then',
+  '3번 안에':'within 3 flicks',
+  '내 땅으로 돌아오면, 지나온 길 안쪽이 내 땅이 된다.':'come home: everything inside your path becomes yours.',
+  '밖에 있는 동안 남의 구슬이 내 길을 지나가면 잘린다. 남의 길도 끊을 수 있다.':'While you are out, a marble crossing your trail cuts you. You can cut theirs too.',
+  '돌은 튕기고, 웅덩이는 구슬을 잡고, 모래는 느려진다.':'Rocks bounce you, puddles hold you, sand slows you down.',
+  '모드':'Modes',
+  '60초, 탈락하면 끝. 마지막까지 남거나 땅이 가장 넓으면 1등.':' 60 seconds, out is out. Last one standing or the widest land wins.',
+  '매일 같은 판에서 점수 겨루기.':' The same board for everyone, every day.',
+  '차례대로 3번씩 튕기는 원조 규칙. 남의 땅 밟으면 꽝. 폰 하나로 친구와.':' Three flicks each, taking turns. Step on their land and you lose the turn. One phone, two players.',
+  '넓은 맵에서 봇 40마리와 끝없이.':' A big map with 40 bots and no finish line.',
+  '연습하기':'Practice',
+  '닫기':'Close',
+  '이름':'Name',
+  '소리':'Sound',
+  '언어':'Language',
+  '켜짐':'On',
+  '꺼짐':'Off',
+  '온라인 서버':'Online server',
+  '데이터는 이 기기에만 저장돼요. 회원가입·채팅 없음.':'Everything stays on this device. No sign-up, no chat.',
+  '개인정보 처리방침':'Privacy policy',
+  '저장':'Save',
+  '"친구와 온라인"을 누르면 접속':'Tap "Play online" to connect',
+  '건너뛰기':'Skip',
+  '친구 차례예요':'Your friend\'s turn',
+  '폰을 넘겨주세요. 준비되면 누르세요.':'Pass the phone. Tap when you are ready.',
+  '준비 완료':'Ready',
+  '구슬 강화':'Marble upgrade',
+  '하나를 고르세요':'Pick one',
+  '새로':'New',
+  '세게 치기':'Harder flick',
+  '같은 힘으로 더 멀리 나간다':'The same pull sends you farther',
+  '잘 구르기':'Better roll',
+  '덜 멈추고 오래 굴러간다':'You keep rolling longer',
+  '무거운 구슬':'Heavy marble',
+  '부딪히면 남을 밀어낸다':'You shove others aside on impact',
+  '탱탱볼':'Bouncy ball',
+  '벽과 돌에 부딪혀도 덜 죽는다':'Walls and rocks slow you down less',
+  '메인으로 나갈까요?':'Leave to the menu?',
+  '지금 하던 판은 사라집니다.':'This round will be gone.',
+  '오늘의 도전은 이번 판을 다시 할 수 없어요.':'You cannot replay today\'s challenge.',
+  '나가기':'Leave',
+  '계속하기':'Keep playing',
+  '탈락!':'You\'re out!',
+  '한 번 이어하기':'Continue once',
+  '결과 보기':'See results',
+  '탈락했어요. 이번 판에 한 번 더 살아날 수 있어요.':'You are out. You can come back once this round.',
+  '부활!':'Back in!',
+  '오늘의 미션':'Today\'s missions',
+  '업적':'Achievements',
+  '완료':'Done',
+  '내 구슬':'My marble',
+  '사용 중':'In use',
+  '선택':'Select',
+  '서바이벌 3판 하기':'Play 3 survival rounds',
+  '상대 2명 자르기':'Cut 2 players',
+  '한 번에 땅 3% 먹기':'Grab 3% of the land at once',
+  '3등 안에 들기':'Finish in the top 3',
+  '1등 하기':'Win a round',
+  '오늘 누적 땅 15% 먹기':'Grab 15% of the land today',
+  '첫 1등':'First win',
+  '1등 5번':'5 wins',
+  '1등 10번':'10 wins',
+  '자르기 10번':'10 cuts',
+  '자르기 50번':'50 cuts',
+  '한 번에 5% 먹기':'Grab 5% at once',
+  '서바이벌 10판':'10 survival rounds',
+  '50판 플레이':'Play 50 rounds',
+  '기본':'Default',
+  '1등 1번':'1 win',
+  '유리알':'Glass',
+  '쇠구슬':'Steel',
+  '고양이눈':'Cat\'s eye',
+  '병뚜껑':'Bottle cap',
+  '사금파리':'Pottery shard',
+  '황금구슬':'Gold',
+  '1등!':'1st!',
+  '1등':'1st',
+  '한 판 더':'Play again',
+  '처음으로':'Main menu',
+  '잘렸다!':'Cut!',
+  '이번 판 최대':'Best this round',
+  '자른 수':'Cuts',
+  '최고 기록':'All-time best',
+  '다시 하기':'Try again',
+  '마지막까지 살아남았다':'Last one standing',
+  '시간 종료 · 땅 넓이 순위':'Time\'s up · ranked by land',
+  '탈락':'Out',
+  '괜찮아요, 다시!':'No problem, try again!',
+  '3번 안에 못 돌아왔다':'Did not get home in 3',
+  '3번 안에 못 돌아왔다 · 꽝':'Did not get home in 3 · miss',
+  '남의 땅 밟음 · 꽝!':'Stepped on their land · miss!',
+  '마지막 한 번!':'Last flick!',
+  '10초!':'10 seconds!',
+  '여기! ▼':'Here! ▼',
+  '내 차례':'Your turn',
+  '친구':'Friend',
+  '나':'You',
+  '누군가':'Someone',
+  '연습봇':'Practice bot',
+  '튜토리얼':'Tutorial',
+  '튜토리얼 완료':'Tutorial done',
+  '오늘의 미션 완료!':'Today\'s missions done!',
+  '클래식 · 턴제':'Classic · turn-based',
+  '오프라인':'Offline',
+  '온라인':'Online',
+  '방에 들어가는 중…':'Joining a room…',
+  '서버 연결 중…':'Connecting to the server…',
+  '온라인 · 서버 연결됨':'Online · connected',
+  '서버에 연결할 수 없어요':'Cannot reach the server',
+  '서버에 연결할 수 없어 혼자 모드로 시작해요':'Cannot reach the server · starting solo',
+  '연결 끊김 · 다시 접속 중…':'Disconnected · reconnecting…',
+  '접속 실패':'Could not connect',
+  '바로 시작':'Start',
+  '온라인 시작':'Start online',
+  '혼자 하기':'Play solo',
+  '친구와 번갈아':'Pass and play',
+  '{name} (나)':'{name} (you)',
+  '{name} 탈락!':'{name} is out!',
+  '{name} 탈락':'{name} is out',
+  '{name} 잘랐다!':'Cut {name}!',
+  '{name} 차례':'{name}\'s turn',
+  '{name} 차례예요':'{name}\'s turn',
+  '{name} 못 돌아옴 · 꽝':'{name} did not get home · miss',
+  '{name} 남의 땅 밟음 · 꽝':'{name} stepped on their land · miss',
+  '순위 · {n}명':'Ranks · {n}',
+  '{r}위 / {n}명':'{r} of {n}',
+  '온라인 · 사람 {n}명':'Online · {n} players',
+  ' · 방 {id}':' · room {id}',
+  '{r} / {t} 라운드':'Round {r} / {t}',
+  '{r}라운드 종료 · 땅 넓이 순위':'{r} rounds played · ranked by land',
+  '{s}점':'{s} pts',
+  ' · 땅 {p}':' · land {p}',
+  ' · 오늘 최고 기록!':' · best today!',
+  ' · 오늘 최고 {b}점':' · today\'s best {b}',
+  '어제 {b}점 · ':'Yesterday {b} · ',
+  '오늘 {n}번 도전':'{n} tries today',
+  '통산 1등 {n}번':'{n} wins all time',
+  '땅 {n}번째 · 하나를 고르세요':'Land grab #{n} · pick one',
+  '{lv}단계 → {nx}':'Lv {lv} → {nx}',
+  '오늘의 도전 · {d}':'Daily Challenge · {d}',
+  '오늘의 도전 · {s}초 · 최고 {b}점':'Daily Challenge · {s}s · best {b}',
+  '{s}초 · 마지막까지 살아남기':'{s}s · last one standing',
+  '{who}한테 땅을 통째로 뺏겼다':'{who} took your land whole',
+  '{who}{i} 내 길을 끊었다':'{who} cut your trail',
+  '서버 연결 중… 잠들어 있으면 1분쯤 걸려요 ({i}/8)':'Connecting… a sleeping server takes about a minute ({i}/8)',
+  '업적 달성 · {t}':'Achievement · {t}',
+  '{how} 하면 열려요':'Unlocks at: {how}',
+  '통산 {g}판 · 1등 {w}번 · 자르기 {k}번 · 최대 한 방 {c}':'{g} rounds · {w} wins · {k} cuts · best grab {c}',
+  '1등 {w}번 · {g}판 · {s}':'{w} wins · {g} rounds · {s}',
+  '서바이벌 {n}판':'{n} survival rounds',
+  '오늘 최고 {b}점':'Today\'s best {b}',
+  '오늘 {n}번 도전 ':'{n} tries today ',
+  '한 번에 최대 {c}':'Best grab {c}',
+  '구슬을 당겼다 놓아보세요':'Pull the marble back and let go',
+  '밖으로 나갔다가, 3번 안에 파란 땅으로 돌아와 보세요':'Go out, then come back to the blue land within 3 flicks',
+  '저 초록 구슬이 밖에 나가 있을 때 길을 지나가면 잘려요. 끊어보세요!':'While the green marble is out, cross its trail to cut it. Try it!',
+  '잘했어요! 이제 진짜 판으로':'Nicely done. Now the real thing',
+};
+function T(s){const v=LANG==='en'?EN[s]:undefined;return v===undefined?s:v;}
+function TF(s,p){let t=T(s);for(const k in p)t=t.split('{'+k+'}').join(p[k]);return t;}
+/* 1등 / 1st — 등수는 말마다 꼴이 다르다. */
+function rankStr(n){if(LANG!=='en')return n+'등';const t=n%100;const o=(t>=11&&t<=13)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th');return n+o;}
+function sweep(root){
+  if(LANG!=='en')return;
+  document.title=T(document.title);
+  const skip={SCRIPT:1,STYLE:1,CANVAS:1};
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>skip[n.parentNode&&n.parentNode.nodeName]?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const nodes=[];for(let n=w.nextNode();n;n=w.nextNode())nodes.push(n);
+  for(const n of nodes){const k=n.nodeValue.trim();if(!k)continue;const v=EN[k];if(v!==undefined)n.nodeValue=n.nodeValue.replace(k,v);}
+  for(const el of root.querySelectorAll('[aria-label],[placeholder],[title]'))
+    for(const a of ['aria-label','placeholder','title']){const k=el.getAttribute(a);if(k&&EN[k]!==undefined)el.setAttribute(a,EN[k]);}
+}
+sweep(document.body);
+const BOT_NAMES=(LANG==='en'?['Marble King','Pebble','Big Eye','Scamp','Glassy','Steelie','Landlord','Slingshot','Bouncy','Squishy','Lightning','Pogger','Froggy','Candy','Acorn','Chewy','Bun','Turtle','Bell','Spinner','Jack','Rubber','Slab','Big Pog']:['구슬왕','돌멩이','왕눈이','짱구','유리알','쇠구슬','땅부자','새총','탱탱볼','말랑이','번개','딱지왕','개구리','알사탕','도토리','쫀득이','호빵','꼬북이','방울','팽이','제기','고무줄','비석','왕딱지']);
 const BOT_COLORS=['#F0503C','#8B5CF6','#14B8A6','#22C55E','#EC4899','#F97316','#6366F1','#A3E635','#E11D48','#0EA5E9','#D946EF','#FACC15','#4ADE80','#FB7185','#A16207','#2DD4BF'];
 const HUMAN_COLORS=['#2EB6FF','#FF6B35','#FFD23F','#3DDC97','#C77DFF','#FF5DA2','#00C2CB','#FF8C42','#B5E61D','#5C7CFA'];
-const NICKS=['손님','새싹','반짝이','또르르','왕구슬','꼬마','대장','장난꾸러기','오뚝이','번쩍'];
+const NICKS=(LANG==='en'?['Guest','Sprout','Sparkle','Roller','Biggie','Kiddo','Chief','Rascal','Tumbler','Flash']:['손님','새싹','반짝이','또르르','왕구슬','꼬마','대장','장난꾸러기','오뚝이','번쩍']);
 const NBOTS_OFFLINE=40;
 const PROTO=4;
 const WS_URLS=['wss://gusul-ttang-io.fly.dev','wss://gusul-ttang-io.onrender.com']; // 공용 게임 서버 후보: 도쿄(Fly) 먼저, 안 되면 싱가포르(Render)
@@ -482,16 +701,16 @@ function kill(q,by,reason){
   q.cells=0;terrDirty=true;
   if(by&&by!==q)by.kills++;
   if(by===me)meta.onKill();
-  if(!online&&mode==='tutorial'){if(q===me){spawn(me);toast('괜찮아요, 다시!','#FFE08A');return;}if(by===me)tutorial.onKill();return;}
-  if(!online&&isSurv()){elimOrder.push(q);if(q===me){track('die',{mode:mode,reason:reason,land:+(q.peak||0).toFixed(2),online:0});sfx('cut');if(!reviveUsed&&players.filter(x=>x.alive).length>=1){showRevive();return;}endRound();return;}if(by===me){toast(q.name+' 탈락!',by.color);sfx('cut');}else toast(q.name+' 탈락','#FFD7C2');if(players.filter(x=>x.alive).length<=1)endRound();return;}
+  if(!online&&mode==='tutorial'){if(q===me){spawn(me);toast(T('괜찮아요, 다시!'),'#FFE08A');return;}if(by===me)tutorial.onKill();return;}
+  if(!online&&isSurv()){elimOrder.push(q);if(q===me){track('die',{mode:mode,reason:reason,land:+(q.peak||0).toFixed(2),online:0});sfx('cut');if(!reviveUsed&&players.filter(x=>x.alive).length>=1){showRevive();return;}endRound();return;}if(by===me){toast(TF('{name} 탈락!',{name:q.name}),by.color);sfx('cut');}else toast(TF('{name} 탈락',{name:q.name}),'#FFD7C2');if(players.filter(x=>x.alive).length<=1)endRound();return;}
   if(q===me){track('die',{mode:mode,reason:reason,land:+(q.peak||0).toFixed(2),online:online?1:0});showDead(by,reason);sfx('cut');}
-  else{if(q.bot)q.respawnT=2+Math.random()*2.5;if(by===me){toast(q.name+' 잘랐다!',by.color);sfx('cut');}}
+  else{if(q.bot)q.respawnT=2+Math.random()*2.5;if(by===me){toast(TF('{name} 잘랐다!',{name:q.name}),by.color);sfx('cut');}}
 }
 function fail(p){
   const s=ownStats(p);
   p.trail=[];p.out=false;p.flicks=0;
   if(s){p.x=p.px=s.center.x;p.y=p.py=s.center.y;p.lastIn={x:p.x,y:p.y};}
-  if(p===me){toast('3번 안에 못 돌아왔다','#FFD7C2');sfx('fail');}
+  if(p===me){toast(T('3번 안에 못 돌아왔다'),'#FFD7C2');sfx('fail');}
 }
 function flick(p,ang,sp){if(p.out)addVertexAt(p,p.x,p.y);p.vx=Math.cos(ang)*sp;p.vy=Math.sin(ang)*sp;p.flicks++;if(p===me)meta.onFlick();}
 function rasterize(a,b,id){
@@ -527,7 +746,7 @@ function onStop(p){
   if(mode==='classic'){classic.onStop(p);return;}
   const c=cellOf(p.x,p.y),inside=c>=0&&owner[c]===p.id;
   if(inside)p.flicks=0;else if(p.flicks>=3)fail(p);
-  else if(p===me&&p.flicks===2)toast('마지막 한 번!','#FFE08A');
+  else if(p===me&&p.flicks===2)toast(T('마지막 한 번!'),'#FFE08A');
   if(p===me)boost.maybeOffer();
 }
 /* ---------- 장애물: 돌(튕김) · 웅덩이(급감속) · 모래(느려짐) ---------- */
@@ -667,7 +886,7 @@ function step(dt){
     for(const p of players)stepPlayer(p);
     collide();cuts();
     if(mode==='tutorial')tutorial.tick(dt);
-    if(isSurv()){if(running&&!roundOver){const before=roundT;roundT-=dt;if(before>10.5&&roundT<=10.5)toast('10초!','#FFE08A');if(roundT<=0){roundT=0;endRound();}}}
+    if(isSurv()){if(running&&!roundOver){const before=roundT;roundT-=dt;if(before>10.5&&roundT<=10.5)toast(T('10초!'),'#FFE08A');if(roundT<=0){roundT=0;endRound();}}}
     else{for(const p of players){if(p.bot&&!p.alive){p.respawnT-=dt;if(p.respawnT<=0)spawn(p);}}}
   }
   if(frame%10===0)updateHud();
@@ -763,7 +982,7 @@ function drawMeLabel(){
   ctx.beginPath();ctx.moveTo(mx-5/z,ty);ctx.lineTo(mx+5/z,ty);ctx.lineTo(mx,ty+5/z);ctx.closePath();ctx.fill();
   ctx.lineWidth=2.5/z;ctx.strokeStyle='rgba(43,29,15,.85)';ctx.strokeText(label,mx,ty-bh*.16);ctx.fillStyle=CHALK;ctx.fillText(label,mx,ty-bh*.16);
   if(spawnT>0){const a=Math.min(1,spawnT);ctx.globalAlpha=a;const fs2=26/z;ctx.font=fs2+'px Jua, sans-serif';const yy=ty-bh-12/z-Math.sin(t*4)*4/z;
-    ctx.lineWidth=5/z;ctx.strokeStyle='rgba(43,29,15,.9)';ctx.strokeText('여기! ▼',mx,yy);ctx.fillStyle='#FFE08A';ctx.fillText('여기! ▼',mx,yy);ctx.globalAlpha=1;}
+    ctx.lineWidth=5/z;ctx.strokeStyle='rgba(43,29,15,.9)';ctx.strokeText(T('여기! ▼'),mx,yy);ctx.fillStyle='#FFE08A';ctx.fillText(T('여기! ▼'),mx,yy);ctx.globalAlpha=1;}
 }
 /* ---------- 메인 화면 배경: 놀이터 낙서 + 굴러다니는 구슬 ---------- */
 const menuBg={w:0,h:0,doodles:[],marbles:[],last:0};
@@ -887,23 +1106,23 @@ function updateHud(){
     const li=document.createElement('li');if(p===me)li.className='me';
     const n=document.createElement('span');n.className='n';n.textContent=i+1;
     const c=document.createElement('span');c.className='c';c.style.background=p.color;
-    const nm=document.createElement('span');nm.className='name';nm.textContent=p===me?p.name+' (나)':p.name;
+    const nm=document.createElement('span');nm.className='name';nm.textContent=p===me?TF('{name} (나)',{name:p.name}):p.name;
     const pc=document.createElement('span');pc.className='p';pc.textContent=fmtPct(p.cells/TOTAL*100);
     li.append(n,c,nm,pc);return li;};
   const rows=sorted.slice(0,6).map(row);
   const myIdx=me?sorted.indexOf(me):-1;
   if(myIdx>=6){const gap=document.createElement('li');gap.className='gap';rows.push(gap,row(me,myIdx));}
   ranksEl.replaceChildren(...rows);
-  $('boardTitle').textContent='순위 · '+sorted.length+'명';
+  $('boardTitle').textContent=TF('순위 · {n}명',{n:sorted.length});
   if(!me)return;
-  $('myRank').textContent=(myIdx+1)+'위 / '+sorted.length+'명';
+  $('myRank').textContent=TF('{r}위 / {n}명',{r:myIdx+1,n:sorted.length});
   const mp=me.cells/TOTAL*100;
   pctEl.textContent=fmtPct(mp);
   if(mp>me.peak)me.peak=mp;
   const left=3-me.flicks;
   dotEls.forEach((d,i)=>d.classList.toggle('on',i<left));
   const tm=$('timer');if(isSurv()&&!online){const s=Math.max(0,Math.ceil(roundT));tm.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');tm.hidden=false;tm.classList.toggle('hot',s<=10);}else tm.hidden=true;
-  if(online){const n=players.filter(p=>!p.bot).length;netText.textContent='온라인 · 사람 '+n+'명'+(roomId?' · 방 '+roomId:'');}
+  if(online){const n=players.filter(p=>!p.bot).length;netText.textContent=TF('온라인 · 사람 {n}명',{n:n})+(roomId?TF(' · 방 {id}',{id:roomId}):'');}
 }
 function toast(text,color){
   const d=document.createElement('div');d.className='toast';d.textContent=text;if(color)d.style.color=color;
@@ -918,17 +1137,17 @@ function rankAll(){
 function endRound(){
   if(roundOver)return;roundOver=true;running=false;aim=null;paused=false;$('boost').hidden=true;
   const order=rankAll();const myRank=order.indexOf(me)+1;
-  $('resTitle').textContent=myRank===1?'1등!':myRank+'등';
-  $('resSub').textContent=myRank===1?'마지막까지 살아남았다':(me.alive?'시간 종료 · 땅 넓이 순위':'탈락');
+  $('resTitle').textContent=myRank===1?T('1등!'):rankStr(myRank);
+  $('resSub').textContent=myRank===1?T('마지막까지 살아남았다'):(me.alive?T('시간 종료 · 땅 넓이 순위'):T('탈락'));
   const ol=$('resList');ol.replaceChildren(...order.map((p,i)=>{const li=document.createElement('li');if(p===me)li.className='me';
     const n=document.createElement('span');n.className='n';n.textContent=i+1;const c=document.createElement('span');c.className='c';c.style.background=p.color;
-    const nm=document.createElement('span');nm.className='name';nm.textContent=p===me?p.name+' (나)':p.name;const pc=document.createElement('span');pc.className='p';pc.textContent=p.alive?fmtPct(p.cells/TOTAL*100):'탈락';
+    const nm=document.createElement('span');nm.className='name';nm.textContent=p===me?TF('{name} (나)',{name:p.name}):p.name;const pc=document.createElement('span');pc.className='p';pc.textContent=p.alive?fmtPct(p.cells/TOTAL*100):T('탈락');
     li.append(n,c,nm,pc);return li;}));
   let wins=0;try{wins=parseInt(localStorage.getItem('gusul-wins'))||0;if(myRank===1){wins++;localStorage.setItem('gusul-wins',String(wins));}}catch(e){}
   if(mode==='daily'){const land=me.alive?me.cells/TOTAL*100:0;const sc=dailyScore(myRank,land);const ds=dailyStore();const isBest=sc>ds.best;if(isBest)ds.best=sc;dailySave(ds);platform.submitScore(ds.best);track('daily_score',{score:sc,best:ds.best,plays:ds.plays,is_best:isBest?1:0});
-    $('resTitle').textContent=sc+'점';$('resSub').textContent=(myRank===1?'1등':myRank+'등')+' · 땅 '+fmtPct(land)+(isBest?' · 오늘 최고 기록!':' · 오늘 최고 '+ds.best+'점');
-    const y=ds.hist&&ds.hist.length?ds.hist[ds.hist.length-1]:null;$('resWins').textContent=(y?'어제 '+y.best+'점 · ':'')+'오늘 '+ds.plays+'번 도전';restoreRandom();}
-  else $('resWins').textContent='통산 1등 '+wins+'번';
+    $('resTitle').textContent=TF('{s}점',{s:sc});$('resSub').textContent=(myRank===1?T('1등'):rankStr(myRank))+TF(' · 땅 {p}',{p:fmtPct(land)})+(isBest?T(' · 오늘 최고 기록!'):TF(' · 오늘 최고 {b}점',{b:ds.best}));
+    const y=ds.hist&&ds.hist.length?ds.hist[ds.hist.length-1]:null;$('resWins').textContent=(y?TF('어제 {b}점 · ',{b:y.best}):'')+TF('오늘 {n}번 도전',{n:ds.plays});restoreRandom();}
+  else $('resWins').textContent=TF('통산 1등 {n}번',{n:wins});
   sfx(myRank===1?'capture':'fail');
   track('round_end',{mode:mode,rank:myRank,players:order.length,land:+(me.cells/TOTAL*100).toFixed(2),peak:+me.peak.toFixed(2),kills:me.kills,alive:me.alive?1:0,boosts:boost.count()});
   meta.onRoundEnd(myRank,order.length);
@@ -939,14 +1158,14 @@ const classic=(()=>{
   const ROUNDS=6,GRID=40;
   let order=[],idx=0,round=1,cur=null,turnActive=false,wasOut=false,waitHuman=false,fouled=false,captured=false,ended=false,p1=null;
   function banner(){const el=$('turn');if(mode!=='classic'){el.hidden=true;return;}el.hidden=false;
-    const left=cur?Math.max(0,3-cur.flicks):3;$('turnWho').textContent=cur?(cur.human?(order.filter(q=>q.human).length>1?cur.name+' 차례':'내 차례'):cur.name+' 차례'):'';
-    $('turnDots').textContent='●'.repeat(left)+'○'.repeat(3-left);$('turnRound').textContent=round+' / '+ROUNDS+' 라운드';}
+    const left=cur?Math.max(0,3-cur.flicks):3;$('turnWho').textContent=cur?(cur.human?(order.filter(q=>q.human).length>1?TF('{name} 차례',{name:cur.name}):T('내 차례')):TF('{name} 차례',{name:cur.name})):'';
+    $('turnDots').textContent='●'.repeat(left)+'○'.repeat(3-left);$('turnRound').textContent=TF('{r} / {t} 라운드',{r:round,t:ROUNDS});}
   function start(name,opp){
     restoreRandom();wantOnline=false;online=false;mode='classic';roundOver=false;elimOrder=[];
     setGrid(GRID,GRID);resetWorld();
     genObstacles(obstLevel(),[[8,8],[GRID-9,GRID-9],[GRID-9,8],[8,GRID-9]].map(([cx,cy])=>({x:(cx+.5)*CELL,y:(cy+.5)*CELL,r:170})));
     p1=mkPlayer(name,HUMAN_COLORS[0],false);p1.human=true;addPlayer(p1);me=p1;
-    if(opp==='friend'){const f=mkPlayer('친구',HUMAN_COLORS[1],false);f.human=true;addPlayer(f);}
+    if(opp==='friend'){const f=mkPlayer(T('친구'),HUMAN_COLORS[1],false);f.human=true;addPlayer(f);}
     else{const n=opp==='bot1'?1:2;const pool=BOT_NAMES.slice().sort(()=>Math.random()-.5).slice(0,n);pool.forEach((nm,i)=>{const b=mkPlayer(nm,BOT_COLORS[(i*5+2)%BOT_COLORS.length],true);addPlayer(b);});}
     // 집: 서로 멀리
     const spots=[[8,8],[GRID-9,GRID-9],[GRID-9,8],[8,GRID-9]].slice(0,players.length).sort(()=>Math.random()-.5);
@@ -954,7 +1173,7 @@ const classic=(()=>{
     order=players.slice();idx=0;round=1;cur=null;turnActive=false;waitHuman=false;
     me.kills=0;me.peak=0;$('myName').textContent=me.name;
     cam.x=p1.x;cam.y=p1.y;spawnT=0;presimLeft=0;
-    netText.textContent='클래식 · 턴제';netEl.classList.remove('on');
+    netText.textContent=T('클래식 · 턴제');netEl.classList.remove('on');
     meta.onRoundStart('classic');track('round_start',{mode:'classic',opp:opp,obstacles:obstLevel()});
     updateHud();running=true;startEl.hidden=true;$('result').hidden=true;deadEl.hidden=true;hintEl.style.opacity=0;pushGameState();
     nextTurn();
@@ -962,7 +1181,7 @@ const classic=(()=>{
   function nextTurn(){
     cur=order[idx];cur.flicks=0;wasOut=false;fouled=false;captured=false;ended=false;turnActive=false;
     if(cur.human){me=cur;$('myName').textContent=me.name;
-      if(order.filter(q=>q.human).length>1&&!(round===1&&idx===0)){waitHuman=true;$('passWho').textContent=cur.name+' 차례예요';$('pass').hidden=false;banner();return;}}
+      if(order.filter(q=>q.human).length>1&&!(round===1&&idx===0)){waitHuman=true;$('passWho').textContent=TF('{name} 차례예요',{name:cur.name});$('pass').hidden=false;banner();return;}}
     turnActive=true;if(cur.bot)cur.thinkT=.6;hintEl.style.opacity=0;banner();updateHud();
   }
   function endTurn(){
@@ -977,10 +1196,10 @@ const classic=(()=>{
   function endGame(){
     running=false;me=p1;
     const orderR=players.slice().sort((a,b)=>b.cells-a.cells);const myRank=orderR.indexOf(p1)+1;
-    $('resTitle').textContent=myRank===1?'1등!':myRank+'등';$('resSub').textContent=ROUNDS+'라운드 종료 · 땅 넓이 순위';
+    $('resTitle').textContent=myRank===1?T('1등!'):rankStr(myRank);$('resSub').textContent=TF('{r}라운드 종료 · 땅 넓이 순위',{r:ROUNDS});
     const ol=$('resList');ol.replaceChildren(...orderR.map((p,i)=>{const li=document.createElement('li');if(p===p1)li.className='me';
       const n=document.createElement('span');n.className='n';n.textContent=i+1;const c=document.createElement('span');c.className='c';c.style.background=p.color;
-      const nm=document.createElement('span');nm.className='name';nm.textContent=p===p1?p.name+' (나)':p.name;const pc=document.createElement('span');pc.className='p';pc.textContent=fmtPct(p.cells/TOTAL*100);li.append(n,c,nm,pc);return li;}));
+      const nm=document.createElement('span');nm.className='name';nm.textContent=p===p1?TF('{name} (나)',{name:p.name}):p.name;const pc=document.createElement('span');pc.className='p';pc.textContent=fmtPct(p.cells/TOTAL*100);li.append(n,c,nm,pc);return li;}));
     $('resWins').textContent='';track('round_end',{mode:'classic',rank:myRank,players:orderR.length,land:+(p1.cells/TOTAL*100).toFixed(2),rounds:ROUNDS});meta.onRoundEnd(myRank,orderR.length);sfx(myRank===1?'capture':'fail');$('turn').hidden=true;$('result').hidden=false;refreshStartCard();
   }
   return {
@@ -990,10 +1209,10 @@ const classic=(()=>{
     onStop(p){if(p!==cur||!turnActive)return;
       const c=cellOf(p.x,p.y),inside=c>=0&&owner[c]===p.id;
       if(fouled||captured){endTurn();return;}
-      if(p.flicks>=3){if(p.out){fouled=true;toast(p===me?'3번 안에 못 돌아왔다 · 꽝':p.name+' 못 돌아옴 · 꽝','#FFD7C2');sfx('fail');}endTurn();return;}
+      if(p.flicks>=3){if(p.out){fouled=true;toast(p===me?T('3번 안에 못 돌아왔다 · 꽝'):TF('{name} 못 돌아옴 · 꽝',{name:p.name}),'#FFD7C2');sfx('fail');}endTurn();return;}
       banner();},
     onCapture(p,gained){if(p===cur&&turnActive)captured=true;},
-    foul(p){if(p!==cur||fouled||!turnActive)return;fouled=true;p.vx=p.vy=0;toast(p===me?'남의 땅 밟음 · 꽝!':p.name+' 남의 땅 밟음 · 꽝','#FFD7C2');sfx('fail');setTimeout(()=>{if(mode==='classic'&&running)endTurn();},500);},
+    foul(p){if(p!==cur||fouled||!turnActive)return;fouled=true;p.vx=p.vy=0;toast(p===me?T('남의 땅 밟음 · 꽝!'):TF('{name} 남의 땅 밟음 · 꽝',{name:p.name}),'#FFD7C2');sfx('fail');setTimeout(()=>{if(mode==='classic'&&running)endTurn();},500);},
     tick(dt){if(cur&&turnActive&&cur.out)wasOut=true;banner();},
     ready(){$('pass').hidden=true;waitHuman=false;turnActive=true;banner();updateHud();},
   };
@@ -1025,17 +1244,17 @@ const boost=(()=>{
     if(me)b.me(me);
     for(const q of players)if(q.bot)b.bot(q);
     $('boost').hidden=true;paused=false;paint();
-    toast(b.ic+' '+b.name,'#FFE08A');sfx('flick');}
+    toast(b.ic+' '+T(b.name),'#FFE08A');sfx('flick');}
   function offer(){
     const list=pick3();if(!list.length)return;
     paused=true;aim=null;
-    $('boostSub').textContent='땅 '+caps+'번째 · 하나를 고르세요';
+    $('boostSub').textContent=TF('땅 {n}번째 · 하나를 고르세요',{n:caps});
     $('boostGrid').replaceChildren(...list.map(b=>{
       const lv=have[b.id]||0,btn=document.createElement('button');btn.type='button';btn.className='bcard';
       const i=document.createElement('span');i.className='bi';i.textContent=b.ic;
-      const n=document.createElement('span');n.className='bn';n.textContent=b.name;
-      const d=document.createElement('span');d.className='bd';d.textContent=b.desc;
-      const l=document.createElement('span');l.className='bl';l.textContent=lv?lv+'단계 → '+(lv+1):'새로';
+      const n=document.createElement('span');n.className='bn';n.textContent=T(b.name);
+      const d=document.createElement('span');d.className='bd';d.textContent=T(b.desc);
+      const l=document.createElement('span');l.className='bl';l.textContent=lv?TF('{lv}단계 → {nx}',{lv:lv,nx:lv+1}):T('새로');
       btn.append(i,n,d,l);btn.addEventListener('click',()=>take(b));return btn;}));
     $('boost').hidden=false;sfx('capture');}
   return{
@@ -1065,9 +1284,9 @@ function newDailyGame(name){
   me.kills=0;me.peak=0;$('myName').textContent=me.name;
   cam.x=me.x;cam.y=me.y;spawnT=3;
   const ds=dailyStore();ds.plays++;dailySave(ds);
-  netText.textContent='오늘의 도전 · '+dailyKey();netEl.classList.remove('on');
+  netText.textContent=TF('오늘의 도전 · {d}',{d:dailyKey()});netEl.classList.remove('on');
   boost.reset();meta.onRoundStart('daily');track('round_start',{mode:'daily',obstacles:1,day:dailyKey()});
-  toast('오늘의 도전 · '+SURV.time+'초 · 최고 '+ds.best+'점','#FFE08A');
+  toast(TF('오늘의 도전 · {s}초 · 최고 {b}점',{s:SURV.time,b:ds.best}),'#FFE08A');
   updateHud();running=true;startEl.hidden=true;$('result').hidden=true;deadEl.hidden=true;pushGameState();
 }
 function newSurvivalGame(name){
@@ -1080,13 +1299,13 @@ function newSurvivalGame(name){
   for(const p of players){spawn(p);p.thinkT=1.2+Math.random();}
   me.kills=0;me.peak=0;$('myName').textContent=me.name;
   cam.x=me.x;cam.y=me.y;spawnT=3;
-  netText.textContent='5인 서바이벌';netEl.classList.remove('on');
-  boost.reset();reviveUsed=false;meta.onRoundStart('survival');track('round_start',{mode:'survival',obstacles:obstLevel(),bots:SURV.bots});toast(SURV.time+'초 · 마지막까지 살아남기','#FFE08A');
+  netText.textContent=T('5인 서바이벌');netEl.classList.remove('on');
+  boost.reset();reviveUsed=false;meta.onRoundStart('survival');track('round_start',{mode:'survival',obstacles:obstLevel(),bots:SURV.bots});toast(TF('{s}초 · 마지막까지 살아남기',{s:SURV.time}),'#FFE08A');
   updateHud();running=true;startEl.hidden=true;$('result').hidden=true;deadEl.hidden=true;pushGameState();
 }
 function showDead(by,reason){
-  const who=by?(by===me?'나':by.name):'누군가';
-  $('deadWhy').textContent=reason==='enclosed'?`${who}한테 땅을 통째로 뺏겼다`:`${who}${iga(who)} 내 길을 끊었다`;
+  const who=by?(by===me?T('나'):by.name):T('누군가');
+  $('deadWhy').textContent=reason==='enclosed'?TF('{who}한테 땅을 통째로 뺏겼다',{who:who}):TF('{who}{i} 내 길을 끊었다',{who:who,i:iga(who)});
   $('sPeak').textContent=fmtPct(me.peak);
   $('sKills').textContent=me.kills;
   if(me.peak>bestEver){bestEver=me.peak;try{localStorage.setItem('gusul-best',String(bestEver));}catch(e){}}
@@ -1178,7 +1397,7 @@ function connectWs(url,timeoutMs){
 }
 function onWsClose(){
   if(!wantOnline)return;
-  if(running){toast('연결 끊김 · 다시 접속 중…','#FFD7C2');}
+  if(running){toast(T('연결 끊김 · 다시 접속 중…'),'#FFD7C2');}
   clearTimeout(reconnectT);reconnectT=setTimeout(()=>{if(wantOnline)connectWs(wsUrlUsed||wsUrl());},1500);
 }
 function sendJoin(){wsSend({t:'join',name:myName,color:me?me.color:HUMAN_COLORS[0],v:PROTO,room:new URLSearchParams(location.search).get('room')||undefined});}
@@ -1212,7 +1431,7 @@ function applyWelcome(d){
   mode='io';roundOver=false;$('result').hidden=true;if(d.cols&&d.rows)setGrid(d.cols,d.rows);genObstacles(0);
   if(typeof d.grid==='string')decodeGrid(d.grid);
   me=byId[d.me|0]||null;
-  if(!me){toast('접속 실패','#FFD7C2');return;}
+  if(!me){toast(T('접속 실패'),'#FFD7C2');return;}
   me.peak=keepPeak;me.kills=keepKills;
   $('myName').textContent=me.name;
   cam.x=me.x;cam.y=me.y;spawnT=3;
@@ -1232,15 +1451,15 @@ function applyUpdate(u){
     else if(k==='fl'){p.alive=true;const x=num(ev[2],p.x),y=num(ev[3],p.y),vx=clamp(num(ev[4],0),-MAXV*2,MAXV*2),vy=clamp(num(ev[5],0),-MAXV*2,MAXV*2);
       if(p===me&&pendingEcho>0){pendingEcho--;dbg.echo++;p.flicks=clamp(num(ev[6],p.flicks)|0,0,3);continue;} // 내 튕기기 메아리
       if(p.out)addVertexAt(p,x,y);if(p===me){snapTo(p,x,y);p.vx=vx;p.vy=vy;}else applyRemote(p,x,y,vx,vy,num(ev[7],K));p.flicks=clamp(num(ev[6],p.flicks)|0,0,3);}
-    else if(k==='st'){if(p===me&&(p.vx||p.vy)){dbg.stSkip++;continue;}if(p!==me){applyRemote(p,num(ev[2],p.x),num(ev[3],p.y),0,0,num(ev[4],K));}else{snapTo(p,num(ev[2],p.x),num(ev[3],p.y));p.vx=p.vy=0;}if(p===me&&p.out&&p.flicks===2)toast('마지막 한 번!','#FFE08A');}
+    else if(k==='st'){if(p===me&&(p.vx||p.vy)){dbg.stSkip++;continue;}if(p!==me){applyRemote(p,num(ev[2],p.x),num(ev[3],p.y),0,0,num(ev[4],K));}else{snapTo(p,num(ev[2],p.x),num(ev[3],p.y));p.vx=p.vy=0;}if(p===me&&p.out&&p.flicks===2)toast(T('마지막 한 번!'),'#FFE08A');}
     else if(k==='tv'){addVertexAt(p,num(ev[2],p.x),num(ev[3],p.y));}
     else if(k==='ex'){p.out=true;p.trail=[{x:num(ev[2],p.x),y:num(ev[3],p.y)}];}
     else if(k==='in'){p.out=false;p.trail=[];p.flicks=0;}
     else if(k==='cap'){const g=num(ev[2],0);if(p===me&&g>0){toast('+'+fmtPct(g/TOTAL*100),me.color);sfx('capture');}}
     else if(k==='die'){const by=byId[ev[2]|0]||null,reason=ev[3]?'enclosed':'cut';p.alive=false;p.trail=[];p.out=false;p.vx=p.vy=0;for(let i=0;i<TOTAL;i++)if(owner[i]===p.id)owner[i]=0;p.cells=0;terrDirty=true;
       if(by&&by!==p)by.kills++;
-      if(p===me){showDead(by,reason);sfx('cut');}else if(by===me){toast(p.name+' 잘랐다!',me.color);sfx('cut');}}
-    else if(k==='fail'){p.ox=p.oy=0;p.buf=[];p.x=p.px=num(ev[2],p.x);p.y=p.py=num(ev[3],p.y);if(p!==me)applyRemote(p,p.x,p.y,0,0,num(ev[4],K));p.vx=p.vy=0;p.trail=[];p.out=false;p.flicks=0;if(p===me){toast('3번 안에 못 돌아왔다','#FFD7C2');sfx('fail');}}
+      if(p===me){showDead(by,reason);sfx('cut');}else if(by===me){toast(TF('{name} 잘랐다!',{name:p.name}),me.color);sfx('cut');}}
+    else if(k==='fail'){p.ox=p.oy=0;p.buf=[];p.x=p.px=num(ev[2],p.x);p.y=p.py=num(ev[3],p.y);if(p!==me)applyRemote(p,p.x,p.y,0,0,num(ev[4],K));p.vx=p.vy=0;p.trail=[];p.out=false;p.flicks=0;if(p===me){toast(T('3번 안에 못 돌아왔다'),'#FFD7C2');sfx('fail');}}
   }
   if(Array.isArray(u.c))for(const c of u.c){if(Array.isArray(c))applyRuns(c[0]|0,typeof c[1]==='string'?c[1]:'');}
   if(Array.isArray(u.s))for(const s of u.s){if(!Array.isArray(s))continue;const p=byId[s[0]|0];if(!p)continue;
@@ -1279,13 +1498,13 @@ function newOfflineGame(name){
   spawn(me);me.kills=0;me.peak=0;$('myName').textContent=me.name;
   track('round_start',{mode:'io',obstacles:obstLevel(),bots:NBOTS_OFFLINE});
   cam.x=me.x;cam.y=me.y;
-  netText.textContent='오프라인';netEl.classList.remove('on');
+  netText.textContent=T('오프라인');netEl.classList.remove('on');
   updateHud();running=true;startEl.hidden=true;
 }
 async function startOnlineGame(name){
   wantOnline=true;online=true;resetWorld();
   me=mkPlayer(name,HUMAN_COLORS[Math.floor(Math.random()*HUMAN_COLORS.length)],false);
-  lobbyEl.textContent='방에 들어가는 중…';netText.textContent='온라인';
+  lobbyEl.textContent=T('방에 들어가는 중…');netText.textContent=T('온라인');
   if(ws&&ws.readyState===1)sendJoin();
   else{const ok=await connectWs(wsUrlUsed||wsUrl());if(!ok){newOfflineGame(name);return;}}
   setTimeout(()=>{if(!running){wantOnline=false;if(ws){try{ws.close();}catch(e){}ws=null;}newOfflineGame(name);}},8000);
@@ -1296,7 +1515,7 @@ async function probe(){
   const u=wsUrl();let ok=false;
   if(u&&'WebSocket' in window){
     for(let i=0;i<8&&!ok&&!running;i++){
-      lobbyEl.textContent=i?'서버 연결 중… 잠들어 있으면 1분쯤 걸려요 ('+(i+1)+'/8)':'서버 연결 중…';
+      lobbyEl.textContent=i?TF('서버 연결 중… 잠들어 있으면 1분쯤 걸려요 ({i}/8)',{i:i+1}):T('서버 연결 중…');
       ok=await connectWs(u,i?6000:4000);
       if(!ok){if(ws){try{ws.close();}catch(e){}ws=null;}await new Promise(r=>setTimeout(r,1500));}
     }
@@ -1304,20 +1523,20 @@ async function probe(){
   probing=false;
   if(running)return ok;
   netInfo=ok?{kind:'ws'}:{kind:'none'};track('online_probe',{ok:ok?1:0});
-  lobbyEl.textContent=ok?'온라인 · 서버 연결됨':'서버에 연결할 수 없어요';$('netStat').textContent=lobbyEl.textContent;
+  lobbyEl.textContent=ok?T('온라인 · 서버 연결됨'):T('서버에 연결할 수 없어요');$('netStat').textContent=lobbyEl.textContent;
   return ok;
 }
 function setupButtons(){
   if(!ONLINE_OK){
-    startBtn.textContent='바로 시작';altBtn.hidden=true;$('netRow').hidden=true;lobbyEl.textContent='';
+    startBtn.textContent=T('바로 시작');altBtn.hidden=true;$('netRow').hidden=true;lobbyEl.textContent='';
     prepOffline();startBtn.disabled=false;return;
   }
   if(PREFER_BOTS){
-    startBtn.textContent='바로 시작';altBtn.textContent='친구와 온라인';
+    startBtn.textContent=T('바로 시작');altBtn.textContent=T('친구와 온라인');
     lobbyEl.textContent='';
     prepOffline();
   }else{
-    startBtn.textContent='온라인 시작';altBtn.textContent='혼자 하기';
+    startBtn.textContent=T('온라인 시작');altBtn.textContent=T('혼자 하기');
     probe().then(ok=>{if(!ok)prepOffline();});
   }
   startBtn.disabled=false;
@@ -1326,7 +1545,7 @@ function setupButtons(){
 function saveName(){myName=cleanName(nameIn.value);nameIn.value=myName;try{localStorage.setItem('gusul-name',myName);}catch(e){}}
 async function goOnline(name){
   startBtn.disabled=true;altBtn.disabled=true;
-  if(!(ws&&ws.readyState===1)){const ok=await probe();if(!ok){toast('서버에 연결할 수 없어 혼자 모드로 시작해요','#FFD7C2');startOffline(name);startBtn.disabled=false;altBtn.disabled=false;return;}}
+  if(!(ws&&ws.readyState===1)){const ok=await probe();if(!ok){toast(T('서버에 연결할 수 없어 혼자 모드로 시작해요'),'#FFD7C2');startOffline(name);startBtn.disabled=false;altBtn.disabled=false;return;}}
   startOnlineGame(name);
 }
 startBtn.addEventListener('click',()=>{
@@ -1362,7 +1581,7 @@ function goHome(){
 function askQuit(){
   if(!$('quit').hidden)return;
   track('quit_ask',{mode:mode});
-  $('quitWhy').textContent=mode==='daily'?'오늘의 도전은 이번 판을 다시 할 수 없어요.':'지금 하던 판은 사라집니다.';
+  $('quitWhy').textContent=mode==='daily'?T('오늘의 도전은 이번 판을 다시 할 수 없어요.'):T('지금 하던 판은 사라집니다.');
   $('quit').hidden=false;sfx('hit');
 }
 $('exitBtn').addEventListener('click',()=>{askQuit();});
@@ -1427,8 +1646,8 @@ const meta=(()=>{
     {id:'games50',text:'50판 플레이',done:s=>s.games>=50},
   ];
   let achDone={};try{achDone=JSON.parse(localStorage.getItem('gusul-ach')||'{}');}catch(e){}
-  function checkAch(){for(const a of ACH){if(!achDone[a.id]&&a.done(stats)){achDone[a.id]=1;try{localStorage.setItem('gusul-ach',JSON.stringify(achDone));}catch(e){}toast('업적 달성 · '+a.text,'#FFE08A');sfx('capture');skins.refresh();}}}
-  function checkDaily(){const ms=daily();const all=ms.every(m=>(stats.d[m.stat]||0)>=m.target);if(all&&!stats.d.cleared){stats.d.cleared=1;stats.dailyClears++;save();toast('오늘의 미션 완료!','#FFE08A');track('mission_clear',{total:stats.dailyClears});}}
+  function checkAch(){for(const a of ACH){if(!achDone[a.id]&&a.done(stats)){achDone[a.id]=1;try{localStorage.setItem('gusul-ach',JSON.stringify(achDone));}catch(e){}toast(TF('업적 달성 · {t}',{t:T(a.text)}),'#FFE08A');sfx('capture');skins.refresh();}}}
+  function checkDaily(){const ms=daily();const all=ms.every(m=>(stats.d[m.stat]||0)>=m.target);if(all&&!stats.d.cleared){stats.d.cleared=1;stats.dailyClears++;save();toast(T('오늘의 미션 완료!'),'#FFE08A');track('mission_clear',{total:stats.dailyClears});}}
   const bump=(k,v)=>{stats.d[k]=(stats.d[k]||0)+(v==null?1:v);};
   return {
     get stats(){return stats;},ACH,achDone,daily,
@@ -1470,8 +1689,8 @@ const skins=(()=>{
     const grid=$('skinGrid');if(!grid)return;
     grid.replaceChildren(...LIST.map(s=>{const b=document.createElement('button');b.className='skin'+(s.id===cur?' on':'')+(s.unlock()?'':' lock');b.type='button';
       const cv2=document.createElement('canvas');cv2.width=72;cv2.height=72;const g2=cv2.getContext('2d');g2.scale(72/(SPR_R*2),72/(SPR_R*2));draw(g2,SPR_R,SPR_R,s.id,HUMAN_COLORS[0]);
-      const nm=document.createElement('span');nm.className='sn';nm.textContent=s.name;const hw=document.createElement('span');hw.className='sh';hw.textContent=s.unlock()?(s.id===cur?'사용 중':'선택'):'🔒 '+s.how;
-      b.append(cv2,nm,hw);b.addEventListener('click',()=>{if(!s.unlock()){toast(s.how+' 하면 열려요','#FFD7C2');return;}cur=s.id;try{localStorage.setItem('gusul-skin',cur);}catch(e){}sfx('hit');track('skin_select',{id:cur});render();});return b;}));
+      const nm=document.createElement('span');nm.className='sn';nm.textContent=T(s.name);const hw=document.createElement('span');hw.className='sh';hw.textContent=s.unlock()?(s.id===cur?T('사용 중'):T('선택')):'🔒 '+T(s.how);
+      b.append(cv2,nm,hw);b.addEventListener('click',()=>{if(!s.unlock()){toast(TF('{how} 하면 열려요',{how:T(s.how)}),'#FFD7C2');return;}cur=s.id;try{localStorage.setItem('gusul-skin',cur);}catch(e){}sfx('hit');track('skin_select',{id:cur});render();});return b;}));
   }
   return {LIST,current:()=>cur,sprite,render,refresh:render};
 })();
@@ -1481,11 +1700,11 @@ function skinSprite(id,color){return skins.sprite(id,color);}
 function renderMissions(){
   const ms=meta.daily();const ul=$('dailyList');
   ul.replaceChildren(...ms.map(m=>{const li=document.createElement('li');const p=meta.progress(m),done=p>=m.target;li.className=done?'done':'';
-    const tx=document.createElement('span');tx.className='mt';tx.textContent=m.text;const pr=document.createElement('span');pr.className='mp';pr.textContent=done?'완료':(Math.round(p)+' / '+m.target);
+    const tx=document.createElement('span');tx.className='mt';tx.textContent=T(m.text);const pr=document.createElement('span');pr.className='mp';pr.textContent=done?T('완료'):(Math.round(p)+' / '+m.target);
     const bar=document.createElement('i');bar.style.width=Math.min(100,p/m.target*100)+'%';li.append(tx,pr,bar);return li;}));
   const al=$('achList');const s=meta.stats;
-  al.replaceChildren(...meta.ACH.map(a=>{const li=document.createElement('li');const d=!!meta.achDone[a.id]||a.done(s);li.className=d?'done':'';li.textContent=(d?'✓ ':'○ ')+a.text;return li;}));
-  $('statLine').textContent='통산 '+s.games+'판 · 1등 '+s.wins+'번 · 자르기 '+s.kills+'번 · 최대 한 방 '+fmtPct(s.maxCap);
+  al.replaceChildren(...meta.ACH.map(a=>{const li=document.createElement('li');const d=!!meta.achDone[a.id]||a.done(s);li.className=d?'done':'';li.textContent=(d?'✓ ':'○ ')+T(a.text);return li;}));
+  $('statLine').textContent=TF('통산 {g}판 · 1등 {w}번 · 자르기 {k}번 · 최대 한 방 {c}',{g:s.games,w:s.wins,k:s.kills,c:fmtPct(s.maxCap)});
 }
 
 /* ---------- 광고(자리) + 부활 ---------- */
@@ -1496,13 +1715,13 @@ const ads={
 };
 function showRevive(){
   running=false;aim=null;
-  $('reviveWhy').textContent='탈락했어요. 이번 판에 한 번 더 살아날 수 있어요.';
+  $('reviveWhy').textContent=T('탈락했어요. 이번 판에 한 번 더 살아날 수 있어요.');
   $('revive').hidden=false;
 }
 $('reviveYes').addEventListener('click',async()=>{
   sfx('flick');$('revive').hidden=true;reviveUsed=true;track('revive_use',{mode:mode,sec:Math.round(SURV.time-roundT)});
   const ok=await ads.showReward();   // 나중에 실제 보상형 광고로 교체 (지금은 바로 true)
-  if(ok){elimOrder=elimOrder.filter(p=>p!==me);spawn(me);me.flicks=0;spawnT=3;toast('부활!','#FFE08A');sfx('capture');running=true;}
+  if(ok){elimOrder=elimOrder.filter(p=>p!==me);spawn(me);me.flicks=0;spawnT=3;toast(T('부활!'),'#FFE08A');sfx('capture');running=true;}
   else{running=true;endRound();}
 });
 $('reviveNo').addEventListener('click',()=>{sfx('flick');$('revive').hidden=true;running=true;endRound();});
@@ -1510,20 +1729,20 @@ $('reviveNo').addEventListener('click',()=>{sfx('flick');$('revive').hidden=true
 /* ---------- 튜토리얼 ---------- */
 const tutorial=(()=>{
   let step=0,timer=0,botp=null;
-  const TEXT=['구슬을 당겼다 놓아보세요','밖으로 나갔다가, 3번 안에 파란 땅으로 돌아와 보세요','저 초록 구슬이 밖에 나가 있을 때 길을 지나가면 잘려요. 끊어보세요!','잘했어요! 이제 진짜 판으로'];
+  const TEXT=['구슬을 당겼다 놓아보세요','밖으로 나갔다가, 3번 안에 파란 땅으로 돌아와 보세요','저 초록 구슬이 밖에 나가 있을 때 길을 지나가면 잘려요. 끊어보세요!','잘했어요! 이제 진짜 판으로'].map(T);
   function show(){const el=$('tut');el.hidden=false;$('tutText').textContent=TEXT[step];$('tutStep').textContent=(Math.min(step,2)+1)+' / 3';}
   function start(name){
     restoreRandom();wantOnline=false;online=false;mode='tutorial';roundOver=false;elimOrder=[];step=0;timer=0;botp=null;
     setGrid(40,40);resetWorld();genObstacles(0);
     me=mkPlayer(name,HUMAN_COLORS[0],false);addPlayer(me);placeSpawn(me,20,20);me.kills=0;me.peak=0;$('myName').textContent=me.name;
     cam.x=me.x;cam.y=me.y;spawnT=0;
-    netText.textContent='튜토리얼';netEl.classList.remove('on');
+    netText.textContent=T('튜토리얼');netEl.classList.remove('on');
     updateHud();running=true;startEl.hidden=true;$('result').hidden=true;deadEl.hidden=true;hintEl.style.opacity=0;pushGameState();
     show();
   }
-  function spawnBot(){botp=mkPlayer('연습봇','#22C55E',true);botp.passive=true;addPlayer(botp);placeSpawn(botp,20,9);botp.thinkT=.5;}
+  function spawnBot(){botp=mkPlayer(T('연습봇'),'#22C55E',true);botp.passive=true;addPlayer(botp);placeSpawn(botp,20,9);botp.thinkT=.5;}
   function next(){step++;if(step===2)spawnBot();if(step>=3){show();setTimeout(finish,1600);return;}show();sfx('capture');}
-  function finish(){$('tut').hidden=true;track('tutorial_done',{step:step});meta.finishTutorial();running=false;mode='io';startEl.hidden=false;startBtn.disabled=false;altBtn.disabled=false;refreshStartCard();toast('튜토리얼 완료','#FFE08A');}
+  function finish(){$('tut').hidden=true;track('tutorial_done',{step:step});meta.finishTutorial();running=false;mode='io';startEl.hidden=false;startBtn.disabled=false;altBtn.disabled=false;refreshStartCard();toast(T('튜토리얼 완료'),'#FFE08A');}
   return {
     start,
     onFlick(){if(mode!=='tutorial')return;if(step===0)next();},
@@ -1557,21 +1776,25 @@ $('skinsClose').addEventListener('click',()=>{$('skinsPanel').hidden=true;});
 $('tutBtn').addEventListener('click',()=>{sfx('flick');saveName();$('rules').hidden=true;tutorial.start(myName);});
 $('rulesBtn').addEventListener('click',()=>{sfx('hit');$('rules').hidden=false;});
 $('rulesClose').addEventListener('click',()=>{$('rules').hidden=true;});
-$('settingsBtn').addEventListener('click',()=>{sfx('hit');$('netStat').textContent=PREFER_BOTS?'"친구와 온라인"을 누르면 접속':(lobbyEl.textContent||'-');if(!ONLINE_OK)$('netRow').hidden=true;$('settings').hidden=false;setTimeout(()=>nameIn.focus(),50);});
+$('settingsBtn').addEventListener('click',()=>{sfx('hit');$('netStat').textContent=PREFER_BOTS?T('"친구와 온라인"을 누르면 접속'):(lobbyEl.textContent||'-');if(!ONLINE_OK)$('netRow').hidden=true;$('settings').hidden=false;setTimeout(()=>nameIn.focus(),50);});
 $('whoBtn').addEventListener('click',()=>{$('settingsBtn').click();});
 $('settingsClose').addEventListener('click',()=>{saveName();$('settings').hidden=true;sfx('hit');refreshStartCard();});
-function applySound(){$('soundTg').textContent=muted?'꺼짐':'켜짐';$('soundTg').classList.toggle('off',muted);}
+function applyLang(){$('langTg').textContent=LANG==='en'?'English':'한국어';}
+applyLang();
+$('langTg').addEventListener('click',()=>{sfx('hit');const nx=LANG==='en'?'ko':'en';try{localStorage.setItem('gusul-lang',nx);}catch(e){}
+  const u=new URL(location.href);u.searchParams.delete('lang');location.replace(u.toString());});
+function applySound(){$('soundTg').textContent=muted?T('꺼짐'):T('켜짐');$('soundTg').classList.toggle('off',muted);}
 $('soundTg').addEventListener('click',()=>{muted=!muted;try{localStorage.setItem('gusul-mute',muted?'1':'0');}catch(e){}applySound();sfx('hit');});
 applySound();
 function refreshStartCard(){
   const s=meta.stats,ds=dailyStore();let wins=0;try{wins=parseInt(localStorage.getItem('gusul-wins'))||0;}catch(e){}
   $('whoName').textContent=myName;
-  $('whoStat').textContent='1등 '+wins+'번 · '+s.games+'판 · '+(skins.LIST.find(x=>x.id===skins.current())||{}).name;
+  $('whoStat').textContent=TF('1등 {w}번 · {g}판 · {s}',{w:wins,g:s.games,s:T((skins.LIST.find(x=>x.id===skins.current())||{}).name||'')});
   {const c=$('whoMarble'),g2=c.getContext('2d');g2.clearRect(0,0,c.width,c.height);const sp=skins.sprite(skins.current(),HUMAN_COLORS[0]);g2.drawImage(sp,0,0,c.width,c.height);}
-  $('mbSurv').textContent=s.survGames?'서바이벌 '+s.survGames+'판':'';
-  $('mbDaily').textContent=ds.best?'오늘 최고 '+ds.best+'점':(ds.plays?'오늘 '+ds.plays+'번 도전':'');
-  $('mbClassic').textContent=$('classicOpp').value==='friend'?'친구와 번갈아':'';
-  $('mbIo').textContent=s.maxCap?'한 번에 최대 '+fmtPct(s.maxCap):'';
+  $('mbSurv').textContent=s.survGames?TF('서바이벌 {n}판',{n:s.survGames}):'';
+  $('mbDaily').textContent=ds.best?TF('오늘 최고 {b}점',{b:ds.best}):(ds.plays?TF('오늘 {n}번 도전',{n:ds.plays}):'');
+  $('mbClassic').textContent=$('classicOpp').value==='friend'?T('친구와 번갈아'):'';
+  $('mbIo').textContent=s.maxCap?TF('한 번에 최대 {c}',{c:fmtPct(s.maxCap)}):'';
   const done=meta.daily().filter(m=>meta.progress(m)>=m.target).length;const b=$('missionBadge');b.hidden=false;b.textContent=done+'/3';b.classList.toggle('ok',done>=3);
   $('tutBtn').hidden=!s.tutorialDone;
 }
