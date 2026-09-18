@@ -272,7 +272,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="srow" id="acctRow" hidden><span class="sl">계정</span><button type="button" class="tg" id="acctBtn">구글 연결</button></div>
     <div class="acct" id="acctInfo" hidden><span id="acctText"></span> · <a href="#" id="acctDel">계정 삭제</a></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
-    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.2</span></p>
+    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.3</span></p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
   </div>
 </div>
@@ -1773,7 +1773,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.2';
+const APP_VER='0.4.3';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
