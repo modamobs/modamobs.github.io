@@ -279,6 +279,12 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="btnrow"><button class="btn" id="quitYes">나가기</button><button class="btn alt" id="quitNo">계속하기</button></div>
   </div>
 </div>
+<div id="exitAsk" class="overlay" hidden>
+  <div class="card">
+    <h2>게임을 종료할까요?</h2>
+    <div class="btnrow"><button class="btn" id="exitYes">종료</button><button class="btn alt" id="exitNo">계속하기</button></div>
+  </div>
+</div>
 
 <div id="revive" class="overlay" hidden>
   <div class="card">
@@ -474,6 +480,8 @@ const EN={
   '탱탱볼':'Bouncy ball',
   '벽과 돌에 부딪혀도 덜 죽는다':'Walls and rocks slow you down less',
   '메인으로 나갈까요?':'Leave to the menu?',
+  '게임을 종료할까요?':'Quit the game?',
+  '종료':'Quit',
   '지금 하던 판은 사라집니다.':'This round will be gone.',
   '오늘의 도전은 이번 판을 다시 할 수 없어요.':'You cannot replay today\'s challenge.',
   '나가기':'Leave',
@@ -1634,7 +1642,7 @@ function goHome(){
   const wasPushed=histGuard;histGuard=false;
   running=false;aim=null;wantOnline=false;paused=false;$('boost').hidden=true;
   if(online){online=false;if(ws){try{ws.close();}catch(e){}ws=null;}netEl.classList.remove('on');}
-  for(const id of ['result','dead','revive','pass','quit','turn','missions','skinsPanel','rules','settings'])$(id).hidden=true;
+  for(const id of ['result','dead','revive','pass','quit','exitAsk','turn','missions','skinsPanel','rules','settings'])$(id).hidden=true;
   startEl.hidden=false;startBtn.disabled=false;altBtn.disabled=false;
   refreshStartCard();
   if(wasPushed){try{history.back();}catch(e){}} // 쌓아둔 히스토리 한 칸 반납 → 메인에서 뒤로 가기 = 앱 종료
@@ -1649,7 +1657,7 @@ $('exitBtn').addEventListener('click',()=>{askQuit();});
 $('quitNo').addEventListener('click',()=>{$('quit').hidden=true;sfx('hit');pushGameState();});
 $('quitYes').addEventListener('click',()=>{sfx('flick');track('quit_to_main',{mode:mode});goHome();});
 
-/* 안드로이드 뒤로 가기: 판이 돌아가는 중이면 확인창, 메인에서는 앱 종료 */
+/* 브라우저 뒤로 가기: 판이 돌아가는 중이면 확인창. 앱은 아래 onBack(캐패시터 App 플러그인)이 따로 받는다. */
 let histGuard=false;
 function pushGameState(){if(histGuard)return;try{history.pushState({g:1},'');histGuard=true;}catch(e){}}
 function closeTopOverlay(){
@@ -1665,6 +1673,21 @@ window.addEventListener('popstate',()=>{
   if(!$('result').hidden||!deadEl.hidden){goHome();return;}
   askQuit();pushGameState();
 });
+/* 앱: 캐패시터 App 플러그인이 뒤로 가기를 알려 준다 (리스너가 있으면 캐패시터는 아무것도 안 한다). */
+const CapApp=(()=>{try{const C=window.Capacitor;if(!C||!C.isNativePlatform||!C.isNativePlatform())return null;
+  return (C.Plugins&&C.Plugins.App)||(C.registerPlugin?C.registerPlugin('App'):null);}catch(e){return null;}})();
+function onBack(){
+  if(!$('exitAsk').hidden){$('exitAsk').hidden=true;sfx('hit');return;}
+  if(closeTopOverlay()){sfx('hit');return;}
+  if(!startEl.hidden){$('exitAsk').hidden=false;sfx('hit');track('exit_ask',{});return;}
+  if(!$('boost').hidden)return;                       // 강화 카드는 반드시 하나 고른다
+  if(!$('revive').hidden){$('reviveNo').click();return;}
+  if(!$('result').hidden||!deadEl.hidden){sfx('flick');goHome();return;}
+  askQuit();
+}
+if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack());}catch(e){}}
+$('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
+$('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 document.addEventListener('visibilitychange',()=>{if(ONLINE_OK&&!document.hidden&&!running&&!PREFER_BOTS&&!(ws&&ws.readyState===1))probe();});
 setupButtons();
 againBtn.addEventListener('click',()=>{
