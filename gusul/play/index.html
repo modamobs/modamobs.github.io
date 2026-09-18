@@ -167,6 +167,18 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
 .srow .tg{font-family:'Jua',sans-serif;font-size:14px;background:var(--ink);color:var(--chalk);border:0;border-radius:999px;padding:6px 14px;cursor:pointer;min-width:74px}
 .srow .tg.off{background:#c9b48f;color:var(--ink)}
 .fine{font-size:11px;color:#8a6a3d;margin-top:12px;line-height:1.6}
+.tabbar.five{grid-template-columns:repeat(5,1fr)}
+.acct{font-size:12px;color:#8a6a3d;margin:6px 2px 0;line-height:1.5}
+.acct a{color:#a0522d}
+.srow .tg:disabled{opacity:.55;cursor:default}
+.rtabs{display:flex;gap:6px;justify-content:center;margin-top:10px}
+.rtab{font-family:'Jua',sans-serif;font-size:14px;border:2px solid #d9c9a6;background:#fff;color:#6d5535;border-radius:999px;padding:6px 14px;cursor:pointer}
+.rtab.on{background:var(--ink);border-color:var(--ink);color:var(--chalk)}
+.rlist{max-height:48vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.rlist li{grid-template-columns:28px 18px 1fr auto}
+.rlist canvas.c{width:18px;height:18px;border-radius:0}
+.rlist .empty{display:block;text-align:center;color:#8a6a3d;background:transparent}
+.rmine{font-family:'Jua',sans-serif;color:#6d5535;margin-top:10px;min-height:1.4em}
 .fine a{color:#6d5535}
 @media (max-height:760px){
   #start .wrap{gap:8px;padding-top:calc(env(safe-area-inset-top) + 12px)}
@@ -224,6 +236,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
       <button type="button" class="tab" id="missionBtn"><span class="ti" data-ic="missions"></span>미션<span class="badge" id="missionBadge" hidden>0/3</span></button>
       <button type="button" class="tab" id="skinBtn"><span class="ti" data-ic="marbles"></span>구슬</button>
       <button type="button" class="tab" id="rulesBtn"><span class="ti" data-ic="rules"></span>규칙</button>
+      <button type="button" class="tab" id="rankBtn" hidden><span class="ti" data-ic="trophy"></span>순위</button>
       <button type="button" class="tab" id="settingsBtn"><span class="ti" data-ic="settings"></span>설정</button>
     </div>
   </div>
@@ -250,8 +263,10 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="srow"><span class="sl">이름</span><input id="nameIn" maxlength="10" autocomplete="off" spellcheck="false"></div>
     <div class="srow"><span class="sl">소리</span><button type="button" class="tg" id="soundTg">켜짐</button></div>
     <div class="srow"><span class="sl">언어</span><button type="button" class="tg" id="langTg">한국어</button></div>
+    <div class="srow" id="acctRow" hidden><span class="sl">계정</span><button type="button" class="tg" id="acctBtn">구글 연결</button></div>
+    <div class="acct" id="acctInfo" hidden><span id="acctText"></span> · <a href="#" id="acctDel">계정 삭제</a></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
-    <p class="fine">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.<br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.3.2</span></p>
+    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.0</span></p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
   </div>
 </div>
@@ -277,6 +292,22 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <h2>메인으로 나갈까요?</h2>
     <p id="quitWhy">지금 하던 판은 사라집니다.</p>
     <div class="btnrow"><button class="btn" id="quitYes">나가기</button><button class="btn alt" id="quitNo">계속하기</button></div>
+  </div>
+</div>
+<div id="rankPanel" class="overlay" hidden>
+  <div class="card">
+    <h2>순위표</h2>
+    <div class="rtabs"><button type="button" class="rtab on" data-b="daily">오늘의 도전</button><button type="button" class="rtab" data-b="wins">통산 1등</button></div>
+    <ol id="rankList" class="reslist rlist"></ol>
+    <p id="rankMine" class="rmine"></p>
+    <div class="btnrow"><button class="btn" id="rankClose">닫기</button></div>
+  </div>
+</div>
+<div id="delAsk" class="overlay" hidden>
+  <div class="card">
+    <h2>계정을 지울까요?</h2>
+    <p>서버에 올린 기록과 순위표 기록, 구글 연결이 지워져요. 이 폰에 있는 기록은 남아요.</p>
+    <div class="btnrow"><button class="btn" id="delYes">지우기</button><button class="btn alt" id="delNo">취소</button></div>
   </div>
 </div>
 <div id="exitAsk" class="overlay" hidden>
@@ -481,6 +512,31 @@ const EN={
   '벽과 돌에 부딪혀도 덜 죽는다':'Walls and rocks slow you down less',
   '메인으로 나갈까요?':'Leave to the menu?',
   '게임을 종료할까요?':'Quit the game?',
+  '순위표':'Leaderboard',
+  '기록은 이 기기와 서버(순위표·백업)에 저장돼요. 채팅 없음. 익명 이용 통계를 보냅니다.':'Records are stored on this device and on our server (leaderboards, backup). No chat. Anonymous usage stats are sent.',
+  '통산 1등':'All-time wins',
+  '불러오는 중…':'Loading…',
+  '아직 기록이 없어요':'No records yet',
+  '순위표를 불러오지 못했어요':'Could not load the leaderboard',
+  '내 순위 {r}위 · {s}':'You: #{r} · {s}',
+  '아직 올린 기록이 없어요':'You have no record here yet',
+  '{n}번':'{n} wins',
+  '계정':'Account',
+  '구글 연결':'Link Google',
+  '연결 중…':'Linking…',
+  '연결됨':'Linked',
+  '계정 삭제':'Delete account',
+  '계정을 지울까요?':'Delete your account?',
+  '서버에 올린 기록과 순위표 기록, 구글 연결이 지워져요. 이 폰에 있는 기록은 남아요.':'Your cloud save, leaderboard entries and Google link will be deleted. Records on this phone stay.',
+  '지우기':'Delete',
+  '취소':'Cancel',
+  '계정을 지웠어요':'Account deleted',
+  '지우지 못했어요':'Could not delete',
+  '구글 계정을 연결했어요':'Google account linked',
+  '다른 폰의 기록과 합쳤어요':'Merged with your other device',
+  '연결하지 못했어요':'Could not link',
+  '기록을 구글 계정에 백업해요. 폰을 바꿔도 이어져요':'Back up to your Google account and keep your records on a new phone',
+  '{mail} 에 백업 중':'Backed up to {mail}',
   '종료':'Quit',
   '지금 하던 판은 사라집니다.':'This round will be gone.',
   '오늘의 도전은 이번 판을 다시 할 수 없어요.':'You cannot replay today\'s challenge.',
@@ -1642,7 +1698,7 @@ function goHome(){
   const wasPushed=histGuard;histGuard=false;
   running=false;aim=null;wantOnline=false;paused=false;$('boost').hidden=true;
   if(online){online=false;if(ws){try{ws.close();}catch(e){}ws=null;}netEl.classList.remove('on');}
-  for(const id of ['result','dead','revive','pass','quit','exitAsk','turn','missions','skinsPanel','rules','settings'])$(id).hidden=true;
+  for(const id of ['result','dead','revive','pass','quit','exitAsk','rankPanel','delAsk','turn','missions','skinsPanel','rules','settings'])$(id).hidden=true;
   startEl.hidden=false;startBtn.disabled=false;altBtn.disabled=false;
   refreshStartCard();
   if(wasPushed){try{history.back();}catch(e){}} // 쌓아둔 히스토리 한 칸 반납 → 메인에서 뒤로 가기 = 앱 종료
@@ -1661,7 +1717,7 @@ $('quitYes').addEventListener('click',()=>{sfx('flick');track('quit_to_main',{mo
 let histGuard=false;
 function pushGameState(){if(histGuard)return;try{history.pushState({g:1},'');histGuard=true;}catch(e){}}
 function closeTopOverlay(){
-  for(const id of ['quit','missions','skinsPanel','rules','settings']){const el=$(id);if(el&&!el.hidden){el.hidden=true;return true;}}
+  for(const id of ['delAsk','quit','rankPanel','missions','skinsPanel','rules','settings']){const el=$(id);if(el&&!el.hidden){el.hidden=true;return true;}}
   return false;
 }
 window.addEventListener('popstate',()=>{
@@ -1689,7 +1745,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.3.2';
+const APP_VER='0.4.0';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 document.addEventListener('visibilitychange',()=>{if(ONLINE_OK&&!document.hidden&&!running&&!PREFER_BOTS&&!(ws&&ws.readyState===1))probe();});
@@ -1743,7 +1799,7 @@ const meta=(()=>{
     onFlick(){},
     onCapture(pct){rollDay();if(pct>stats.maxCap){stats.maxCap=pct;}bump('land',pct);if(pct>=3)bump('bigCap');save();checkAch();checkDaily();},
     onKill(){rollDay();stats.kills++;bump('kills');save();checkAch();checkDaily();},
-    onRoundEnd(rank,n){rollDay();if(rank===1){stats.wins++;bump('wins');}if(rank<=3){stats.top3++;bump('top3');}save();checkAch();checkDaily();},
+    onRoundEnd(rank,n){rollDay();if(rank===1){stats.wins++;bump('wins');}if(rank<=3){stats.top3++;bump('top3');}save();checkAch();checkDaily();try{cloud.afterRound();}catch(e){}},
     finishTutorial(){stats.tutorialDone=1;save();},
     progress(m){return Math.min(m.target,stats.d[m.stat]||0);},
   };
@@ -1894,6 +1950,119 @@ resize();
 analytics.boot();
 track('app_open',{platform:analytics.platform,mode:selMode,tutorial_done:meta.stats.tutorialDone?1:0,games:meta.stats.games});
 if(document.fonts&&document.fonts.load){document.fonts.load('16px Jua').catch(()=>{});}
+/* ---------- 클라우드 (안드로이드 앱에서만: app/cloud/cloud.js → window.gusulCloud) ----------
+   익명으로 시작해 모두 순위표에 자리가 있고, 설정에서 구글 계정을 이으면 기록이 그 계정에 백업된다.
+   합치기는 늘기만 하는 값이라 '큰 쪽'으로 한다. 켤 때 합쳐서 이 폰 기록이 바뀌면 한 번 다시 연다. */
+const cloud=(()=>{
+  const C=window.gusulCloud&&window.gusulCloud.available?window.gusulCloud:null;
+  const KEYS=['gusul-stats','gusul-ach','gusul-best','gusul-wins','gusul-daily','gusul-name','gusul-skin'];
+  let user=null,busy=false,pushT=0,board='daily';
+  const J=(v,d)=>{try{return v==null?d:JSON.parse(v);}catch(e){return d;}};
+  const N=v=>parseFloat(v)||0;
+  const dayNum=k=>{const m=/(\d+)-(\d+)-(\d+)/.exec(k||'');return m?(+m[1])*10000+(+m[2])*100+(+m[3]):0;};
+  function snap(){const o={};for(const k of KEYS){try{const v=localStorage.getItem(k);if(v!=null&&v!=='')o[k]=v;}catch(e){}}return o;}
+  function mergeStats(a,b){
+    const o=Object.assign({},b,a);
+    for(const k of ['games','wins','kills','maxCap','top3','survGames','tutorialDone','dailyClears'])o[k]=Math.max(+a[k]||0,+b[k]||0);
+    if(dayNum(a.dayKey)===dayNum(b.dayKey)){o.dayKey=a.dayKey||b.dayKey;o.d={};for(const k of new Set([...Object.keys(a.d||{}),...Object.keys(b.d||{})]))o.d[k]=Math.max(+(a.d||{})[k]||0,+(b.d||{})[k]||0);}
+    else{const n=dayNum(a.dayKey)>dayNum(b.dayKey)?a:b;o.dayKey=n.dayKey;o.d=Object.assign({},n.d||{});}
+    return o;}
+  function mergeDaily(a,b){
+    const h={};for(const x of [...(a.hist||[]),...(b.hist||[])])if(x&&x.key)h[x.key]=Math.max(h[x.key]||0,x.best||0);
+    let o;
+    if(a.key===b.key)o={key:a.key,best:Math.max(a.best||0,b.best||0),plays:Math.max(a.plays||0,b.plays||0)};
+    else{const n=dayNum(a.key)>dayNum(b.key)?a:b,old=n===a?b:a;o={key:n.key,best:n.best||0,plays:n.plays||0};if(old.key)h[old.key]=Math.max(h[old.key]||0,old.best||0);}
+    delete h[o.key];
+    o.hist=Object.keys(h).sort((x,y)=>dayNum(x)-dayNum(y)).slice(-7).map(k=>({key:k,best:h[k]}));
+    return o;}
+  function merge(L,R){
+    const o={};
+    o['gusul-stats']=JSON.stringify(mergeStats(J(L['gusul-stats'],{}),J(R['gusul-stats'],{})));
+    o['gusul-ach']=JSON.stringify(Object.assign({},J(R['gusul-ach'],{}),J(L['gusul-ach'],{})));
+    o['gusul-best']=String(Math.max(N(L['gusul-best']),N(R['gusul-best'])));
+    o['gusul-wins']=String(Math.max(N(L['gusul-wins']),N(R['gusul-wins'])));
+    const dl=J(L['gusul-daily'],null),dr=J(R['gusul-daily'],null);
+    if(dl||dr)o['gusul-daily']=JSON.stringify(mergeDaily(dl||{},dr||{}));
+    if(L['gusul-name']||R['gusul-name'])o['gusul-name']=L['gusul-name']||R['gusul-name'];
+    if(L['gusul-skin']||R['gusul-skin'])o['gusul-skin']=L['gusul-skin']||R['gusul-skin'];
+    return o;}
+  const same=(a,b)=>KEYS.every(k=>(a[k]||'')===(b[k]||''));
+  /* 서버와 맞춘다. 이 폰 기록이 바뀌었으면 'changed'. */
+  async function sync(){
+    if(!C||!user||busy)return null;busy=true;
+    try{const L=snap(),R=await C.pullSave(),M=R?merge(L,R):L,changed=!same(L,M);
+      if(changed)for(const k in M){try{localStorage.setItem(k,M[k]);}catch(e){}}
+      if(!R||!same(R,M))await C.pushSave(M);
+      return changed?'changed':'same';}
+    catch(e){return null;}finally{busy=false;}}
+  function nameNow(){return (myName||'').trim().slice(0,12)||T('손님');}
+  async function submitAll(){
+    if(!C||!user)return;
+    const skin=skins.current();
+    try{if(meta.stats.wins>0)await C.submitScore('wins',meta.stats.wins|0,nameNow(),skin);}catch(e){}
+    try{const ds=dailyStore();if(ds.best>0)await C.submitScore('daily-'+ds.key,ds.best|0,nameNow(),skin);}catch(e){}}
+  /* 판이 끝나면 몇 초 뒤 한꺼번에: 합치기(다시 열지는 않는다 — 판 중일 수 있다) + 순위표 */
+  function soon(){if(!C||!user)return;clearTimeout(pushT);pushT=setTimeout(()=>{sync().then(()=>submitAll());},3000);}
+  function renderAcct(){
+    if(!C)return;
+    $('acctRow').hidden=false;$('acctInfo').hidden=false;
+    const b=$('acctBtn'),linked=!!(user&&!user.anon);
+    b.disabled=linked;b.textContent=linked?T('연결됨'):T('구글 연결');
+    $('acctText').textContent=linked?TF('{mail} 에 백업 중',{mail:user.email||'Google'}):T('기록을 구글 계정에 백업해요. 폰을 바꿔도 이어져요');}
+  async function link(){
+    if(!C)return;const b=$('acctBtn');b.disabled=true;b.textContent=T('연결 중…');
+    try{const r=await C.linkGoogle();user=r.user;track('cloud_link',{switched:r.switched?1:0});
+      const s=await sync();await submitAll();renderAcct();
+      if(s==='changed'){toast(T('다른 폰의 기록과 합쳤어요'),'#FFE08A');setTimeout(()=>location.reload(),900);}
+      else toast(T('구글 계정을 연결했어요'),'#FFE08A');}
+    catch(e){renderAcct();toast(T('연결하지 못했어요'),'#FFD7C2');}}
+  async function del(){
+    if(!C)return;$('delAsk').hidden=true;
+    try{await C.deleteAccount();track('cloud_delete',{});user=null;toast(T('계정을 지웠어요'),'#FFE08A');renderAcct();}
+    catch(e){toast(T('지우지 못했어요'),'#FFD7C2');}}
+  /* 순위표 */
+  const COLS=BOT_COLORS.concat(HUMAN_COLORS);
+  const colFor=uid=>{let h=0;for(const ch of String(uid))h=(h*31+ch.charCodeAt(0))|0;return COLS[Math.abs(h)%COLS.length];};
+  const fmt=v=>board==='wins'?TF('{n}번',{n:v}):TF('{s}점',{s:v});
+  const boardId=()=>board==='wins'?'wins':'daily-'+dailyKey();
+  function li(n,e,isMe){const el=document.createElement('li');if(isMe)el.className='me';
+    const a=document.createElement('span');a.className='n';a.textContent=n;
+    const cv=document.createElement('canvas');cv.className='c';cv.width=cv.height=40;cv.getContext('2d').drawImage(skins.sprite(e.skin||'glass',isMe?HUMAN_COLORS[0]:colFor(e.uid)),0,0,40,40);
+    const nm=document.createElement('span');nm.className='name';nm.textContent=e.name;
+    const sc=document.createElement('span');sc.className='p';sc.textContent=fmt(e.score);
+    el.append(a,cv,nm,sc);return el;}
+  function msg(t){const el=document.createElement('li');el.className='empty';el.textContent=t;return el;}
+  async function showBoard(b){
+    board=b;for(const t of document.querySelectorAll('.rtab'))t.classList.toggle('on',t.dataset.b===b);
+    const ol=$('rankList');ol.replaceChildren(msg(T('불러오는 중…')));$('rankMine').textContent='';
+    const id=boardId(),me=user&&user.uid;
+    try{const list=await C.top(id,50);if(board!==b)return;
+      ol.replaceChildren(...(list.length?list.map((e,i)=>li(i+1,e,e.uid===me)):[msg(T('아직 기록이 없어요'))]));
+      const m=await C.mine(id);if(board!==b)return;
+      $('rankMine').textContent=m?TF('내 순위 {r}위 · {s}',{r:m.rank,s:fmt(m.score)}):T('아직 올린 기록이 없어요');}
+    catch(e){ol.replaceChildren(msg(T('순위표를 불러오지 못했어요')));}}
+  function start(){
+    if(!C)return;
+    $('rankBtn').hidden=false;document.querySelector('.tabbar').classList.add('five');
+    $('fineText').textContent=T('기록은 이 기기와 서버(순위표·백업)에 저장돼요. 채팅 없음. 익명 이용 통계를 보냅니다.');
+    renderAcct();
+    C.init(u=>{user=u;renderAcct();}).then(u=>{if(!u)return;user=u;
+      sync().then(r=>{
+        let again=false;try{again=sessionStorage.getItem('gusul-synced')==='1';}catch(e){}
+        if(r==='changed'&&!again){try{sessionStorage.setItem('gusul-synced','1');}catch(e){}location.reload();return;}
+        submitAll();});});
+    $('acctBtn').addEventListener('click',()=>{sfx('hit');link();});
+    $('acctDel').addEventListener('click',ev=>{ev.preventDefault();sfx('hit');$('delAsk').hidden=false;});
+    $('delYes').addEventListener('click',()=>{sfx('flick');del();});
+    $('delNo').addEventListener('click',()=>{sfx('hit');$('delAsk').hidden=true;});
+    $('rankBtn').addEventListener('click',()=>{sfx('hit');$('rankPanel').hidden=false;track('rank_open',{});showBoard(board);});
+    $('rankClose').addEventListener('click',()=>{sfx('hit');$('rankPanel').hidden=true;});
+    for(const t of document.querySelectorAll('.rtab'))t.addEventListener('click',()=>{sfx('hit');showBoard(t.dataset.b);});
+    $('settingsClose').addEventListener('click',()=>soon());
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)soon();});}
+  return{on:!!C,start,afterRound:soon};
+})();
+cloud.start();
 loadArt().then(()=>{groundPat=null;refreshStartCard();if(!$('skinsPanel').hidden)skins.render();});
 requestAnimationFrame(loop);
 })();

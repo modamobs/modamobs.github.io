@@ -1,62 +1,109 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>개인정보처리방침 — 구슬 땅따먹기</title>
-<style>body{max-width:720px;margin:40px auto;padding:0 20px;font:16px/1.7 -apple-system,'Malgun Gothic',sans-serif;color:#3a2a1e;background:#fff6e3}h1{font-size:26px}h2{font-size:19px;margin-top:32px}a{color:#a0522d}</style>
+<style>body{max-width:720px;margin:40px auto;padding:0 20px;font:16px/1.7 -apple-system,'Malgun Gothic',sans-serif;color:#3a2a1e;background:#fff6e3}h1{font-size:26px}h2{font-size:19px;margin-top:32px}a{color:#a0522d}table{border-collapse:collapse;width:100%;font-size:15px}th,td{border:1px solid #e3d3b4;padding:6px 8px;text-align:left;vertical-align:top}</style>
 </head><body>
 <h1 id="top">개인정보처리방침 — 구슬 땅따먹기</h1>
-<p>최종 수정일: 2026-09-17 · <a href="#en">English</a></p>
+<p>최종 수정일: 2026-09-18 · <a href="#en">English</a></p>
+
 <h2>요약</h2>
-<p>앱은 로그인 없이 즐길 수 있고, 게임 기록은 기기 안에만 저장됩니다. 이름이나 연락처 같은 개인정보는 수집하지 않습니다. 다만 게임을 고치는 데 쓰려고 익명 이용 통계를 구글 애널리틱스로 보냅니다. 현재 버전에는 광고와 인앱 구매가 없으며, 게임을 하는 데 인터넷 연결이 필요하지 않습니다.</p>
-<h2>1. 앱이 저장하는 정보</h2>
-<p>다음 정보가 기기 내부 저장소에만 보관됩니다. 개발자를 포함한 누구도 외부에서 열람할 수 없으며, 앱을 삭제하면 함께 지워집니다.</p>
-<ul><li>화면에 표시할 이름(직접 입력한 별명)</li><li>고른 모드와 장애물 설정, 소리 켬·끔</li><li>통산 판 수, 1등 횟수, 최고 기록, 업적과 구슬 모양 해금</li><li>오늘의 도전 점수와 최근 기록</li></ul>
-<h2>2. 인터넷 연결</h2>
-<p>앱은 게임을 진행하기 위해 인터넷에 연결하지 않습니다. 봇과 겨루는 모든 모드가 기기 안에서 계산됩니다.</p>
-<p>웹 브라우저로 즐기는 버전(<a href="https://gusul-ttang-io.onrender.com">gusul-ttang-io.onrender.com</a>)에는 온라인 대전이 있습니다. 온라인 대전을 시작하면 화면에 표시할 이름과 구슬의 위치가 같은 방에 있는 다른 이용자에게 실시간으로 전달됩니다. 이 정보는 저장하지 않으며 방을 나가면 사라집니다. 서버 운영을 위해 접속 시각과 IP 주소가 호스팅 사업자의 서버 기록에 일시적으로 남을 수 있습니다.</p>
+<p>게임은 로그인 없이 즐길 수 있고, 게임을 하는 데 인터넷이 필요하지 않습니다. 광고와 인앱 구매는 없습니다. 게임을 고치는 데 쓰려고 익명 이용 통계를 보냅니다. 안드로이드 앱에는 순위표와 기록 백업이 있어서, 이를 위해 이름 없는 익명 계정이 자동으로 만들어지고 구글 계정을 선택해 연결할 수 있습니다. 설정에서 언제든 계정과 서버 기록을 지울 수 있습니다.</p>
+
+<h2>1. 기기 안에 저장하는 정보</h2>
+<p>다음 정보는 기기 내부 저장소에 보관되고, 앱을 삭제하면 함께 지워집니다.</p>
+<ul><li>화면에 표시할 이름(직접 입력한 별명)</li><li>고른 모드와 장애물 설정, 언어, 소리 켬·끔</li><li>통산 판 수, 1등 횟수, 최고 기록, 업적과 구슬 모양 해금</li><li>오늘의 도전 점수와 최근 기록</li></ul>
+
+<h2>2. 계정·순위표·기록 백업 (안드로이드 앱)</h2>
+<p>순위표와 백업을 위해 구글의 Firebase(인증, Cloud Firestore — 서울 리전)를 씁니다. 웹 브라우저 버전과 토스 미니앱에는 이 기능이 없습니다.</p>
+<table>
+<tr><th>언제</th><th>무엇이 서버에 저장되나</th><th>누가 보나</th></tr>
+<tr><td>앱을 처음 켤 때</td><td>이름 없는 익명 계정과 그 계정 번호. 이메일·전화번호 같은 정보는 들어가지 않습니다.</td><td>개발자(관리 목적)</td></tr>
+<tr><td>판이 끝날 때</td><td>순위표 기록: 게임 안 이름(별명), 고른 구슬 모양, 오늘의 도전 점수, 통산 1등 횟수</td><td><b>다른 이용자에게 공개</b>됩니다(순위표)</td></tr>
+<tr><td>판이 끝나거나 앱이 뒤로 갈 때</td><td>기록 백업: 1장에 적은 게임 기록(통계·업적·오늘의 도전 기록·이름·구슬)</td><td>본인 계정만</td></tr>
+<tr><td>설정에서 "구글 연결"을 누를 때</td><td>연결한 구글 계정의 이메일 주소와 계정 식별자(Firebase 인증에 보관). 백업이 그 구글 계정에 묶여 다른 폰에서도 이어집니다.</td><td>개발자(관리 목적)</td></tr>
+</table>
+<p>순위표에는 직접 정한 별명이 그대로 보이니 실명이나 연락처를 이름으로 쓰지 마세요.</p>
+
 <h2>3. 이용 통계 (구글 애널리틱스)</h2>
-<p>어떤 모드가 많이 쓰이는지, 어디서 그만두는지 보려고 구글 애널리틱스 4로 익명 이용 통계를 보냅니다. 보내는 것은 판을 시작·끝낸 기록, 고른 모드와 강화, 순위와 차지한 땅 넓이 같은 숫자입니다. 구글은 이 과정에서 기기 식별자와 IP 주소에서 추정한 대략적인 위치(국가 수준)를 함께 처리합니다.</p>
-<p><b>직접 입력한 이름(별명)은 보내지 않습니다.</b> 전화번호, 이메일, 연락처, 사진 등 어떤 개인정보도 보내지 않습니다. 수집한 통계는 구글 애널리틱스에 14개월간 보관된 뒤 삭제됩니다.</p>
-<h2>4. 광고</h2>
-<p>현재 버전에는 광고가 없습니다. 광고 식별자(Advertising ID)를 사용하지 않습니다. 나중에 광고를 넣게 되면 이 문서를 먼저 갱신하고 스토어의 데이터 보안 정보도 함께 고칩니다.</p>
-<h2>5. 인앱 구매</h2>
-<p>현재 버전에는 인앱 구매가 없습니다.</p>
+<p>어떤 모드가 많이 쓰이는지, 어디서 그만두는지 보려고 구글 애널리틱스 4로 익명 이용 통계를 보냅니다. 보내는 것은 판을 시작·끝낸 기록, 고른 모드와 강화, 순위와 차지한 땅 넓이 같은 숫자입니다. 구글은 이 과정에서 기기 식별자와 IP 주소에서 추정한 대략적인 위치(국가 수준)를 함께 처리합니다. <b>직접 입력한 이름(별명)은 이용 통계로 보내지 않습니다.</b> 통계는 구글 애널리틱스에 14개월간 보관된 뒤 삭제됩니다.</p>
+
+<h2>4. 인터넷 연결</h2>
+<p>게임 진행은 모두 기기 안에서 계산되고 인터넷이 필요하지 않습니다. 인터넷은 순위표·기록 백업(안드로이드 앱)과 이용 통계에만 씁니다.</p>
+<p>웹 브라우저로 즐기는 개발 서버 버전(gusul-ttang-io.onrender.com)에는 온라인 대전이 있습니다. 온라인 대전을 시작하면 화면에 표시할 이름과 구슬의 위치가 같은 방의 다른 이용자에게 실시간으로 전달되고, 저장하지 않으며 방을 나가면 사라집니다. 서버 운영을 위해 접속 시각과 IP 주소가 호스팅 사업자의 서버 기록에 일시적으로 남을 수 있습니다.</p>
+
+<h2>5. 광고와 인앱 구매</h2>
+<p>현재 버전에는 광고와 인앱 구매가 없고, 광고 식별자(Advertising ID)를 쓰지 않습니다. 나중에 넣게 되면 이 문서와 스토어의 데이터 보안 정보를 먼저 고칩니다.</p>
+
 <h2>6. 제3자 제공</h2>
-<p>개발자는 어떤 정보도 제3자에게 판매하지 않습니다. 위에 적은 이용 통계 처리를 위해 구글(Google LLC)을 이용하는 것 외에는 제공하지 않습니다.</p>
+<p>개발자는 어떤 정보도 판매하지 않습니다. 위의 순위표·백업(Google Firebase)과 이용 통계(Google Analytics) 처리를 위해 구글(Google LLC)을 이용하는 것 외에는 제공하지 않습니다. 순위표에 올린 별명·구슬·점수는 다른 이용자에게 보입니다.</p>
+
 <h2>7. 아동</h2>
 <p>앱은 만 13세 미만 아동을 주 대상으로 하지 않으며, 아동의 개인정보를 고의로 수집하지 않습니다.</p>
+
 <h2>8. 정보 삭제</h2>
-<p>앱을 삭제하면 기기에 저장된 모든 기록이 함께 삭제됩니다. 개발자 서버에는 아무 기록도 없으므로 별도의 삭제 요청은 필요하지 않습니다.</p>
+<ul>
+<li><b>앱에서 바로:</b> 설정 → 계정 삭제. 서버에 있는 기록 백업, 순위표 기록, 계정(구글 연결 포함)이 즉시 지워집니다. 기기 안의 기록은 남습니다.</li>
+<li><b>앱을 지운 뒤라면:</b> <a href="delete-account.html">계정 삭제 안내</a>를 보고 이메일로 요청하세요.</li>
+<li>앱만 삭제하면 기기 안 기록은 지워지지만 서버의 순위표·백업은 남습니다. 서버 기록까지 지우려면 먼저 계정 삭제를 하세요.</li>
+<li>서버 기록은 계정을 지울 때까지 보관합니다. 이용 통계는 3장처럼 14개월 뒤 자동으로 지워집니다.</li>
+</ul>
+
 <h2>9. 방침 변경</h2>
 <p>내용이 바뀌면 이 문서의 최종 수정일을 갱신합니다.</p>
+
 <h2>10. 문의</h2>
 <p>이메일: yamoda24@gmail.com</p>
 
 <hr style="margin:44px 0;border:0;border-top:1px solid #e3d3b4">
+
 <h1 id="en">Privacy Policy — Marble Land Grab</h1>
-<p>Last updated: 2026-09-17 · <a href="#top">한국어</a></p>
+<p>Last updated: 2026-09-18 · <a href="#top">한국어</a></p>
+
 <h2>Summary</h2>
-<p>You can play without an account, and your game records stay on your device. The developer does not collect personal information such as your name or contact details. The app does send anonymous usage statistics to Google Analytics so the game can be improved. This version has no ads and no in-app purchases, and the game does not need an internet connection.</p>
-<h2>1. What the app stores</h2>
-<p>The following is kept only in your device's storage. Nobody, including the developer, can read it from outside, and it is removed when you uninstall the app.</p>
+<p>You can play without an account and without an internet connection. There are no ads and no in-app purchases. The app sends anonymous usage statistics so the game can be improved. The Android app has leaderboards and record backup: for these, a nameless anonymous account is created automatically, and you may choose to link your Google account. You can delete your account and server records from Settings at any time.</p>
+
+<h2>1. Stored on your device</h2>
+<p>The following stays in your device's storage and is removed when you uninstall the app.</p>
 <ul><li>The display name you type</li><li>Your chosen mode, obstacle setting, language and sound on/off</li><li>Total rounds, wins, best record, achievements and unlocked marbles</li><li>Daily Challenge scores and recent results</li></ul>
-<h2>2. Internet connection</h2>
-<p>The app does not connect to the internet to play. Every mode against bots is computed on your device.</p>
-<p>The browser version at <a href="https://modamobs.github.io/play/?g=gusul">modamobs.github.io</a> also plays against bots only. A separate online mode exists on the development server; when it is used, your display name and marble position are relayed in real time to the other players in the same room. That information is not stored and disappears when you leave the room. Connection times and IP addresses may remain briefly in the hosting provider's server logs.</p>
+
+<h2>2. Account, leaderboards and backup (Android app)</h2>
+<p>Leaderboards and backup use Google Firebase (Authentication and Cloud Firestore, Seoul region). The browser version and the Toss mini app do not have these features.</p>
+<table>
+<tr><th>When</th><th>What is stored on the server</th><th>Who can see it</th></tr>
+<tr><td>First launch</td><td>A nameless anonymous account and its ID. No email or phone number.</td><td>The developer (for administration)</td></tr>
+<tr><td>End of a round</td><td>Leaderboard entry: your in-game display name, chosen marble, Daily Challenge score and all-time win count</td><td><b>Public to other players</b> (leaderboard)</td></tr>
+<tr><td>End of a round or when the app goes to the background</td><td>Record backup: the game records listed in section 1 (stats, achievements, Daily Challenge records, name, marble)</td><td>Only your account</td></tr>
+<tr><td>When you tap "Link Google" in Settings</td><td>The email address and account identifier of the Google account you link (kept in Firebase Authentication). Your backup is tied to that Google account so it follows you to another phone.</td><td>The developer (for administration)</td></tr>
+</table>
+<p>Your display name is shown as is on the leaderboard, so do not use your real name or contact details.</p>
+
 <h2>3. Usage statistics (Google Analytics)</h2>
-<p>To see which modes people play and where they stop, the app sends anonymous usage statistics through Google Analytics 4. What is sent are numbers: rounds started and finished, the mode and upgrades you chose, your rank and how much land you took. In doing so Google also processes a device identifier and an approximate location (country level) derived from your IP address.</p>
-<p><b>The display name you type is never sent.</b> No phone number, email, contacts or photos are sent either. The statistics are kept in Google Analytics for 14 months and then deleted.</p>
-<h2>4. Ads</h2>
-<p>This version has no ads and does not use the Advertising ID. If ads are added later, this document will be updated first, along with the Data Safety section of the store listing.</p>
-<h2>5. In-app purchases</h2>
-<p>This version has no in-app purchases.</p>
+<p>To see which modes people play and where they stop, the app sends anonymous usage statistics through Google Analytics 4: rounds started and finished, the mode and upgrades you chose, your rank and how much land you took. In doing so Google also processes a device identifier and an approximate location (country level) derived from your IP address. <b>Your display name is never sent to analytics.</b> The statistics are kept for 14 months and then deleted.</p>
+
+<h2>4. Internet connection</h2>
+<p>Gameplay is computed entirely on your device and needs no internet. The internet is used only for leaderboards and backup (Android app) and for usage statistics.</p>
+<p>The development server version in the browser (gusul-ttang-io.onrender.com) has an online mode. When you use it, your display name and marble position are relayed in real time to the other players in the same room; this is not stored and disappears when you leave. Connection times and IP addresses may remain briefly in the hosting provider's logs.</p>
+
+<h2>5. Ads and in-app purchases</h2>
+<p>This version has no ads and no in-app purchases, and does not use the Advertising ID. If that changes, this document and the store's Data Safety section will be updated first.</p>
+
 <h2>6. Sharing with third parties</h2>
-<p>The developer does not sell any information. Apart from using Google (Google LLC) to process the usage statistics described above, nothing is shared with third parties.</p>
+<p>The developer does not sell any information. Apart from using Google (Google LLC) to process the leaderboards and backup (Firebase) and usage statistics (Analytics) described above, nothing is shared. The name, marble and scores you post to a leaderboard are visible to other players.</p>
+
 <h2>7. Children</h2>
 <p>The app is not directed to children under 13, and the developer does not knowingly collect personal information from children.</p>
+
 <h2>8. Deleting your data</h2>
-<p>Uninstalling the app deletes every record stored on the device. Nothing is kept on the developer's servers, so there is no separate deletion request to make.</p>
+<ul>
+<li><b>In the app:</b> Settings → Delete account. Your server backup, leaderboard entries and account (including the Google link) are deleted immediately. Records on the phone stay.</li>
+<li><b>If you already uninstalled the app:</b> follow the <a href="delete-account.html#en">account deletion guide</a> and request deletion by email.</li>
+<li>Uninstalling alone removes the records on the phone but not the server leaderboard entries or backup. Delete your account first to remove those.</li>
+<li>Server records are kept until you delete your account. Usage statistics are deleted automatically after 14 months (section 3).</li>
+</ul>
+
 <h2>9. Changes</h2>
 <p>If this policy changes, the date at the top of this document is updated.</p>
+
 <h2>10. Contact</h2>
 <p>Email: yamoda24@gmail.com</p>
 </body></html>
