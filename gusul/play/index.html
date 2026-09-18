@@ -272,7 +272,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="srow" id="acctRow" hidden><span class="sl">계정</span><button type="button" class="tg" id="acctBtn">구글 연결</button></div>
     <div class="acct" id="acctInfo" hidden><span id="acctText"></span> · <a href="#" id="acctDel">계정 삭제</a></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
-    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.4</span></p>
+    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.5</span></p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
   </div>
 </div>
@@ -714,8 +714,9 @@ const cv=document.getElementById('game'),ctx=cv.getContext('2d');
 const mini=document.getElementById('mini'),mctx=mini.getContext('2d');
 const terr=document.createElement('canvas');terr.width=COLS;terr.height=ROWS;
 const tctx=terr.getContext('2d');let timg=tctx.createImageData(COLS,ROWS);
-let terrDirty=true,terrBox=null; // terrDirty: 전체 다시 그림. terrBox: 이 네모(칸 좌표)만 다시 그림
+let terrDirty=true,terrBox=null,border=null,terrVer=0; // terrDirty: 전체 다시 그림. terrBox: 이 네모(칸 좌표)만 다시 그림. border: 땅 테두리 캐시. terrVer: 땅 그림이 바뀔 때마다 오른다(미니맵 바탕)
 function markTerr(x0,y0,x1,y1){x0=Math.max(0,x0);y0=Math.max(0,y0);x1=Math.min(COLS-1,x1);y1=Math.min(ROWS-1,y1);if(x1<x0||y1<y0)return;
+  if(border&&x1>=border.x0-1&&x0<=border.x1&&y1>=border.y0-1&&y0<=border.y1)border=null;
   if(!terrBox)terrBox={x0,y0,x1,y1};else{if(x0<terrBox.x0)terrBox.x0=x0;if(y0<terrBox.y0)terrBox.y0=y0;if(x1>terrBox.x1)terrBox.x1=x1;if(y1>terrBox.y1)terrBox.y1=y1;}}
 function setGrid(c,r){c=c|0;r=r|0;if(!(c>=20&&c<=1000&&r>=20&&r<=1000))return;if(c===COLS&&r===ROWS){owner.fill(0);terrDirty=true;return;}COLS=c;ROWS=r;W=COLS*CELL;H=ROWS*CELL;TOTAL=COLS*ROWS;owner=new Int16Array(TOTAL);visited=new Uint8Array(TOTAL);queue=new Int32Array(TOTAL);terr.width=COLS;terr.height=ROWS;timg=tctx.createImageData(COLS,ROWS);terrDirty=true;}
 
@@ -741,8 +742,9 @@ const rgbCache={};
 function rgb(hex){if(rgbCache[hex])return rgbCache[hex];const n=parseInt(hex.slice(1),16);return rgbCache[hex]=[n>>16&255,n>>8&255,n&255];}
 function shade(hex,k){const [r,g,b]=rgb(hex);const t=k<0?0:255,a=Math.abs(k);return `rgb(${Math.round(r+(t-r)*a)},${Math.round(g+(t-g)*a)},${Math.round(b+(t-b)*a)})`;}
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const hyp=(x,y)=>Math.sqrt(x*x+y*y); // Math.hypot 은 V8 에서 부를 때마다 배열을 만들어 GC 를 부른다 — 프레임마다 도는 곳에서 쓰지 말 것
 function cellOf(x,y){const cx=Math.floor(x/CELL),cy=Math.floor(y/CELL);if(cx<0||cy<0||cx>=COLS||cy>=ROWS)return -1;return cy*COLS+cx;}
-function distSeg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy;let t=l2?((px-ax)*dx+(py-ay)*dy)/l2:0;t=t<0?0:t>1?1:t;return Math.hypot(px-(ax+dx*t),py-(ay+dy*t));}
+function distSeg2(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy;let t=l2?((px-ax)*dx+(py-ay)*dy)/l2:0;t=t<0?0:t>1?1:t;const ex=px-(ax+dx*t),ey=py-(ay+dy*t);return ex*ex+ey*ey;} // 점과 선분 사이 거리의 제곱
 function cross(ax,ay,bx,by,cx,cy){return (bx-ax)*(cy-ay)-(by-ay)*(cx-ax);}
 function segInter(a,b,c,d,e,f,g,h){const d1=cross(e,f,g,h,a,b),d2=cross(e,f,g,h,c,d),d3=cross(a,b,c,d,e,f),d4=cross(a,b,c,d,g,h);return ((d1>0&&d2<0)||(d1<0&&d2>0))&&((d3>0&&d4<0)||(d3<0&&d4>0));}
 function cleanName(s){s=String(s||"").replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g,"").trim().slice(0,10);return s||"???";}
@@ -808,8 +810,8 @@ function killEmptied(lost,by){if(online)return;for(const q of lost)if(q.alive&&q
 /* 칸 수와 네모를 맵 전체로 다시 맞춘다 — 미리 돌려 둔 판을 이어받을 때 한 번. 그 뒤로는 claim·kill 이 맞춰 간다. */
 function resync(){for(const p of players){p.cells=0;p.bx1=-1;}for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const i=y*COLS+x,o=owner[i];if(!o)continue;const p=byId[o];if(!p){owner[i]=0;continue;}p.cells++;boxAdd(p,x,y);}terrDirty=true;}
 function resetWorld(){players=[];byId=[];owner.fill(0);nextId=1;terrDirty=true;me=null;}
-function snapTo(p,x,y){const dx=p.x+p.ox-x,dy=p.y+p.oy-y;if(Math.hypot(dx,dy)>220){p.ox=0;p.oy=0;p.on=0;}else{p.ox=dx;p.oy=dy;p.on=6;}p.x=p.px=x;p.y=p.py=y;}
-function addVertexAt(p,x,y){const l=p.trail[p.trail.length-1];if(l&&Math.hypot(l.x-x,l.y-y)<1.5)return;p.trail.push({x,y});if(p.trail.length>400)p.trail.splice(1,1);}
+function snapTo(p,x,y){const dx=p.x+p.ox-x,dy=p.y+p.oy-y;if(hyp(dx,dy)>220){p.ox=0;p.oy=0;p.on=0;}else{p.ox=dx;p.oy=dy;p.on=6;}p.x=p.px=x;p.y=p.py=y;}
+function addVertexAt(p,x,y){const l=p.trail[p.trail.length-1];if(l&&hyp(l.x-x,l.y-y)<1.5)return;p.trail.push({x,y});if(p.trail.length>400)p.trail.splice(1,1);}
 
 /* ---------- offline sim (봇과 혼자 놀 때만 쓴다; 온라인은 서버가 판정) ---------- */
 function findSpot(p){
@@ -823,8 +825,8 @@ function findSpot(p){
     for(let dy=-6;dy<=6&&ok;dy++)for(let dx=-6;dx<=6;dx++){if(owner[(cy+dy)*COLS+cx+dx]!==0){ok=false;break;}}
     if(!ok)continue;
     const wx=(cx+.5)*CELL,wy=(cy+.5)*CELL;
-    for(const q of others){if(Math.hypot(q.x-wx,q.y-wy)<280){ok=false;break;}}
-    if(ok)for(const o of obst){if(Math.hypot(o.x-wx,o.y-wy)<o.r+140){ok=false;break;}}
+    for(const q of others){if(hyp(q.x-wx,q.y-wy)<280){ok=false;break;}}
+    if(ok)for(const o of obst){if(hyp(o.x-wx,o.y-wy)<o.r+140){ok=false;break;}}
     if(ok)return{cx,cy};
   }
   return{cx:7+Math.floor(Math.random()*(COLS-14)),cy:7+Math.floor(Math.random()*(ROWS-14))};
@@ -851,11 +853,11 @@ function ownStats(p){
   for(let y=b.y0;y<=b.y1;y++){const r=y*COLS;for(let x=b.x0;x<=b.x1;x++)if(owner[r+x]===id){n++;sx+=x;sy+=y;}}
   if(!n)return null;
   const cx=(sx/n+.5)*CELL,cy=(sy/n+.5)*CELL;
-  let bc=null,bd=1e18,bm=null,bmd=1e18;
+  let bd=1e18,bmd=1e18,bcx=0,bcy=0,bmx=0,bmy=0;
   for(let gy=b.y0;gy<=b.y1;gy++){const r=gy*COLS;for(let gx=b.x0;gx<=b.x1;gx++){if(owner[r+gx]!==id)continue;const x=(gx+.5)*CELL,y=(gy+.5)*CELL;
-    const d1=(x-cx)**2+(y-cy)**2;if(d1<bd){bd=d1;bc={x,y};}
-    const d2=(x-p.x)**2+(y-p.y)**2;if(d2<bmd){bmd=d2;bm={x,y};}}}
-  return{cx,cy,center:bc,nearest:bm};
+    const d1=(x-cx)**2+(y-cy)**2;if(d1<bd){bd=d1;bcx=x;bcy=y;}
+    const d2=(x-p.x)**2+(y-p.y)**2;if(d2<bmd){bmd=d2;bmx=x;bmy=y;}}}
+  return{cx,cy,center:{x:bcx,y:bcy},nearest:{x:bmx,y:bmy}};
 }
 function kill(q,by,reason){
   if(!q.alive)return;
@@ -877,7 +879,7 @@ function fail(p){
 }
 function flick(p,ang,sp){if(p.out)addVertexAt(p,p.x,p.y);p.vx=Math.cos(ang)*sp;p.vy=Math.sin(ang)*sp;p.flicks++;if(p===me)meta.onFlick();}
 function rasterize(a,b,p,lost){
-  const id=p.id,dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy),n=Math.max(1,Math.ceil(len/(CELL*.5)));let g=0;
+  const id=p.id,dx=b.x-a.x,dy=b.y-a.y,len=hyp(dx,dy),n=Math.max(1,Math.ceil(len/(CELL*.5)));let g=0;
   for(let i=0;i<=n;i++){const c=cellOf(a.x+dx*i/n,a.y+dy*i/n);if(c>=0&&(mode!=='classic'||!owner[c]||owner[c]===id))g+=claim(c,p,lost);}
   return g;
 }
@@ -932,16 +934,16 @@ function genObstacles(level,keep){
   for(const [ty,n] of want){let i=0;for(let tries=0;i<n&&tries<n*40;tries++){
     const r=ty===0?22+Math.random()*18:ty===1?45+Math.random()*30:70+Math.random()*40,m=r+CELL*3;
     const x=m+Math.random()*(W-2*m),y=m+Math.random()*(H-2*m);let ok=true;
-    for(const o of list){if(Math.hypot(o.x-x,o.y-y)<o.r+r+50){ok=false;break;}}
-    if(ok&&keep)for(const q of keep){if(Math.hypot(q.x-x,q.y-y)<q.r+r){ok=false;break;}}
+    for(const o of list){if(hyp(o.x-x,o.y-y)<o.r+r+50){ok=false;break;}}
+    if(ok&&keep)for(const q of keep){if(hyp(q.x-x,q.y-y)<q.r+r){ok=false;break;}}
     if(!ok)continue;list.push({t:ty,x,y,r,s:Math.random()});i++;}}
   setObstacles(list);
 }
 // 돌 충돌: 밀어내고 반사(반발 .8). true 면 튕김.
-function rockHit(p,x,y,v){let hit=false;for(const o of obstNear(x,y)){if(o.t!==0)continue;const dx=x-o.x,dy=y-o.y,d=Math.hypot(dx,dy);if(d>=R+o.r||d===0)continue;
+function rockHit(p,x,y,v){let hit=false;const L=obstNear(x,y);for(let k=0;k<L.length;k++){const o=L[k];if(o.t!==0)continue;const dx=x-o.x,dy=y-o.y,d=hyp(dx,dy);if(d>=R+o.r||d===0)continue;
   const nx=dx/d,ny=dy/d;x=o.x+nx*(R+o.r);y=o.y+ny*(R+o.r);const vn=v.vx*nx+v.vy*ny;if(vn<0){v.vx-=1.8*vn*nx;v.vy-=1.8*vn*ny;}hit=true;}
   v.x=x;v.y=y;return hit;}
-function dragAt(x,y){let d=1;for(const o of obstNear(x,y)){if(o.t===0)continue;if(Math.hypot(x-o.x,y-o.y)<o.r){const f=o.t===1?.86:.96;if(f<d)d=f;}}return d;}
+function dragAt(x,y){let d=1;const L=obstNear(x,y);for(let k=0;k<L.length;k++){const o=L[k];if(o.t===0)continue;if(hyp(x-o.x,y-o.y)<o.r){const f=o.t===1?.86:.96;if(f<d)d=f;}}return d;}
 function drawObst(o){
   if(artReady){const k=o.t===0?OB_ROCKS[Math.floor((o.s||0)*OB_ROCKS.length)%OB_ROCKS.length]:o.t===1?'ob_puddle':'ob_sand';const im=IMG[k];
     if(im){if(o.t===0){ctx.beginPath();ctx.arc(o.x+3,o.y+4,o.r*.95,0,TAU);ctx.fillStyle='rgba(43,29,15,.28)';ctx.fill();}
@@ -957,7 +959,7 @@ function drawObst(o){
 function stepPlayer(p){
   p.moved=false;
   if(!p.alive)return;
-  let sp=Math.hypot(p.vx,p.vy);
+  let sp=hyp(p.vx,p.vy);
   if(sp===0){p.px=p.x;p.py=p.y;return;}
   p.px=p.x;p.py=p.y;p.moved=true;
   const n=Math.max(1,Math.ceil(sp/6));
@@ -969,7 +971,7 @@ function stepPlayer(p){
     if(b&&p.out)addVertexAt(p,p.x,p.y);
   }
   if(obst.length){const dr=dragAt(p.x,p.y);if(dr<1){p.vx*=dr;p.vy*=dr;}}
-  sp=Math.hypot(p.vx,p.vy);
+  sp=hyp(p.vx,p.vy);
   const nsp=Math.max(0,sp-p.dec);
   if(nsp<STOPV){p.vx=0;p.vy=0;if(!online){territory(p);if(p.alive)onStop(p);}}
   else{const k=nsp/sp;p.vx*=k;p.vy*=k;if(!online)territory(p);}
@@ -977,7 +979,7 @@ function stepPlayer(p){
 function collide(){
   for(let i=0;i<players.length;i++){const a=players[i];if(!a.alive)continue;
     for(let j=i+1;j<players.length;j++){const b=players[j];if(!b.alive)continue;
-      const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d>=2*R||d===0)continue;
+      const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;if(d2>=4*R*R||d2===0)continue;const d=Math.sqrt(d2);
       const nx=dx/d,ny=dy/d,ov=2*R-d,ma=a.mass||1,mb=b.mass||1;
       a.x-=nx*ov*(mb/(ma+mb));a.y-=ny*ov*(mb/(ma+mb));b.x+=nx*ov*(ma/(ma+mb));b.y+=ny*ov*(ma/(ma+mb));
       const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
@@ -989,9 +991,9 @@ function hitsTrail(m,q){
   for(let i=1;i<=tr.length;i++){
     const p0=tr[i-1];let p1x,p1y;
     if(i<tr.length){p1x=tr[i].x;p1y=tr[i].y;}
-    else{const dx=q.x-p0.x,dy=q.y-p0.y,L=Math.hypot(dx,dy);if(L<=2.2*R)break;const k=(L-2.2*R)/L;p1x=p0.x+dx*k;p1y=p0.y+dy*k;}
+    else{const dx=q.x-p0.x,dy=q.y-p0.y,L=hyp(dx,dy);if(L<=2.2*R)break;const k=(L-2.2*R)/L;p1x=p0.x+dx*k;p1y=p0.y+dy*k;}
     if(segInter(ax,ay,bx,by,p0.x,p0.y,p1x,p1y))return true;
-    if(distSeg(bx,by,p0.x,p0.y,p1x,p1y)<R*.8)return true;
+    if(distSeg2(bx,by,p0.x,p0.y,p1x,p1y)<R*R*.64)return true;
   }
   return false;
 }
@@ -1016,8 +1018,8 @@ function sideTarget(p){
 function enemyTrailTarget(p,range){
   let best=null,bd=range;
   for(const q of players){if(q===p||!q.alive||!q.out||!q.trail.length)continue;
-    const pts=q.trail.concat([{x:q.x,y:q.y}]);
-    for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];for(let t=.2;t<.95;t+=.3){const x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t,d=Math.hypot(x-p.x,y-p.y);if(d<bd&&Math.hypot(x-q.x,y-q.y)>3*R){bd=d;best={x,y};}}}}
+    const tr=q.trail,n=tr.length;
+    for(let i=1;i<=n;i++){const a=tr[i-1],bx=i<n?tr[i].x:q.x,by=i<n?tr[i].y:q.y;for(let t=.2;t<.95;t+=.3){const x=a.x+(bx-a.x)*t,y=a.y+(by-a.y)*t,d=hyp(x-p.x,y-p.y);if(d<bd&&hyp(x-q.x,y-q.y)>3*R){bd=d;best={x,y};}}}}
   if(!best)return null;
   const a=Math.atan2(best.y-p.y,best.x-p.x);
   return{x:clamp(best.x+Math.cos(a)*50,40,W-40),y:clamp(best.y+Math.sin(a)*50,40,H-40)};
@@ -1036,7 +1038,7 @@ function brain(p,dt){
     else if(p.flicks<=1&&Math.random()<.5)target=sideTarget(p);
     else{target=homeTarget(p);mult=1.18;}
   }
-  const dx=target.x-p.x,dy=target.y-p.y,d=Math.hypot(dx,dy);if(d<2)return;
+  const dx=target.x-p.x,dy=target.y-p.y,d=hyp(dx,dy);if(d<2)return;
   const sp=Math.min(p.spd||MAXV,Math.sqrt(2*(p.dec||DECEL)*d)*mult*(.95+Math.random()*.1));
   flick(p,Math.atan2(dy,dx)+(Math.random()-.5)*.1,sp);
 }
@@ -1092,8 +1094,24 @@ function loop(now){
 setInterval(()=>{if(document.hidden)advance(performance.now());},250);
 
 /* ---------- render ---------- */
+/* 땅 테두리 선: 보이는 칸(+여유 6칸)의 테두리를 주인별 Path2D 로 한 번 만들어 두고, 그 안의 땅이 바뀌거나(markTerr·전체 다시 그림)
+   화면이 여유 밖으로 나갈 때만 다시 만든다. 매 프레임 새로 만들면 Path2D·색 글자가 쌓여 GC 가 자주 돌고 그때 프레임을 건너뛴다.
+   border·terrVer 는 스폰(markTerr)이 켤 때부터 부르므로 terrDirty 옆에 선언한다. */
+function borderPaths(gx0,gy0,gx1,gy1){
+  const b=border;
+  if(b&&gx0>=b.x0&&gy0>=b.y0&&gx1<=b.x1&&gy1<=b.y1)return b.list;
+  const M=6,x0=Math.max(0,gx0-M),y0=Math.max(0,gy0-M),x1=Math.min(COLS,gx1+M),y1=Math.min(ROWS,gy1+M),paths=new Map();
+  const seg=(id,ax,ay,bx,by)=>{let Q=paths.get(id);if(!Q)paths.set(id,Q=new Path2D());Q.moveTo(ax,ay);Q.lineTo(bx,by);};
+  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+    const i=y*COLS+x,o=owner[i];
+    if(x<COLS-1){const o2=owner[i+1];if(o!==o2)seg(o||o2,(x+1)*CELL,y*CELL,(x+1)*CELL,(y+1)*CELL);}
+    if(y<ROWS-1){const o2=owner[i+COLS];if(o!==o2)seg(o||o2,x*CELL,(y+1)*CELL,(x+1)*CELL,(y+1)*CELL);}
+  }
+  const list=[...paths].sort((a,c)=>a[0]-c[0]).map(([id,Q])=>{const p=byId[id];return{c:p?shade(p.color,-.2):INK,P:Q};}); // 예전처럼 id 순서로 그린다
+  border={x0,y0,x1,y1,list};return list;
+}
 function buildTerr(b){
-  const d=timg.data;
+  const d=timg.data;terrVer++;
   if(b){ // 바뀐 네모만
     for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0,i=y*COLS+x;x<=b.x1;x++,i++){const o=owner[i],k=i*4;if(!o){d[k+3]=0;continue;}const p=byId[o];const c=p?rgb(p.color):[120,120,120];d[k]=c[0];d[k+1]=c[1];d[k+2]=c[2];d[k+3]=150;}
     tctx.putImageData(timg,0,0,b.x0,b.y0,b.x1-b.x0+1,b.y1-b.y0+1);terrBox=null;return;
@@ -1103,7 +1121,7 @@ function buildTerr(b){
 }
 function aimVec(){
   if(!aim)return null;
-  const dx=aim.sx-aim.cx,dy=aim.sy-aim.cy,len=Math.hypot(dx,dy);
+  const dx=aim.sx-aim.cx,dy=aim.sy-aim.cy,len=hyp(dx,dy);
   if(len<20)return{len,ok:false};
   const pw=Math.min(1,len/PULL_MAX);
   return{len,ok:true,ang:Math.atan2(dy,dx),sp:(me&&me.spd||MAXV)*pw,pw};
@@ -1112,12 +1130,12 @@ function predict(x,y,vx,vy,st){
   const dec=(st&&st.dec)||DECEL,rest=(st&&st.rest)||.8;
   const pts=[];
   for(let i=0;i<700;i++){
-    let sp=Math.hypot(vx,vy);if(sp<=0)break;
+    let sp=hyp(vx,vy);if(sp<=0)break;
     x+=vx;y+=vy;
     if(x<R){x=R;vx=-vx*rest;}else if(x>W-R){x=W-R;vx=-vx*rest;}
     if(y<R){y=R;vy=-vy*rest;}else if(y>H-R){y=H-R;vy=-vy*rest;}
     if(obst.length){const v={vx,vy,x,y};rockHit(null,x,y,v);x=v.x;y=v.y;vx=v.vx;vy=v.vy;const dr=dragAt(x,y);if(dr<1){vx*=dr;vy*=dr;}}
-    sp=Math.hypot(vx,vy);const nsp=Math.max(0,sp-dec);
+    sp=hyp(vx,vy);const nsp=Math.max(0,sp-dec);
     if(nsp<STOPV){pts.push({x,y,end:true});break;}
     vx*=nsp/sp;vy*=nsp/sp;
     if(i%3===0)pts.push({x,y});
@@ -1200,9 +1218,9 @@ function renderMenu(){
     m.x+=m.vx*k;m.y+=m.vy*k;const f=Math.pow(.985,k);m.vx*=f;m.vy*=f;
     if(m.x<m.r){m.x=m.r;m.vx=Math.abs(m.vx)*.8;}else if(m.x>vw-m.r){m.x=vw-m.r;m.vx=-Math.abs(m.vx)*.8;}
     if(m.y<m.r){m.y=m.r;m.vy=Math.abs(m.vy)*.8;}else if(m.y>vh-m.r){m.y=vh-m.r;m.vy=-Math.abs(m.vy)*.8;}
-    if(Math.hypot(m.vx,m.vy)<.15){m.wait-=dt;if(m.wait<=0){const a=Math.random()*TAU,sp=1.5+Math.random()*3.5;m.vx=Math.cos(a)*sp;m.vy=Math.sin(a)*sp;m.wait=1+Math.random()*4;}}
+    if(hyp(m.vx,m.vy)<.15){m.wait-=dt;if(m.wait<=0){const a=Math.random()*TAU,sp=1.5+Math.random()*3.5;m.vx=Math.cos(a)*sp;m.vy=Math.sin(a)*sp;m.wait=1+Math.random()*4;}}
   }
-  for(let i=0;i<M.length;i++)for(let j=i+1;j<M.length;j++){const a=M[i],b=M[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),rr=a.r+b.r;if(d>=rr||d===0)continue;
+  for(let i=0;i<M.length;i++)for(let j=i+1;j<M.length;j++){const a=M[i],b=M[j],dx=b.x-a.x,dy=b.y-a.y,d=hyp(dx,dy),rr=a.r+b.r;if(d>=rr||d===0)continue;
     const nx=dx/d,ny=dy/d,ov=(rr-d)/2;a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const imp=.9*(-rv);a.vx-=imp*nx;a.vy-=imp*ny;b.vx+=imp*nx;b.vy+=imp*ny;}}
   for(const m of M){const sp=skins.sprite(m.skin,m.color),sz=m.r/R*SPR_R*2;ctx.drawImage(sp,m.x-sz/2,m.y-sz/2,sz,sz);}
   const g=ctx.createRadialGradient(vw/2,vh*.42,Math.min(vw,vh)*.25,vw/2,vh/2,Math.max(vw,vh)*.75);g.addColorStop(0,'rgba(43,29,15,0)');g.addColorStop(1,'rgba(43,29,15,.5)');ctx.fillStyle=g;ctx.fillRect(0,0,vw,vh);
@@ -1211,7 +1229,7 @@ function render(){
   if(!startEl.hidden){renderMenu();return;}
   if(online)placeRemotes();
   for(const p of players){if(p.on>0){p.ox-=p.ox/p.on;p.oy-=p.oy/p.on;p.on--;if(!p.on){p.ox=0;p.oy=0;}}
-    if(online&&p!==me&&p.alive){const rx_=rx(p),ry_=ry(p);const sp=Math.hypot(rx_-p.lrx,ry_-p.lry)/Math.max(4,dbg.rdt)*16.67;p.mf=(sp>3)?(p.mf||0)+1:0;if(p.lsp>3&&sp>3&&p.mf>4){const r=sp/p.lsp;if(r>1.4||r<0.7)dbg.jerk++;dbg.frames++;}p.lsp=sp;p.lrx=rx_;p.lry=ry_;}}
+    if(online&&p!==me&&p.alive){const rx_=rx(p),ry_=ry(p);const sp=hyp(rx_-p.lrx,ry_-p.lry)/Math.max(4,dbg.rdt)*16.67;p.mf=(sp>3)?(p.mf||0)+1:0;if(p.lsp>3&&sp>3&&p.mf>4){const r=sp/p.lsp;if(r>1.4||r<0.7)dbg.jerk++;dbg.frames++;}p.lsp=sp;p.lrx=rx_;p.lry=ry_;}}
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle=OUT;ctx.fillRect(0,0,vw,vh);
   ctx.save();
@@ -1223,16 +1241,10 @@ function render(){
   for(let x=gx0;x<=gx1;x++){ctx.moveTo(x*CELL,Math.max(0,vy0));ctx.lineTo(x*CELL,Math.min(H,vy1));}
   for(let y=gy0;y<=gy1;y++){ctx.moveTo(Math.max(0,vx0),y*CELL);ctx.lineTo(Math.min(W,vx1),y*CELL);}
   ctx.stroke();
-  if(terrDirty)buildTerr();else if(terrBox)buildTerr(terrBox);
+  if(terrDirty){buildTerr();border=null;}else if(terrBox)buildTerr(terrBox);
   ctx.imageSmoothingEnabled=false;ctx.drawImage(terr,0,0,W,H);ctx.imageSmoothingEnabled=true;
-  const paths={};
-  for(let y=gy0;y<gy1;y++)for(let x=gx0;x<gx1;x++){
-    const i=y*COLS+x,o=owner[i];
-    if(x<COLS-1){const o2=owner[i+1];if(o!==o2){const id=o||o2;const P=paths[id]||(paths[id]=new Path2D());P.moveTo((x+1)*CELL,y*CELL);P.lineTo((x+1)*CELL,(y+1)*CELL);}}
-    if(y<ROWS-1){const o2=owner[i+COLS];if(o!==o2){const id=o||o2;const P=paths[id]||(paths[id]=new Path2D());P.moveTo(x*CELL,(y+1)*CELL);P.lineTo((x+1)*CELL,(y+1)*CELL);}}
-  }
   ctx.lineWidth=2.5;ctx.lineCap='round';
-  for(const id in paths){const p=byId[id];ctx.strokeStyle=p?shade(p.color,-.2):INK;ctx.stroke(paths[id]);}
+  {const L=borderPaths(gx0,gy0,gx1,gy1);for(let k=0;k<L.length;k++){ctx.strokeStyle=L[k].c;ctx.stroke(L[k].P);}}
   ctx.strokeStyle=CHALK;ctx.lineWidth=6;ctx.strokeRect(0,0,W,H);
   for(const o of obst){if(o.x+o.r<vx0||o.x-o.r>vx1||o.y+o.r<vy0||o.y-o.r>vy1)continue;drawObst(o);}
   ctx.lineJoin='round';
@@ -1265,36 +1277,48 @@ function render(){
   ctx.restore();
   drawMini();
 }
+const miniBg=document.createElement('canvas');miniBg.width=miniBg.height=240;const mbg=miniBg.getContext('2d');let miniVer=-1,miniObst=null;
 function drawMini(){
-  mctx.setTransform(2,0,0,2,0,0);mctx.clearRect(0,0,120,120);
-  mctx.imageSmoothingEnabled=false;mctx.drawImage(terr,0,0,120,120);
   const s=120/W;
-  if(obst.length){mctx.fillStyle='rgba(60,54,45,.8)';for(const o of obst){if(o.t!==0)continue;mctx.beginPath();mctx.arc(o.x*s,o.y*s,Math.max(1,o.r*s),0,TAU);mctx.fill();}}
+  if(miniVer!==terrVer||miniObst!==obst){miniVer=terrVer;miniObst=obst;
+    mbg.setTransform(2,0,0,2,0,0);mbg.clearRect(0,0,120,120);mbg.imageSmoothingEnabled=false;mbg.drawImage(terr,0,0,120,120);
+    if(obst.length){mbg.fillStyle='rgba(60,54,45,.8)';for(const o of obst){if(o.t!==0)continue;mbg.beginPath();mbg.arc(o.x*s,o.y*s,Math.max(1,o.r*s),0,TAU);mbg.fill();}}}
+  mctx.setTransform(1,0,0,1,0,0);mctx.clearRect(0,0,240,240);mctx.drawImage(miniBg,0,0);
+  mctx.setTransform(2,0,0,2,0,0);
   for(const p of players){if(!p.alive)continue;mctx.beginPath();mctx.arc(rx(p)*s,ry(p)*s,p===me?3.5:2.2,0,TAU);mctx.fillStyle=p.color;mctx.fill();if(p===me){mctx.lineWidth=1.5;mctx.strokeStyle='#fff';mctx.stroke();}}
   mctx.lineWidth=1;mctx.strokeStyle='rgba(255,247,230,.8)';
   mctx.strokeRect((cam.x-vw/2/cam.zoom)*s,(cam.y-vh/2/cam.zoom)*s,vw/cam.zoom*s,vh/cam.zoom*s);
 }
 
 /* ---------- HUD ---------- */
+/* 순위판 줄은 한 번 만들어 두고 바뀐 글자·색만 고친다 — 10프레임마다 새로 만들면 DOM 이 쌓여 큰 GC 와 레이아웃을 부른다. */
+const hudRows=[],hudGap=document.createElement('li');hudGap.className='gap';
+function setText(el,v){v=String(v);if(el.__t!==v){el.__t=v;el.textContent=v;}}
+function hudRow(k,p,i){
+  let r=hudRows[k];
+  if(!r){const li=document.createElement('li'),n=document.createElement('span'),c=document.createElement('span'),nm=document.createElement('span'),pc=document.createElement('span');
+    n.className='n';c.className='c';nm.className='name';pc.className='p';li.append(n,c,nm,pc);r=hudRows[k]={li,n,c,nm,pc,color:'',me:null};}
+  setText(r.n,i+1);
+  if(r.color!==p.color){r.color=p.color;r.c.style.background=p.color;}
+  setText(r.nm,p===me?TF('{name} (나)',{name:p.name}):p.name);
+  setText(r.pc,fmtPct(p.cells/TOTAL*100));
+  if(r.me!==(p===me)){r.me=p===me;r.li.className=r.me?'me':'';}
+  return r.li;
+}
 function updateHud(){
   if(online)recount(null);
   const sorted=players.slice().sort((a,b)=>b.cells-a.cells);
-  const row=(p,i)=>{
-    const li=document.createElement('li');if(p===me)li.className='me';
-    const n=document.createElement('span');n.className='n';n.textContent=i+1;
-    const c=document.createElement('span');c.className='c';c.style.background=p.color;
-    const nm=document.createElement('span');nm.className='name';nm.textContent=p===me?TF('{name} (나)',{name:p.name}):p.name;
-    const pc=document.createElement('span');pc.className='p';pc.textContent=fmtPct(p.cells/TOTAL*100);
-    li.append(n,c,nm,pc);return li;};
-  const rows=sorted.slice(0,6).map(row);
+  const rows=[];for(let k=0;k<6&&k<sorted.length;k++)rows.push(hudRow(k,sorted[k],k));
   const myIdx=me?sorted.indexOf(me):-1;
-  if(myIdx>=6){const gap=document.createElement('li');gap.className='gap';rows.push(gap,row(me,myIdx));}
-  ranksEl.replaceChildren(...rows);
-  $('boardTitle').textContent=TF('순위 · {n}명',{n:sorted.length});
+  if(myIdx>=6)rows.push(hudGap,hudRow(6,me,myIdx));
+  let same=ranksEl.children.length===rows.length;
+  for(let k=0;same&&k<rows.length;k++)if(ranksEl.children[k]!==rows[k])same=false;
+  if(!same)ranksEl.replaceChildren(...rows);
+  setText($('boardTitle'),TF('순위 · {n}명',{n:sorted.length}));
   if(!me)return;
-  $('myRank').textContent=TF('{r}위 / {n}명',{r:myIdx+1,n:sorted.length});
+  setText($('myRank'),TF('{r}위 / {n}명',{r:myIdx+1,n:sorted.length}));
   const mp=me.cells/TOTAL*100;
-  pctEl.textContent=fmtPct(mp);
+  setText(pctEl,fmtPct(mp));
   if(mp>me.peak)me.peak=mp;
   const left=3-me.flicks;
   dotEls.forEach((d,i)=>d.classList.toggle('on',i<left));
@@ -1536,7 +1560,7 @@ function remoteAt(p,tt){
     if(i<b.length-1){const a=b[i],c=b[i+1],f=(tt-a.t)/Math.max(1,c.t-a.t);return{x:a.x+(c.x-a.x)*f,y:a.y+(c.y-a.y)*f};}
     // 최신 상태보다 뒤: 같은 물리로 잠깐 외삽 (최대 12프레임)
     const a=b[i];let k=Math.min(12,(tt-a.t)/16.667),x=a.x,y=a.y,vx=a.vx,vy=a.vy;
-    while(k>0){const s=Math.min(1,k);x+=vx*s;y+=vy*s;const sp=Math.hypot(vx,vy),nsp=Math.max(0,sp-DECEL*s);if(sp>0){vx*=nsp/sp;vy*=nsp/sp;}if(nsp<STOPV){vx=vy=0;}k-=s;}
+    while(k>0){const s=Math.min(1,k);x+=vx*s;y+=vy*s;const sp=hyp(vx,vy),nsp=Math.max(0,sp-DECEL*s);if(sp>0){vx*=nsp/sp;vy*=nsp/sp;}if(nsp<STOPV){vx=vy=0;}k-=s;}
     return{x:clamp(x,0,W),y:clamp(y,0,H)};}}
   return{x:b[0].x,y:b[0].y};
 }
@@ -1641,7 +1665,7 @@ function applyUpdate(u){
   if(Array.isArray(u.c))for(const c of u.c){if(Array.isArray(c))applyRuns(c[0]|0,typeof c[1]==='string'?c[1]:'');}
   if(Array.isArray(u.s))for(const s of u.s){if(!Array.isArray(s))continue;const p=byId[s[0]|0];if(!p)continue;
     const sx=clamp(num(s[1],p.x),0,W),sy=clamp(num(s[2],p.y),0,H),svx=clamp(num(s[3],0),-MAXV*2,MAXV*2),svy=clamp(num(s[4],0),-MAXV*2,MAXV*2);
-    if(p===me){dbg.snaps++;const h=histAt(lat*2)||p;const err=Math.hypot(sx-h.x,sy-h.y);dbg.lastErr=err;if(err>dbg.maxErr)dbg.maxErr=err; // 내 튕기기는 왕복(가는 길+오는 길)만큼 늦게 반영된다
+    if(p===me){dbg.snaps++;const h=histAt(lat*2)||p;const err=hyp(sx-h.x,sy-h.y);dbg.lastErr=err;if(err>dbg.maxErr)dbg.maxErr=err; // 내 튕기기는 왕복(가는 길+오는 길)만큼 늦게 반영된다
       if(err<120){errStreak=0;continue;} // 지연만큼 과거의 내 위치와 비교: 같은 경로면 무시
       if(++errStreak<2)continue;errStreak=0;
       dbg.resync++;p.ox=p.oy=0;p.x=p.px=sx;p.y=p.py=sy;p.vx=svx;p.vy=svy;p.alive=true;fastForward(p);continue;} // 진짜 어긋남: 서버 구슬이 '지금' 있을 자리로 앞당겨 맞춤
@@ -1797,7 +1821,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.4';
+const APP_VER='0.4.5';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -2003,7 +2027,7 @@ function passiveBrain(p,dt){
   if(!p.out){const a=Math.random()*TAU,d=260;target={x:clamp(p.x+Math.cos(a)*d,60,W-60),y:clamp(p.y+Math.sin(a)*d,60,H-60)};}
   else if(p.flicks<=1&&Math.random()<.6){const h=homeTarget(p),a=Math.atan2(h.y-p.y,h.x-p.x)+Math.PI/2,d=160;target={x:clamp(p.x+Math.cos(a)*d,60,W-60),y:clamp(p.y+Math.sin(a)*d,60,H-60)};}
   else target=homeTarget(p);
-  const dx=target.x-p.x,dy=target.y-p.y,d=Math.hypot(dx,dy);if(d<2)return;
+  const dx=target.x-p.x,dy=target.y-p.y,d=hyp(dx,dy);if(d<2)return;
   flick(p,Math.atan2(dy,dx),Math.min(MAXV*.6,Math.sqrt(2*DECEL*d)*1.1));
 }
 // 튜토리얼 훅 (내 튕기기/캡처는 meta 훅에서 함께 부른다)
