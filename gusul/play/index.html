@@ -180,6 +180,11 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
 .rlist .empty{display:block;text-align:center;color:#8a6a3d;background:transparent}
 .rmine{font-family:'Jua',sans-serif;color:#6d5535;margin-top:10px;min-height:1.4em}
 .fine a{color:#6d5535}
+.upd{width:100%;display:flex;align-items:center;gap:6px;background:#fff;border:3px solid #FFD23F;border-radius:14px;padding:7px 8px 7px 14px;box-sizing:border-box;box-shadow:0 4px 0 rgba(0,0,0,.25);font-family:'Jua',sans-serif;font-size:15px;color:var(--ink)}
+.upd span{flex:1;min-width:0}
+.upd button{font-family:'Jua',sans-serif;font-size:14px;border:0;border-radius:999px;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.upd .later{background:transparent;color:#8a6a3d}
+.upd .go{background:var(--ink);color:var(--chalk)}
 @media (max-height:760px){
   #start .wrap{gap:8px;padding-top:calc(env(safe-area-inset-top) + 12px)}
   .title h1{font-size:38px}.title small{font-size:12px;margin-top:5px}
@@ -220,6 +225,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
 <div id="start" class="main">
   <div class="wrap">
     <div class="title"><h1>구슬 땅따먹기</h1><small>놀이터 · 땅따먹기</small></div>
+    <div class="upd" id="updBar" hidden><span id="updText">새 버전이 나왔어요</span><button type="button" class="later" id="updLater">나중에</button><button type="button" class="go" id="updGo">업데이트</button></div>
     <button type="button" class="who" id="whoBtn"><canvas id="whoMarble" width="104" height="104"></canvas><div><div class="wn" id="whoName">손님</div><div class="ws" id="whoStat"></div></div><span class="we">이름 · 설정</span></button>
     <div class="modegrid">
       <button type="button" class="mcard on" data-mode="survival"><span class="ic" data-ic="survival"></span><span class="mt">5인 서바이벌</span><span class="md">60초 · 마지막까지 살아남기</span><span class="mb" id="mbSurv"></span></button>
@@ -266,7 +272,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="srow" id="acctRow" hidden><span class="sl">계정</span><button type="button" class="tg" id="acctBtn">구글 연결</button></div>
     <div class="acct" id="acctInfo" hidden><span id="acctText"></span> · <a href="#" id="acctDel">계정 삭제</a></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
-    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.1</span></p>
+    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.2</span></p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
   </div>
 </div>
@@ -527,6 +533,12 @@ const EN={
   '벽과 돌에 부딪혀도 덜 죽는다':'Walls and rocks slow you down less',
   '메인으로 나갈까요?':'Leave to the menu?',
   '게임을 종료할까요?':'Quit the game?',
+  '새 버전이 나왔어요':'A new version is out',
+  '나중에':'Later',
+  '업데이트':'Update',
+  '새 버전을 받는 중이에요':'Downloading the new version',
+  '새 버전을 받았어요':'New version is ready',
+  '다시 시작':'Restart',
   '순위표':'Leaderboard',
   '기록은 이 기기와 서버(순위표·백업)에 저장돼요. 채팅 없음. 익명 이용 통계를 보냅니다.':'Records are stored on this device and on our server (leaderboards, backup). No chat. Anonymous usage stats are sent.',
   '통산 1등':'All-time wins',
@@ -1037,7 +1049,8 @@ function advance(now){
   if(running){
     if(Math.abs(dt-1/60)<0.004){ // 60Hz 화면: 프레임당 정확히 한 스텝 (멈춤/두 배 프레임 방지), 누적 오차는 따로 보정
       drift+=dt-1/60;step(1/60);if(drift>1/60){step(1/60);drift-=1/60;}else if(drift<-1/60){drift+=1/60;/* 다음 프레임에 스텝 하나 건너뛰는 대신 시간만 되돌린다 */}
-      acc=0;alpha=1;
+      // 보간 위치(acc·alpha)는 그대로 둔다. 여기서 alpha=1 로 지우면 늦은 프레임 하나마다 구슬이 한 스텝 뒤로 갔다가
+      // 다음 프레임에 두 스텝 앞으로 튄다 — 세게 쳐서 빠를 때 '프레임 드랍' 처럼 보이던 것 (0.4.2 에서 고침).
     }else{acc+=dt;let n=0;while(acc>=1/60&&n<90){step(1/60);acc-=1/60;n++;}if(n===90)acc=0;alpha=Math.max(0,Math.min(1,acc*60));}
   }
   if(spawnT>0)spawnT-=dt;
@@ -1760,9 +1773,54 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.1';
+const APP_VER='0.4.2';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
+/* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
+   업데이트 → Play 확인 창 → 뒤에서 받는다(게임은 그대로 한다) → 다 받으면 "다시 시작" → 설치하고 다시 켜진다.
+   "나중에"는 그날은 다시 안 띄운다. Play Console 우선순위 4 이상인 버전은 띠 대신 전체 화면 즉시 업데이트.
+   Play 스토어로 설치한 앱에서만 동작한다(adb 로 깐 앱은 늘 "없음"). 네이티브는 UpdatePlugin.java.
+   웹·토스는 열 때마다 최신이라 필요 없다. 모양 보기: ?update */
+const appUpdate=(()=>{
+  let P=null;
+  try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform())P=(C.Plugins&&C.Plugins.AppUpdate)||(C.registerPlugin?C.registerPlugin('AppUpdate'):null);}catch(e){}
+  const KEY='gusul-update-dismissed',bar=$('updBar'),txt=$('updText'),later=$('updLater'),go=$('updGo');
+  const day=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();};
+  let state='none';
+  function show(s,pct){
+    state=s;bar.hidden=s==='none';
+    txt.textContent=s==='ready'?T('새 버전을 받았어요'):s==='downloading'?T('새 버전을 받는 중이에요')+(pct>0?' '+pct+'%':''):T('새 버전이 나왔어요');
+    later.hidden=s!=='available';go.hidden=s==='downloading';go.textContent=T(s==='ready'?'다시 시작':'업데이트');
+  }
+  function check(first){
+    P.check().then(i=>{
+      if(!i)return;
+      if(i.downloaded){show('ready');return;}
+      if(i.downloading){show('downloading');return;}
+      if(first&&(i.inProgress||(i.available&&i.immediate&&(i.priority||0)>=4))){track('app_update',{step:'immediate'});P.startImmediate().catch(()=>{});return;}
+      let dis='';try{dis=localStorage.getItem(KEY)||'';}catch(e){}
+      if(i.available&&i.flexible&&(state!=='none'||dis!==day())){if(state==='none')track('app_update',{step:'shown'});show('available');}
+      else if(state==='downloading')show('none');
+    }).catch(()=>{});
+  }
+  if(P){
+    try{P.addListener('state',e=>{const s=e&&e.status;
+      if(s==='downloaded'){if(state!=='ready')track('app_update',{step:'downloaded'});show('ready');}
+      else if(s==='downloading')show('downloading',e.total>0?Math.floor(100*e.downloaded/e.total):0);
+      else if(s==='failed'||s==='canceled')show('available');});}catch(e){}
+    check(true);
+    // Play 확인 창에서 취소하고 돌아오면 "받는 중" 에 멈춰 있지 않게 다시 묻는다.
+    if(CapApp&&CapApp.addListener){try{CapApp.addListener('resume',()=>{if(state==='downloading')check(false);});}catch(e){}}
+  }else if(/[?&]update\b/.test(location.search))show('available');
+  go.addEventListener('click',()=>{
+    sfx('flick');if(!P)return;
+    if(state==='ready'){track('app_update',{step:'install'});P.complete().catch(()=>{});return;}
+    track('app_update',{step:'accept'});
+    P.startFlexible().then(()=>show('downloading')).catch(()=>show('none'));
+  });
+  later.addEventListener('click',()=>{sfx('hit');track('app_update',{step:'dismiss'});try{localStorage.setItem(KEY,day());}catch(e){}show('none');});
+  return {state:()=>state};
+})();
 document.addEventListener('visibilitychange',()=>{if(ONLINE_OK&&!document.hidden&&!running&&!PREFER_BOTS&&!(ws&&ws.readyState===1))probe();});
 setupButtons();
 againBtn.addEventListener('click',()=>{
