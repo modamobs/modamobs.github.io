@@ -1994,8 +1994,9 @@ $('skinsClose').addEventListener('click',()=>{$('skinsPanel').hidden=true;});
 $('tutBtn').addEventListener('click',()=>{sfx('flick');saveName();$('rules').hidden=true;tutorial.start(myName);});
 $('rulesBtn').addEventListener('click',()=>{sfx('hit');$('rules').hidden=false;});
 $('rulesClose').addEventListener('click',()=>{$('rules').hidden=true;});
-$('settingsBtn').addEventListener('click',()=>{sfx('hit');$('netStat').textContent=PREFER_BOTS?T('"친구와 온라인"을 누르면 접속'):(lobbyEl.textContent||'-');if(!ONLINE_OK)$('netRow').hidden=true;$('settings').hidden=false;setTimeout(()=>nameIn.focus(),50);});
-$('whoBtn').addEventListener('click',()=>{$('settingsBtn').click();});
+$('settingsBtn').addEventListener('click',()=>{sfx('hit');$('netStat').textContent=PREFER_BOTS?T('"친구와 온라인"을 누르면 접속'):(lobbyEl.textContent||'-');if(!ONLINE_OK)$('netRow').hidden=true;$('settings').hidden=false;});
+// 이름 칸은 '이름 · 설정'으로 열 때만 잡는다 — 설정 탭으로 열 때 잡으면 폰에서 키보드가 올라와 설정을 가린다.
+$('whoBtn').addEventListener('click',()=>{$('settingsBtn').click();setTimeout(()=>nameIn.focus(),50);});
 $('settingsClose').addEventListener('click',()=>{saveName();$('settings').hidden=true;sfx('hit');refreshStartCard();});
 function applyLang(){$('langTg').textContent=LANG==='en'?'English':'한국어';}
 applyLang();
