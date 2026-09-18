@@ -272,7 +272,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="srow" id="acctRow" hidden><span class="sl">계정</span><button type="button" class="tg" id="acctBtn">구글 연결</button></div>
     <div class="acct" id="acctInfo" hidden><span id="acctText"></span> · <a href="#" id="acctDel">계정 삭제</a></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
-    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.3</span></p>
+    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.4</span></p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
   </div>
 </div>
@@ -714,7 +714,9 @@ const cv=document.getElementById('game'),ctx=cv.getContext('2d');
 const mini=document.getElementById('mini'),mctx=mini.getContext('2d');
 const terr=document.createElement('canvas');terr.width=COLS;terr.height=ROWS;
 const tctx=terr.getContext('2d');let timg=tctx.createImageData(COLS,ROWS);
-let terrDirty=true;
+let terrDirty=true,terrBox=null; // terrDirty: 전체 다시 그림. terrBox: 이 네모(칸 좌표)만 다시 그림
+function markTerr(x0,y0,x1,y1){x0=Math.max(0,x0);y0=Math.max(0,y0);x1=Math.min(COLS-1,x1);y1=Math.min(ROWS-1,y1);if(x1<x0||y1<y0)return;
+  if(!terrBox)terrBox={x0,y0,x1,y1};else{if(x0<terrBox.x0)terrBox.x0=x0;if(y0<terrBox.y0)terrBox.y0=y0;if(x1>terrBox.x1)terrBox.x1=x1;if(y1>terrBox.y1)terrBox.y1=y1;}}
 function setGrid(c,r){c=c|0;r=r|0;if(!(c>=20&&c<=1000&&r>=20&&r<=1000))return;if(c===COLS&&r===ROWS){owner.fill(0);terrDirty=true;return;}COLS=c;ROWS=r;W=COLS*CELL;H=ROWS*CELL;TOTAL=COLS*ROWS;owner=new Int16Array(TOTAL);visited=new Uint8Array(TOTAL);queue=new Int32Array(TOTAL);terr.width=COLS;terr.height=ROWS;timg=tctx.createImageData(COLS,ROWS);terrDirty=true;}
 
 const $=id=>document.getElementById(id);
@@ -795,6 +797,16 @@ else if(kind==='cut'){o.type='square';o.frequency.setValueAtTime(140,t);o.freque
 function mkPlayer(name,color,bot,id){return{id:id||nextId++,name,color,bot,x:W/2,y:H/2,px:W/2,py:H/2,vx:0,vy:0,alive:false,out:false,trail:[],flicks:0,cells:0,lastIn:{x:W/2,y:H/2},thinkT:0,respawnT:0,kills:0,peak:0,moved:false,ox:0,oy:0,on:0,lrx:0,lry:0,lsp:-1,buf:[],spd:MAXV,dec:DECEL,mass:1,rest:.8};}
 function addPlayer(p){players.push(p);byId[p.id]=p;if(p.id>=nextId)nextId=p.id+1;}
 function removePlayer(p){if(p===me)return;for(let i=0;i<TOTAL;i++)if(owner[i]===p.id)owner[i]=0;players=players.filter(q=>q!==p);delete byId[p.id];terrDirty=true;}
+/* 선수마다 '내 땅이 모두 들어 있는 네모'(칸 좌표 bx0..bx1, by0..by1)를 들고 다닌다. 땅을 얻을 때 넓히고, 다 잃을 때(탈락) 비운다.
+   뺏겨서 줄어든 건 그대로 둔다 — 넓게 잡히는 쪽으로만 틀리므로 그 안만 훑어도 맵 전체를 훑은 것과 결과가 같다.
+   칸 주인이 바뀌는 곳은 placeSpawn·capture(claim)·kill 뿐이다(온라인은 서버가 보내 주므로 네모를 안 쓴다). */
+function boxAdd(p,cx,cy){if(!(p.bx1>=0)){p.bx0=p.bx1=cx;p.by0=p.by1=cy;return;}if(cx<p.bx0)p.bx0=cx;else if(cx>p.bx1)p.bx1=cx;if(cy<p.by0)p.by0=cy;else if(cy>p.by1)p.by1=cy;}
+function boxOf(p){return(!online&&p.bx1>=0)?{x0:p.bx0,y0:p.by0,x1:p.bx1,y1:p.by1}:{x0:0,y0:0,x1:COLS-1,y1:ROWS-1};}
+/* 칸 i 를 p 의 것으로. 뺏긴 선수의 칸 수를 줄인다 — 맵 전체를 다시 세지(recount) 않으려고. 바뀌었으면 1. */
+function claim(i,p,lost){const o=owner[i];if(o===p.id)return 0;if(o){const q=byId[o];if(q){q.cells--;lost.add(q);}}owner[i]=p.id;p.cells++;return 1;}
+function killEmptied(lost,by){if(online)return;for(const q of lost)if(q.alive&&q.cells<=0)kill(q,by,'enclosed');}
+/* 칸 수와 네모를 맵 전체로 다시 맞춘다 — 미리 돌려 둔 판을 이어받을 때 한 번. 그 뒤로는 claim·kill 이 맞춰 간다. */
+function resync(){for(const p of players){p.cells=0;p.bx1=-1;}for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const i=y*COLS+x,o=owner[i];if(!o)continue;const p=byId[o];if(!p){owner[i]=0;continue;}p.cells++;boxAdd(p,x,y);}terrDirty=true;}
 function resetWorld(){players=[];byId=[];owner.fill(0);nextId=1;terrDirty=true;me=null;}
 function snapTo(p,x,y){const dx=p.x+p.ox-x,dy=p.y+p.oy-y;if(Math.hypot(dx,dy)>220){p.ox=0;p.oy=0;p.on=0;}else{p.ox=dx;p.oy=dy;p.on=6;}p.x=p.px=x;p.y=p.py=y;}
 function addVertexAt(p,x,y){const l=p.trail[p.trail.length-1];if(l&&Math.hypot(l.x-x,l.y-y)<1.5)return;p.trail.push({x,y});if(p.trail.length>400)p.trail.splice(1,1);}
@@ -819,10 +831,12 @@ function findSpot(p){
 }
 function placeSpawn(p,cx,cy){
   cx=clamp(cx|0,5,COLS-6);cy=clamp(cy|0,5,ROWS-6);
-  for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){if(dx*dx+dy*dy<=20)owner[(cy+dy)*COLS+cx+dx]=p.id;}
+  const lost=new Set();
+  for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){if(dx*dx+dy*dy<=20)claim((cy+dy)*COLS+cx+dx,p,lost);}
+  boxAdd(p,cx-5,cy-5);boxAdd(p,cx+5,cy+5);markTerr(cx-5,cy-5,cx+5,cy+5);
   p.x=p.px=(cx+.5)*CELL;p.y=p.py=(cy+.5)*CELL;p.vx=p.vy=0;
   p.alive=true;p.out=false;p.trail=[];p.flicks=0;p.lastIn={x:p.x,y:p.y};p.thinkT=.8+Math.random();p.peak=0;
-  terrDirty=true;recount(null);
+  lost.delete(p);killEmptied(lost,null);
 }
 function spawn(p){const s=findSpot(p);placeSpawn(p,s.cx,s.cy);if(p===me)spawnT=3;}
 function recount(by){
@@ -832,21 +846,22 @@ function recount(by){
   for(const p of players){if(p.alive&&p.cells===0)kill(p,by,'enclosed');}
 }
 function ownStats(p){
+  const b=boxOf(p),id=p.id;
   let n=0,sx=0,sy=0;
-  for(let i=0;i<TOTAL;i++){if(owner[i]===p.id){n++;sx+=i%COLS;sy+=(i/COLS)|0;}}
+  for(let y=b.y0;y<=b.y1;y++){const r=y*COLS;for(let x=b.x0;x<=b.x1;x++)if(owner[r+x]===id){n++;sx+=x;sy+=y;}}
   if(!n)return null;
   const cx=(sx/n+.5)*CELL,cy=(sy/n+.5)*CELL;
   let bc=null,bd=1e18,bm=null,bmd=1e18;
-  for(let i=0;i<TOTAL;i++){if(owner[i]!==p.id)continue;const x=(i%COLS+.5)*CELL,y=(((i/COLS)|0)+.5)*CELL;
+  for(let gy=b.y0;gy<=b.y1;gy++){const r=gy*COLS;for(let gx=b.x0;gx<=b.x1;gx++){if(owner[r+gx]!==id)continue;const x=(gx+.5)*CELL,y=(gy+.5)*CELL;
     const d1=(x-cx)**2+(y-cy)**2;if(d1<bd){bd=d1;bc={x,y};}
-    const d2=(x-p.x)**2+(y-p.y)**2;if(d2<bmd){bmd=d2;bm={x,y};}}
+    const d2=(x-p.x)**2+(y-p.y)**2;if(d2<bmd){bmd=d2;bm={x,y};}}}
   return{cx,cy,center:bc,nearest:bm};
 }
 function kill(q,by,reason){
   if(!q.alive)return;
   q.alive=false;q.trail=[];q.out=false;q.vx=q.vy=0;
-  for(let i=0;i<TOTAL;i++)if(owner[i]===q.id)owner[i]=0;
-  q.cells=0;terrDirty=true;
+  {const b=boxOf(q);for(let y=b.y0;y<=b.y1;y++){const r=y*COLS;for(let x=b.x0;x<=b.x1;x++)if(owner[r+x]===q.id)owner[r+x]=0;}markTerr(b.x0,b.y0,b.x1,b.y1);q.bx1=-1;}
+  q.cells=0;
   if(by&&by!==q)by.kills++;
   if(by===me)meta.onKill();
   if(!online&&mode==='tutorial'){if(q===me){spawn(me);toast(T('괜찮아요, 다시!'),'#FFE08A');return;}if(by===me)tutorial.onKill();return;}
@@ -861,23 +876,28 @@ function fail(p){
   if(p===me){toast(T('3번 안에 못 돌아왔다'),'#FFD7C2');sfx('fail');}
 }
 function flick(p,ang,sp){if(p.out)addVertexAt(p,p.x,p.y);p.vx=Math.cos(ang)*sp;p.vy=Math.sin(ang)*sp;p.flicks++;if(p===me)meta.onFlick();}
-function rasterize(a,b,id){
-  const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy),n=Math.max(1,Math.ceil(len/(CELL*.5)));
-  for(let i=0;i<=n;i++){const c=cellOf(a.x+dx*i/n,a.y+dy*i/n);if(c>=0&&(mode!=='classic'||!owner[c]||owner[c]===id))owner[c]=id;}
+function rasterize(a,b,p,lost){
+  const id=p.id,dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy),n=Math.max(1,Math.ceil(len/(CELL*.5)));let g=0;
+  for(let i=0;i<=n;i++){const c=cellOf(a.x+dx*i/n,a.y+dy*i/n);if(c>=0&&(mode!=='classic'||!owner[c]||owner[c]===id))g+=claim(c,p,lost);}
+  return g;
 }
 function capture(p){
-  const id=p.id,pts=p.trail.concat([{x:p.x,y:p.y}]);
-  let before=0;for(let i=0;i<TOTAL;i++)if(owner[i]===id)before++;
-  for(let i=1;i<pts.length;i++)rasterize(pts[i-1],pts[i],id);
-  visited.fill(0);let qh=0,qt=0;
+  const id=p.id,pts=p.trail.concat([{x:p.x,y:p.y}]),lost=new Set();
+  // 새로 먹는 칸은 '내 땅 + 지나온 길'을 감싼 네모 안에만 생긴다. 맵 전체(무한 io 는 16만 칸)를 훑지 않고 그 네모(+1칸)만 본다.
+  // 네모 바깥 테두리 칸은 내 땅이 아니고 맵 가장자리와 이어져 있으니, 거기서 시작한 flood fill 은 맵 가장자리에서 한 것과 같다.
+  for(const q of pts)boxAdd(p,clamp(Math.floor(q.x/CELL),0,COLS-1),clamp(Math.floor(q.y/CELL),0,ROWS-1));
+  const x0=Math.max(0,p.bx0-1),y0=Math.max(0,p.by0-1),x1=Math.min(COLS-1,p.bx1+1),y1=Math.min(ROWS-1,p.by1+1);
+  let gained=0;
+  for(let i=1;i<pts.length;i++)gained+=rasterize(pts[i-1],pts[i],p,lost);
+  for(let y=y0;y<=y1;y++){const r=y*COLS;visited.fill(0,r+x0,r+x1+1);}
+  let qh=0,qt=0;
   const push=i=>{if(!visited[i]&&owner[i]!==id){visited[i]=1;queue[qt++]=i;}};
-  for(let x=0;x<COLS;x++){push(x);push((ROWS-1)*COLS+x);}
-  for(let y=0;y<ROWS;y++){push(y*COLS);push(y*COLS+COLS-1);}
-  while(qh<qt){const i=queue[qh++],x=i%COLS,y=(i-x)/COLS;if(x>0)push(i-1);if(x<COLS-1)push(i+1);if(y>0)push(i-COLS);if(y<ROWS-1)push(i+COLS);}
-  for(let i=0;i<TOTAL;i++)if(!visited[i]&&owner[i]!==id&&(mode!=='classic'||!owner[i]))owner[i]=id;
-  terrDirty=true;
-  recount(p);
-  const gained=p.cells-before;
+  for(let x=x0;x<=x1;x++){push(y0*COLS+x);push(y1*COLS+x);}
+  for(let y=y0;y<=y1;y++){push(y*COLS+x0);push(y*COLS+x1);}
+  while(qh<qt){const i=queue[qh++],x=i%COLS,y=(i-x)/COLS;if(x>x0)push(i-1);if(x<x1)push(i+1);if(y>y0)push(i-COLS);if(y<y1)push(i+COLS);}
+  for(let y=y0;y<=y1;y++){const r=y*COLS;for(let x=x0;x<=x1;x++){const i=r+x;if(!visited[i]&&owner[i]!==id&&(mode!=='classic'||!owner[i]))gained+=claim(i,p,lost);}}
+  markTerr(x0,y0,x1,y1);
+  lost.delete(p);killEmptied(lost,p);
   if(p===me&&gained>0){toast('+'+fmtPct(gained/TOTAL*100),me.color);sfx('capture');meta.onCapture(gained/TOTAL*100);}
   if(p===me&&gained>0&&isSurv()&&!online)boost.onCapture();
   if(mode==='classic')classic.onCapture(p,gained);
@@ -1072,10 +1092,14 @@ function loop(now){
 setInterval(()=>{if(document.hidden)advance(performance.now());},250);
 
 /* ---------- render ---------- */
-function buildTerr(){
+function buildTerr(b){
   const d=timg.data;
+  if(b){ // 바뀐 네모만
+    for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0,i=y*COLS+x;x<=b.x1;x++,i++){const o=owner[i],k=i*4;if(!o){d[k+3]=0;continue;}const p=byId[o];const c=p?rgb(p.color):[120,120,120];d[k]=c[0];d[k+1]=c[1];d[k+2]=c[2];d[k+3]=150;}
+    tctx.putImageData(timg,0,0,b.x0,b.y0,b.x1-b.x0+1,b.y1-b.y0+1);terrBox=null;return;
+  }
   for(let i=0;i<TOTAL;i++){const o=owner[i],k=i*4;if(!o){d[k+3]=0;continue;}const p=byId[o];const c=p?rgb(p.color):[120,120,120];d[k]=c[0];d[k+1]=c[1];d[k+2]=c[2];d[k+3]=150;}
-  tctx.putImageData(timg,0,0);terrDirty=false;
+  tctx.putImageData(timg,0,0);terrDirty=false;terrBox=null;
 }
 function aimVec(){
   if(!aim)return null;
@@ -1199,7 +1223,7 @@ function render(){
   for(let x=gx0;x<=gx1;x++){ctx.moveTo(x*CELL,Math.max(0,vy0));ctx.lineTo(x*CELL,Math.min(H,vy1));}
   for(let y=gy0;y<=gy1;y++){ctx.moveTo(Math.max(0,vx0),y*CELL);ctx.lineTo(Math.min(W,vx1),y*CELL);}
   ctx.stroke();
-  if(terrDirty)buildTerr();
+  if(terrDirty)buildTerr();else if(terrBox)buildTerr(terrBox);
   ctx.imageSmoothingEnabled=false;ctx.drawImage(terr,0,0,W,H);ctx.imageSmoothingEnabled=true;
   const paths={};
   for(let y=gy0;y<gy1;y++)for(let x=gx0;x<gx1;x++){
@@ -1633,7 +1657,7 @@ function onWsMessage(m){
 
 /* ---------- game flow ---------- */
 function prepOffline(){
-  if(players.length&&!online&&!me&&COLS===400&&obstLevelCur===obstLevel())return;
+  if(players.length&&!online&&!me&&COLS===400&&obstLevelCur===obstLevel()){resync();return;}
   if(COLS!==400)setGrid(400,400);
   resetWorld();online=false;genObstacles(obstLevel());
   for(let i=0;i<NBOTS_OFFLINE;i++){const b=mkPlayer(botName(i),BOT_COLORS[i%BOT_COLORS.length],true);addPlayer(b);}
@@ -1773,7 +1797,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.3';
+const APP_VER='0.4.4';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
