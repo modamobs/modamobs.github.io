@@ -713,6 +713,9 @@ const NICKS=(LANG==='en'?['Guest','Sprout','Sparkle','Roller','Biggie','Kiddo','
 /* 실험 패널(DEV): 무한 io 봇 수와 그리기 끄기. 설정의 버전 글자 7번 → 패널. localStorage gusul-dev */
 const DEV=(()=>{let v={};try{v=JSON.parse(localStorage.getItem('gusul-dev')||'{}')||{};}catch(e){}return v;})();
 const NBOTS_OFFLINE=DEV.bots===0?0:DEV.bots===10?10:40;
+/** 실험 패널에서 무언가 바꿨나 (봇 수는 기본 40 이 아닐 때만). 켜져 있으면 기록·업적·순위표가 쌓이지 않는다. */
+const devOn=()=>NBOTS_OFFLINE!==40||Object.keys(DEV).some(k=>k!=='bots'&&DEV[k]);
+let devRound=false; // 이번 판이 실험 판인가 (판 시작 때 정함)
 const PROTO=4;
 const WS_URLS=['wss://gusul-ttang-io.fly.dev','wss://gusul-ttang-io.onrender.com']; // 공용 게임 서버 후보: 도쿄(Fly) 먼저, 안 되면 싱가포르(Render)
 const WS_URL=WS_URLS[0];
@@ -812,7 +815,7 @@ const perfStat=(()=>{
   function tick(now){if(!on||paused||document.hidden){last=0;return;}if(last){const d=now-last;frames++;if(d>24){late++;if(d>40)late2++;}if(d>worst)worst=d;}last=now;}
   function end(){
     if(!on)return;on=false;const secs=(performance.now()-t0)/1000;if(secs<10||frames<300)return;
-    const p={mode:mode,secs:Math.round(secs),frames:frames,late:late,late2:late2,late_pct:+(100*late/frames).toFixed(2),worst_ms:Math.round(worst),dpr:+(window.devicePixelRatio||1).toFixed(2),dev:Object.keys(DEV).some(k=>DEV[k])?1:0};
+    const p={mode:mode,secs:Math.round(secs),frames:frames,late:late,late2:late2,late_pct:+(100*late/frames).toFixed(2),worst_ms:Math.round(worst),dpr:+(window.devicePixelRatio||1).toFixed(2),dev:devOn()?1:0};
     const go=()=>analytics.track('perf_round',p);
     if(!D){go();return;}
     D.stats({reset:true}).then(n=>{if(n){p.n_frames=n.frames|0;p.n_late=n.late|0;p.n_late2=n.veryLate|0;p.n_late_pct=n.frames?+(100*n.late/n.frames).toFixed(2):0;
@@ -1121,7 +1124,7 @@ let devLate=0,devFrames=0,devLast=0,devShown=0,devSec=performance.now(),devN=0;
 function devTick(now){if(devp.hidden)return;if(devLast&&now-devLast>24)devLate++;devFrames++;devLast=now;
   if(now-devSec>=1000){devSec=now;if((devN=(devN||0)+1)%5===1)perfStat.native().then(n=>{const e=devp.querySelector('#devNat');if(e&&n)e.textContent=n.maker+' '+n.model+' · '+n.hz+'Hz · 절전 '+(n.powerSave?'켬':'끔')+' · 시스템 '+n.frames+'f 늦음 '+n.late+'/'+n.veryLate;}).catch(()=>{});const t=devp.querySelector('b');if(t)t.textContent=devFrames+'fps 늦음 '+devLate+' (합 '+(devShown+=devLate)+')';devFrames=0;devLate=0;}}
 function devOpen(){devp.hidden=false;devLast=0;devShown=0;const f=(k,l)=>`<label><input type=checkbox data-k=${k} ${DEV[k]?'checked':''}> ${l}</label>`;
-  devp.innerHTML='<b>…</b><br><span id=devNat></span><br><label>봇 <select id=devBots><option value=40>40</option><option value=10>10</option><option value=0>0</option></select> (새 판부터)</label>'+f('noborder','땅 테두리 끔')+f('notrail','길 끔')+f('nogrid','격자 끔')+f('noground','바닥 무늬 끔')+f('nomini','미니맵 끔')+f('nohud','순위판 끔')+'<label><button id=devClose>닫기</button></label>';
+  devp.innerHTML='<b>…</b><br><span id=devNat></span><br><label>봇 <select id=devBots><option value=40>40</option><option value=10>10</option><option value=0>0</option></select> (새 판부터)</label>'+f('noborder','땅 테두리 끔')+f('notrail','길 끔')+f('nogrid','격자 끔')+f('noground','바닥 무늬 끔')+f('nomini','미니맵 끔')+f('nohud','순위판 끔')+'<br><small>하나라도 바꾸면 그 판은 기록·업적·순위표에 안 들어가요</small><label><button id=devClose>닫기</button></label>';
   devp.querySelector('#devBots').value=String(NBOTS_OFFLINE);
   devp.addEventListener('change',e=>{const el=e.target;if(el.id==='devBots')DEV.bots=+el.value;else if(el.dataset.k)DEV[el.dataset.k]=el.checked;try{localStorage.setItem('gusul-dev',JSON.stringify(DEV));}catch(x){}});
   devp.querySelector('#devClose').addEventListener('click',()=>{devp.hidden=true;});}
@@ -1422,8 +1425,8 @@ function endRound(){
     const n=document.createElement('span');n.className='n';n.textContent=i+1;const c=document.createElement('span');c.className='c';c.style.background=p.color;
     const nm=document.createElement('span');nm.className='name';nm.textContent=p===me?TF('{name} (나)',{name:p.name}):p.name;const pc=document.createElement('span');pc.className='p';pc.textContent=p.alive?fmtPct(p.cells/TOTAL*100):T('탈락');
     li.append(n,c,nm,pc);return li;}));
-  let wins=0;try{wins=parseInt(localStorage.getItem('gusul-wins'))||0;if(myRank===1){wins++;localStorage.setItem('gusul-wins',String(wins));}}catch(e){}
-  if(mode==='daily'){const land=me.alive?me.cells/TOTAL*100:0;const sc=dailyScore(myRank,land);const ds=dailyStore();const isBest=sc>ds.best;if(isBest)ds.best=sc;dailySave(ds);platform.submitScore(ds.best);track('daily_score',{score:sc,best:ds.best,plays:ds.plays,is_best:isBest?1:0});
+  let wins=0;try{wins=parseInt(localStorage.getItem('gusul-wins'))||0;if(myRank===1&&!devRound){wins++;localStorage.setItem('gusul-wins',String(wins));}}catch(e){}
+  if(mode==='daily'){const land=me.alive?me.cells/TOTAL*100:0;const sc=dailyScore(myRank,land);const ds=dailyStore();const isBest=!devRound&&sc>ds.best;if(!devRound){if(isBest)ds.best=sc;dailySave(ds);platform.submitScore(ds.best);}track('daily_score',{score:sc,best:ds.best,plays:ds.plays,is_best:isBest?1:0});
     $('resTitle').textContent=TF('{s}점',{s:sc});$('resSub').textContent=(myRank===1?T('1등'):rankStr(myRank))+TF(' · 땅 {p}',{p:fmtPct(land)})+(isBest?T(' · 오늘 최고 기록!'):TF(' · 오늘 최고 {b}점',{b:ds.best}));
     const y=ds.hist&&ds.hist.length?ds.hist[ds.hist.length-1]:null;$('resWins').textContent=(y?TF('어제 {b}점 · ',{b:y.best}):'')+TF('오늘 {n}번 도전',{n:ds.plays});restoreRandom();}
   else $('resWins').textContent=TF('통산 1등 {n}번',{n:wins});
@@ -1901,7 +1904,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.15';
+const APP_VER='0.4.16';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -1996,11 +1999,11 @@ const meta=(()=>{
   const bump=(k,v)=>{stats.d[k]=(stats.d[k]||0)+(v==null?1:v);};
   return {
     get stats(){return stats;},ACH,achDone,daily,
-    onRoundStart(m){rollDay();if(m==='survival'||m==='daily'||m==='classic'){if(m==='survival')stats.survGames++;stats.games++;bump('games');save();}},
+    onRoundStart(m){devRound=devOn();if(devRound)return;rollDay();if(m==='survival'||m==='daily'||m==='classic'){if(m==='survival')stats.survGames++;stats.games++;bump('games');save();}},
     onFlick(){},
-    onCapture(pct){rollDay();if(pct>stats.maxCap){stats.maxCap=pct;}bump('land',pct);if(pct>=3)bump('bigCap');save();checkAch();checkDaily();},
-    onKill(){rollDay();stats.kills++;bump('kills');save();checkAch();checkDaily();},
-    onRoundEnd(rank,n){ads.noteFinished();rollDay();if(rank===1){stats.wins++;bump('wins');}if(rank<=3){stats.top3++;bump('top3');}save();checkAch();checkDaily();try{cloud.afterRound();}catch(e){}},
+    onCapture(pct){if(devRound||devOn())return;rollDay();if(pct>stats.maxCap){stats.maxCap=pct;}bump('land',pct);if(pct>=3)bump('bigCap');save();checkAch();checkDaily();},
+    onKill(){if(devRound||devOn())return;rollDay();stats.kills++;bump('kills');save();checkAch();checkDaily();},
+    onRoundEnd(rank,n){ads.noteFinished();if(devRound)return;rollDay();if(rank===1){stats.wins++;bump('wins');}if(rank<=3){stats.top3++;bump('top3');}save();checkAch();checkDaily();try{cloud.afterRound();}catch(e){}},
     finishTutorial(){stats.tutorialDone=1;save();},
     progress(m){return Math.min(m.target,stats.d[m.stat]||0);},
   };
