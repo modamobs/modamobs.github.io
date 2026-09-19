@@ -7,7 +7,7 @@
 <p>최종 수정일: 2026-09-19 · <a href="#en">English</a></p>
 
 <h2>요약</h2>
-<p>게임은 로그인 없이 즐길 수 있고, 게임을 하는 데 인터넷이 필요하지 않습니다. 광고와 인앱 구매는 없습니다. 게임을 고치는 데 쓰려고 익명 이용 통계를 보냅니다. 안드로이드 앱에는 순위표와 기록 백업이 있어서, 이를 위해 이름 없는 익명 계정이 자동으로 만들어지고 구글 계정을 선택해 연결할 수 있습니다. 설정에서 언제든 계정과 서버 기록을 지울 수 있습니다.</p>
+<p>게임은 로그인 없이 즐길 수 있고, 게임을 하는 데 인터넷이 필요하지 않습니다. 인앱 구매는 없습니다. 안드로이드 앱에는 광고(Google AdMob)가 있고, 광고를 위해 구글이 기기 정보를 수집합니다(아래 5장). 웹판에는 광고가 없습니다. 게임을 고치는 데 쓰려고 익명 이용 통계를 보냅니다. 안드로이드 앱에는 순위표와 기록 백업이 있어서, 이를 위해 이름 없는 익명 계정이 자동으로 만들어지고 구글 계정을 선택해 연결할 수 있습니다. 설정에서 언제든 계정과 서버 기록을 지울 수 있습니다.</p>
 
 <h2>1. 기기 안에 저장하는 정보</h2>
 <p>다음 정보는 기기 내부 저장소에 보관되고, 앱을 삭제하면 함께 지워집니다.</p>
@@ -31,11 +31,18 @@
 <p>게임 진행은 모두 기기 안에서 계산되고 인터넷이 필요하지 않습니다. 인터넷은 순위표·기록 백업(안드로이드 앱)과 이용 통계에만 씁니다.</p>
 <p>웹 브라우저로 즐기는 개발 서버 버전(gusul-ttang-io.onrender.com)에는 온라인 대전이 있습니다. 온라인 대전을 시작하면 화면에 표시할 이름과 구슬의 위치가 같은 방의 다른 이용자에게 실시간으로 전달되고, 저장하지 않으며 방을 나가면 사라집니다. 서버 운영을 위해 접속 시각과 IP 주소가 호스팅 사업자의 서버 기록에 일시적으로 남을 수 있습니다.</p>
 
-<h2>5. 광고와 인앱 구매</h2>
-<p>현재 버전에는 광고와 인앱 구매가 없고, 광고 식별자(Advertising ID)를 쓰지 않습니다. 나중에 넣게 되면 이 문서와 스토어의 데이터 보안 정보를 먼저 고칩니다.</p>
+<h2>5. 광고(Google AdMob)와 인앱 구매</h2>
+<p>안드로이드 앱은 Google AdMob 으로 두 가지 광고를 보여줍니다. 탈락했을 때 스스로 골라 보는 보상형 광고(끝까지 보면 한 번 이어하기)와, 판을 두 번 이상 마친 뒤 결과 화면을 떠날 때 가끔 나오는 전면 광고입니다. 판 도중에는 광고가 나오지 않습니다. 광고를 위해 구글이 다음 정보를 수집하고 처리합니다.</p>
+<table>
+<tr><th>정보</th><th>목적</th></tr>
+<tr><td>광고 ID(Advertising ID), App Set ID 등 기기 식별자</td><td>광고 게재, 빈도 제한, 광고 실적 측정, 부정 클릭 방지</td></tr>
+<tr><td>IP 주소로 추정한 대략적인 위치</td><td>지역에 맞는 광고, 분석</td></tr>
+<tr><td>광고 시청·탭 등 앱 상호작용, 기기 모델·운영체제 등 진단 정보</td><td>광고, 분석, 부정 방지</td></tr>
+</table>
+<p>구글이 이 정보를 어떻게 쓰는지는 <a href="https://policies.google.com/technologies/partner-sites">구글 파트너 사이트 정책</a>에서 볼 수 있습니다. 광고 ID는 기기 설정(Google → 광고)에서 재설정하거나 지울 수 있습니다. 유럽경제지역·영국에서는 처음 실행할 때 동의 창이 뜨고, 앱 설정의 "광고 개인정보 설정"에서 언제든 바꿀 수 있습니다. 웹판(modamobs.github.io)에는 광고가 없습니다. 인앱 구매는 없습니다.</p>
 
 <h2>6. 제3자 제공</h2>
-<p>개발자는 어떤 정보도 판매하지 않습니다. 위의 순위표·백업(Google Firebase)과 이용 통계(Google Analytics) 처리를 위해 구글(Google LLC)을 이용하는 것 외에는 제공하지 않습니다. 순위표에 올린 별명·구슬·점수는 다른 이용자에게 보입니다.</p>
+<p>개발자는 어떤 정보도 판매하지 않습니다. 위의 순위표·백업(Google Firebase)과 이용 통계(Google Analytics), 광고(Google AdMob, 5장) 처리를 위해 구글(Google LLC)을 이용하는 것 외에는 제공하지 않습니다. 순위표에 올린 별명·구슬·점수는 다른 이용자에게 보입니다.</p>
 
 <h2>7. 아동</h2>
 <p>앱은 만 13세 미만 아동을 주 대상으로 하지 않으며, 아동의 개인정보를 고의로 수집하지 않습니다.</p>
@@ -60,7 +67,7 @@
 <p>Last updated: 2026-09-19 · <a href="#top">한국어</a></p>
 
 <h2>Summary</h2>
-<p>You can play without an account and without an internet connection. There are no ads and no in-app purchases. The app sends anonymous usage statistics so the game can be improved. The Android app has leaderboards and record backup: for these, a nameless anonymous account is created automatically, and you may choose to link your Google account. You can delete your account and server records from Settings at any time.</p>
+<p>You can play without an account and without an internet connection. There are no in-app purchases. The Android app shows ads (Google AdMob), and Google collects device information to serve them (section 5). The web version has no ads. The app sends anonymous usage statistics so the game can be improved. The Android app has leaderboards and record backup: for these, a nameless anonymous account is created automatically, and you may choose to link your Google account. You can delete your account and server records from Settings at any time.</p>
 
 <h2>1. Stored on your device</h2>
 <p>The following stays in your device's storage and is removed when you uninstall the app.</p>
@@ -84,11 +91,18 @@
 <p>Gameplay is computed entirely on your device and needs no internet. The internet is used only for leaderboards and backup (Android app) and for usage statistics.</p>
 <p>The development server version in the browser (gusul-ttang-io.onrender.com) has an online mode. When you use it, your display name and marble position are relayed in real time to the other players in the same room; this is not stored and disappears when you leave. Connection times and IP addresses may remain briefly in the hosting provider's logs.</p>
 
-<h2>5. Ads and in-app purchases</h2>
-<p>This version has no ads and no in-app purchases, and does not use the Advertising ID. If that changes, this document and the store's Data Safety section will be updated first.</p>
+<h2>5. Ads (Google AdMob) and in-app purchases</h2>
+<p>The Android app shows two kinds of ads through Google AdMob: a rewarded ad you choose to watch after being knocked out (watch to the end to continue once), and an occasional interstitial ad when you leave the result screen after finishing two or more rounds. No ads appear during a round. To serve ads, Google collects and processes:</p>
+<table>
+<tr><th>Information</th><th>Purpose</th></tr>
+<tr><td>Device identifiers such as the Advertising ID and App Set ID</td><td>Serving ads, frequency capping, ad measurement, fraud prevention</td></tr>
+<tr><td>Approximate location derived from the IP address</td><td>Regional ads, analytics</td></tr>
+<tr><td>App interactions such as ad views and taps; diagnostics such as device model and OS</td><td>Advertising, analytics, fraud prevention</td></tr>
+</table>
+<p>See <a href="https://policies.google.com/technologies/partner-sites">how Google uses information from sites or apps that use its services</a>. You can reset or delete the Advertising ID in your device settings (Google → Ads). In the EEA and UK a consent form appears on first launch, and you can change your choice any time under "Ad privacy settings" in the app's Settings. The web version (modamobs.github.io) has no ads. There are no in-app purchases.</p>
 
 <h2>6. Sharing with third parties</h2>
-<p>The developer does not sell any information. Apart from using Google (Google LLC) to process the leaderboards and backup (Firebase) and usage statistics (Analytics) described above, nothing is shared. The name, marble and scores you post to a leaderboard are visible to other players.</p>
+<p>The developer does not sell any information. Apart from using Google (Google LLC) to process the leaderboards and backup (Firebase) and usage statistics (Analytics) and ads (AdMob, section 5) described above, nothing is shared. The name, marble and scores you post to a leaderboard are visible to other players.</p>
 
 <h2>7. Children</h2>
 <p>The app is not directed to children under 13, and the developer does not knowingly collect personal information from children.</p>
