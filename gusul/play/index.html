@@ -274,7 +274,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="srow" id="acctRow" hidden><span class="sl">계정</span><button type="button" class="tg" id="acctBtn">구글 연결</button></div>
     <div class="acct" id="acctInfo" hidden><span id="acctText"></span> · <a href="#" id="acctDel">계정 삭제</a></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
-    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.11</span></p>
+    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.13</span></p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
   </div>
 </div>
@@ -789,6 +789,8 @@ const analytics=(()=>{
     const ev={t:Date.now(),name,params:params||{}};
     buf.push(ev);if(buf.length>200)buf.shift();
     if(busy()){pend.push(ev);if(pend.length>100)pend.shift();}else send(ev);
+    if(name==='round_start')perfStat.begin(params&&params.mode);
+    else if(name==='round_end'||name==='die'||name==='quit_to_main')perfStat.end();
   }
   setInterval(()=>{if(pend.length&&!busy())flush();},500);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();});
@@ -796,6 +798,24 @@ const analytics=(()=>{
   return{boot,track,platform,enabled:()=>!!id,events:()=>buf.slice(-50),flush};
 })();
 const track=(n,p)=>analytics.track(n,p);
+/* 끊김 요약(perf_round): 판이 도는 동안 프레임 간격을 세고, 판이 끝나면 한 줄로 보낸다. 10초 안 된 판은 안 보낸다.
+   late = 24ms 넘은 간격(한 프레임 놓침), late2 = 40ms 넘은 간격. 앱에서는 시스템이 센 값(n_*)과 기기 상태도 같이.
+   실험 패널(DEV)을 켠 판은 dev=1 로 표시해 통계에서 거른다. */
+const perfStat=(()=>{
+  let on=false,mode='',t0=0,last=0,frames=0,late=0,late2=0,worst=0;
+  let D=null;try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform())D=(C.Plugins&&C.Plugins.Diag)||(C.registerPlugin?C.registerPlugin('Diag'):null);}catch(e){}
+  function begin(m){on=true;mode=m||'';t0=performance.now();last=0;frames=0;late=0;late2=0;worst=0;if(D){try{D.stats({reset:true}).catch(()=>{});}catch(e){}}}
+  function tick(now){if(!on||paused||document.hidden){last=0;return;}if(last){const d=now-last;frames++;if(d>24){late++;if(d>40)late2++;}if(d>worst)worst=d;}last=now;}
+  function end(){
+    if(!on)return;on=false;const secs=(performance.now()-t0)/1000;if(secs<10||frames<300)return;
+    const p={mode:mode,secs:Math.round(secs),frames:frames,late:late,late2:late2,late_pct:+(100*late/frames).toFixed(2),worst_ms:Math.round(worst),dpr:+(window.devicePixelRatio||1).toFixed(2),dev:Object.keys(DEV).some(k=>DEV[k])?1:0};
+    const go=()=>analytics.track('perf_round',p);
+    if(!D){go();return;}
+    D.stats({reset:true}).then(n=>{if(n){p.n_frames=n.frames|0;p.n_late=n.late|0;p.n_late2=n.veryLate|0;p.n_late_pct=n.frames?+(100*n.late/n.frames).toFixed(2):0;
+      p.power_save=n.powerSave?1:0;p.hz=n.hz|0;p.thermal=n.thermal==null?-1:n.thermal|0;p.device=String(n.maker||'')+' '+String(n.model||'');p.sdk=n.sdk|0;}go();}).catch(go);
+  }
+  return{begin,tick,end,peek:()=>({on,frames,late,late2}),native:()=>D?D.stats({}):Promise.resolve(null)};
+})();
 
 /* ---------- sound ---------- */
 let ac=null,muted=false;try{muted=localStorage.getItem('gusul-mute')==='1';}catch(e){}
@@ -1093,17 +1113,17 @@ function advance(now){
 let presimLeft=0;
 const hudEl=$('hud'),exitEl=$('exitBtn');
 const devp=document.createElement('div');devp.className='devp';devp.hidden=true;document.body.appendChild(devp);
-let devLate=0,devFrames=0,devLast=0,devShown=0,devSec=performance.now();
+let devLate=0,devFrames=0,devLast=0,devShown=0,devSec=performance.now(),devN=0;
 function devTick(now){if(devp.hidden)return;if(devLast&&now-devLast>24)devLate++;devFrames++;devLast=now;
-  if(now-devSec>=1000){devSec=now;const t=devp.querySelector('b');if(t)t.textContent=devFrames+'fps 늦음 '+devLate+' (합 '+(devShown+=devLate)+')';devFrames=0;devLate=0;}}
+  if(now-devSec>=1000){devSec=now;if((devN=(devN||0)+1)%5===1)perfStat.native().then(n=>{const e=devp.querySelector('#devNat');if(e&&n)e.textContent=n.maker+' '+n.model+' · '+n.hz+'Hz · 절전 '+(n.powerSave?'켬':'끔')+' · 시스템 '+n.frames+'f 늦음 '+n.late+'/'+n.veryLate;}).catch(()=>{});const t=devp.querySelector('b');if(t)t.textContent=devFrames+'fps 늦음 '+devLate+' (합 '+(devShown+=devLate)+')';devFrames=0;devLate=0;}}
 function devOpen(){devp.hidden=false;devLast=0;devShown=0;const f=(k,l)=>`<label><input type=checkbox data-k=${k} ${DEV[k]?'checked':''}> ${l}</label>`;
-  devp.innerHTML='<b>…</b><br><label>봇 <select id=devBots><option value=40>40</option><option value=10>10</option><option value=0>0</option></select> (새 판부터)</label>'+f('noborder','땅 테두리 끔')+f('notrail','길 끔')+f('nogrid','격자 끔')+f('noground','바닥 무늬 끔')+f('nomini','미니맵 끔')+f('nohud','순위판 끔')+'<label><button id=devClose>닫기</button></label>';
+  devp.innerHTML='<b>…</b><br><span id=devNat></span><br><label>봇 <select id=devBots><option value=40>40</option><option value=10>10</option><option value=0>0</option></select> (새 판부터)</label>'+f('noborder','땅 테두리 끔')+f('notrail','길 끔')+f('nogrid','격자 끔')+f('noground','바닥 무늬 끔')+f('nomini','미니맵 끔')+f('nohud','순위판 끔')+'<label><button id=devClose>닫기</button></label>';
   devp.querySelector('#devBots').value=String(NBOTS_OFFLINE);
   devp.addEventListener('change',e=>{const el=e.target;if(el.id==='devBots')DEV.bots=+el.value;else if(el.dataset.k)DEV[el.dataset.k]=el.checked;try{localStorage.setItem('gusul-dev',JSON.stringify(DEV));}catch(x){}});
   devp.querySelector('#devClose').addEventListener('click',()=>{devp.hidden=true;});}
 {let n=0,t=0;$('appVer').addEventListener('click',()=>{const now=Date.now();n=now-t<1500?n+1:1;t=now;if(n>=7){n=0;$('settings').hidden=true;devOpen();}});}
 function loop(now){
-  requestAnimationFrame(loop);devTick(now);
+  requestAnimationFrame(loop);devTick(now);perfStat.tick(now);
   if(hudEl.hidden!==!startEl.hidden)hudEl.hidden=!startEl.hidden;
   {const show=startEl.hidden&&mode!=='tutorial';if(exitEl.hidden===show)exitEl.hidden=!show;}
   if(dbg.lastRaf){const d=now-dbg.lastRaf;dbg.rdt=d;dbg.fall++;if(Math.abs(d-16.67)>5)dbg.fjit++;}dbg.lastRaf=now;
@@ -1876,7 +1896,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.11';
+const APP_VER='0.4.13';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -1929,7 +1949,7 @@ setupButtons();
 againBtn.addEventListener('click',()=>{
   sfx('flick');
   if(online){againBtn.disabled=true;wsSend({t:'respawn'});setTimeout(()=>{againBtn.disabled=false;},3000);}
-  else{spawn(me);me.kills=0;me.peak=0;hintEl.style.opacity=1;deadEl.hidden=true;updateHud();}
+  else{spawn(me);me.kills=0;me.peak=0;hintEl.style.opacity=1;deadEl.hidden=true;updateHud();perfStat.begin(mode);}
 });
 
 window.__gusul={die:()=>kill(me,null,'cut'),stats:()=>meta.stats,roundT:s=>{roundT=s;},mode:()=>mode,cfg,reset:()=>{dbg.jerk=0;dbg.frames=0;dbg.resync=0;dbg.maxErr=0;dbg.fjit=0;dbg.fall=0;dbg.late=0;dbg.gapMax=0;dbg.nak=0;dbg.echo=0;gaps.length=0;},gaps:()=>{const g=gaps.slice().sort((a,b)=>a-b);const q=x=>g.length?Math.round(g[Math.min(g.length-1,Math.floor(g.length*x))]):0;return{n:g.length,p50:q(.5),p90:q(.9),p99:q(.99),max:q(1)};},net:()=>Object.assign({lat:Math.round(lat),pendingEcho},dbg),me:()=>({online,running,room:roomId,slot:me?me.id:null,build:wsBuild}),obst:()=>obst,players:()=>players.map(p=>({id:p.id,name:p.name,alive:p.alive,cells:p.cells,bot:p.bot,x:p.x|0,y:p.y|0,out:p.out,tr:p.trail.length,f:p.flicks,spd:+p.spd.toFixed(2),dec:+p.dec.toFixed(3),mass:+p.mass.toFixed(2),rest:+p.rest.toFixed(2)})),paused:()=>paused,rt:()=>roundT,boost:()=>boost,events:()=>analytics.events(),track};
@@ -2042,7 +2062,7 @@ function showRevive(){
 $('reviveYes').addEventListener('click',async()=>{
   sfx('flick');$('revive').hidden=true;reviveUsed=true;track('revive_use',{mode:mode,sec:Math.round(SURV.time-roundT)});
   const ok=await ads.showReward();   // 나중에 실제 보상형 광고로 교체 (지금은 바로 true)
-  if(ok){elimOrder=elimOrder.filter(p=>p!==me);spawn(me);me.flicks=0;spawnT=3;toast(T('부활!'),'#FFE08A');sfx('capture');running=true;}
+  if(ok){elimOrder=elimOrder.filter(p=>p!==me);spawn(me);me.flicks=0;spawnT=3;toast(T('부활!'),'#FFE08A');sfx('capture');running=true;perfStat.begin(mode);}
   else{running=true;endRound();}
 });
 $('reviveNo').addEventListener('click',()=>{sfx('flick');$('revive').hidden=true;running=true;endRound();});
