@@ -272,9 +272,10 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
     <div class="srow"><span class="sl">소리</span><button type="button" class="tg" id="soundTg">켜짐</button></div>
     <div class="srow"><span class="sl">언어</span><button type="button" class="tg" id="langTg">한국어</button></div>
     <div class="srow" id="acctRow" hidden><span class="sl">계정</span><button type="button" class="tg" id="acctBtn">구글 연결</button></div>
+    <div class="srow" id="adPrivRow" hidden><span class="sl">광고 개인정보 설정</span><button type="button" class="tg" id="adPrivBtn">열기</button></div>
     <div class="acct" id="acctInfo" hidden><span id="acctText"></span> · <a href="#" id="acctDel">계정 삭제</a></div>
     <div class="srow" id="netRow"><span class="sl">온라인 서버</span><span id="netStat" style="font-size:12px;color:#6d5535">-</span></div>
-    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.13</span></p>
+    <p class="fine"><span id="fineText">기록은 이 기기에만 저장돼요. 회원가입·채팅 없음. 익명 이용 통계만 보냅니다.</span><br><a href="https://modamobs.github.io/gusul/privacy-policy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · <span id="appVer">v0.4.14</span></p>
     <div class="btnrow"><button class="btn" id="settingsClose">저장</button></div>
   </div>
 </div>
@@ -573,6 +574,9 @@ const EN={
   '계속하기':'Keep playing',
   '탈락!':'You\'re out!',
   '한 번 이어하기':'Continue once',
+  '광고 보고 이어하기':'Watch an ad to continue',
+  '광고 개인정보 설정':'Ad privacy settings',
+  '열기':'Open',
   '결과 보기':'See results',
   '탈락했어요. 이번 판에 한 번 더 살아날 수 있어요.':'You are out. You can come back once this round.',
   '부활!':'Back in!',
@@ -1579,6 +1583,7 @@ function newSurvivalGame(name){
   updateHud();running=true;startEl.hidden=true;$('result').hidden=true;deadEl.hidden=true;pushGameState();
 }
 function showDead(by,reason){
+  ads.noteFinished();
   const who=by?(by===me?T('나'):by.name):T('누군가');
   $('deadWhy').textContent=reason==='enclosed'?TF('{who}한테 땅을 통째로 뺏겼다',{who:who}):TF('{who}{i} 내 길을 끊었다',{who:who,i:iga(who)});
   $('sPeak').textContent=fmtPct(me.peak);
@@ -1840,9 +1845,9 @@ $('classicOpp').addEventListener('change',()=>{refreshStartCard();sfx('hit');});
 $('obstSel').value=String(obstLevel());$('obstSel').addEventListener('change',()=>{try{localStorage.setItem('gusul-obst',$('obstSel').value);}catch(e){}sfx('hit');});
 document.querySelectorAll('.mcard').forEach(c=>c.addEventListener('click',()=>{selMode=c.dataset.mode;try{localStorage.setItem('gusul-mode',selMode);}catch(e){}applyChips();sfx('hit');track('mode_select',{mode:selMode});}));
 applyChips();
-$('resAgain').addEventListener('click',()=>{sfx('flick');$('result').hidden=true;if(mode==='classic')classic.start(myName,$('classicOpp').value);else if(mode==='daily')newDailyGame(myName);else if(mode==='survival')newSurvivalGame(myName);else newOfflineGame(myName);});
-$('resHome').addEventListener('click',()=>{sfx('flick');goHome();});
-$('deadHome').addEventListener('click',()=>{sfx('flick');goHome();});
+$('resAgain').addEventListener('click',()=>{sfx('flick');ads.leaveResult(()=>{$('result').hidden=true;if(mode==='classic')classic.start(myName,$('classicOpp').value);else if(mode==='daily')newDailyGame(myName);else if(mode==='survival')newSurvivalGame(myName);else newOfflineGame(myName);});});
+$('resHome').addEventListener('click',()=>{sfx('flick');ads.leaveResult(goHome);});
+$('deadHome').addEventListener('click',()=>{sfx('flick');ads.leaveResult(goHome);});
 
 /* ---------- 메인으로 나가기 ---------- */
 function goHome(){
@@ -1896,7 +1901,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.13';
+const APP_VER='0.4.15';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -1949,7 +1954,7 @@ setupButtons();
 againBtn.addEventListener('click',()=>{
   sfx('flick');
   if(online){againBtn.disabled=true;wsSend({t:'respawn'});setTimeout(()=>{againBtn.disabled=false;},3000);}
-  else{spawn(me);me.kills=0;me.peak=0;hintEl.style.opacity=1;deadEl.hidden=true;updateHud();perfStat.begin(mode);}
+  else ads.leaveResult(()=>{spawn(me);me.kills=0;me.peak=0;hintEl.style.opacity=1;deadEl.hidden=true;updateHud();perfStat.begin(mode);});
 });
 
 window.__gusul={die:()=>kill(me,null,'cut'),stats:()=>meta.stats,roundT:s=>{roundT=s;},mode:()=>mode,cfg,reset:()=>{dbg.jerk=0;dbg.frames=0;dbg.resync=0;dbg.maxErr=0;dbg.fjit=0;dbg.fall=0;dbg.late=0;dbg.gapMax=0;dbg.nak=0;dbg.echo=0;gaps.length=0;},gaps:()=>{const g=gaps.slice().sort((a,b)=>a-b);const q=x=>g.length?Math.round(g[Math.min(g.length-1,Math.floor(g.length*x))]):0;return{n:g.length,p50:q(.5),p90:q(.9),p99:q(.99),max:q(1)};},net:()=>Object.assign({lat:Math.round(lat),pendingEcho},dbg),me:()=>({online,running,room:roomId,slot:me?me.id:null,build:wsBuild}),obst:()=>obst,players:()=>players.map(p=>({id:p.id,name:p.name,alive:p.alive,cells:p.cells,bot:p.bot,x:p.x|0,y:p.y|0,out:p.out,tr:p.trail.length,f:p.flicks,spd:+p.spd.toFixed(2),dec:+p.dec.toFixed(3),mass:+p.mass.toFixed(2),rest:+p.rest.toFixed(2)})),paused:()=>paused,rt:()=>roundT,boost:()=>boost,events:()=>analytics.events(),track};
@@ -1995,7 +2000,7 @@ const meta=(()=>{
     onFlick(){},
     onCapture(pct){rollDay();if(pct>stats.maxCap){stats.maxCap=pct;}bump('land',pct);if(pct>=3)bump('bigCap');save();checkAch();checkDaily();},
     onKill(){rollDay();stats.kills++;bump('kills');save();checkAch();checkDaily();},
-    onRoundEnd(rank,n){rollDay();if(rank===1){stats.wins++;bump('wins');}if(rank<=3){stats.top3++;bump('top3');}save();checkAch();checkDaily();try{cloud.afterRound();}catch(e){}},
+    onRoundEnd(rank,n){ads.noteFinished();rollDay();if(rank===1){stats.wins++;bump('wins');}if(rank<=3){stats.top3++;bump('top3');}save();checkAch();checkDaily();try{cloud.afterRound();}catch(e){}},
     finishTutorial(){stats.tutorialDone=1;save();},
     progress(m){return Math.min(m.target,stats.d[m.stat]||0);},
   };
@@ -2049,19 +2054,52 @@ function renderMissions(){
 }
 
 /* ---------- 광고(자리) + 부활 ---------- */
-const ads={
-  // 실제 광고(AdMob/토스 보상형)를 붙일 자리. 붙이기 전까지는 그냥 통과시킨다.
-  // 가짜 광고 화면을 사용자에게 보여주지 않기 위해 #ad 오버레이는 쓰지 않는다.
-  showReward(){return Promise.resolve(true);}
-};
+/* 광고는 앱 전용 층(window.gusulAds, app/ads/ads.js — AdMob)이 있을 때만 있다. 웹·토스에는 아직 없어 그냥 통과한다.
+   광고는 웹뷰 위에 네이티브로 덮여 visibilitychange 가 안 온다 — 띄우는 쪽에서 직접 판을 멈춰야 한다.
+   보상형은 부활 창(running=false)에서, 전면은 결과 화면에서만 띄우므로 둘 다 판이 멈춘 상태다.
+   전면 규칙(스도쿠와 같음): 끝낸 판 EVERY 번마다, 마지막 광고 뒤 COOLDOWN, 보상형 본 뒤 AFTER_REWARD 는 건너뜀. 앱을 껐다 켜면 처음부터. */
+const ads=(()=>{
+  const A=window.gusulAds||null;
+  const EVERY=2,COOLDOWN=120000,AFTER_REWARD=60000;
+  let finished=0,finishedAtShow=0,lastShown=0,lastReward=0,busy=false;
+  if(A){try{A.init();}catch(e){}}
+  return{
+    has:!!A,
+    /** 'earned' 끝까지 봄 · 'closed' 중간에 닫음 · 'unavailable' 광고 없음(오프라인·재고 없음) · 'none' 광고가 없는 판(웹·토스) */
+    async showReward(){
+      if(!A)return 'none';
+      let r='unavailable';try{r=await A.showReward();}catch(e){}
+      if(r==='earned')lastReward=Date.now();
+      track('ad_reward',{result:r});return r;
+    },
+    noteFinished(){finished++;},
+    /** 결과 화면을 떠날 때. 띄울 차례면 띄우고, 닫힌 뒤에 next 를 부른다. 아니면 바로 next. */
+    async leaveResult(next){
+      if(busy)return;
+      const now=Date.now();
+      if(A&&finished-finishedAtShow>=EVERY&&now-lastShown>=COOLDOWN&&now-lastReward>=AFTER_REWARD){
+        busy=true;finishedAtShow=finished;lastShown=now;
+        let shown=false;try{shown=await A.showInterstitial();}catch(e){}
+        if(!shown){finishedAtShow=finished-EVERY;lastShown=0;} // 못 띄웠으면 다음 기회에 다시
+        track('ad_interstitial',{shown:shown?1:0});busy=false;
+      }
+      next();
+    },
+    privacy:A,
+  };
+})();
+if(ads.privacy){const sync=()=>{$('adPrivRow').hidden=!ads.privacy.privacyOptionsRequired();};sync();try{ads.privacy.watchPrivacyOptions(sync);}catch(e){}
+  $('adPrivBtn').addEventListener('click',()=>{sfx('hit');ads.privacy.showPrivacyOptions();});}
 function showRevive(){
   running=false;aim=null;
   $('reviveWhy').textContent=T('탈락했어요. 이번 판에 한 번 더 살아날 수 있어요.');
+  $('reviveYes').textContent=T(ads.has?'광고 보고 이어하기':'한 번 이어하기');
   $('revive').hidden=false;
 }
 $('reviveYes').addEventListener('click',async()=>{
   sfx('flick');$('revive').hidden=true;reviveUsed=true;track('revive_use',{mode:mode,sec:Math.round(SURV.time-roundT)});
-  const ok=await ads.showReward();   // 나중에 실제 보상형 광고로 교체 (지금은 바로 true)
+  const r=await ads.showReward();
+  const ok=r!=='closed';            // 중간에 닫았을 때만 부활 없음. 광고를 못 불러온 건 사람 탓이 아니니 그냥 살린다.
   if(ok){elimOrder=elimOrder.filter(p=>p!==me);spawn(me);me.flicks=0;spawnT=3;toast(T('부활!'),'#FFE08A');sfx('capture');running=true;perfStat.begin(mode);}
   else{running=true;endRound();}
 });
