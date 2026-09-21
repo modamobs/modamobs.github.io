@@ -35,7 +35,8 @@
 <body>
 
 <h1>로켓 탈출 개인정보 처리방침</h1>
-<p class="meta">시행일: 2026년 9월 15일 (사용 통계·오류 보고 추가: Google Analytics for Firebase, Firebase Crashlytics)</p>
+<p class="meta">시행일: 2026년 9월 21일 (고스트 레이스 추가: 한 판의 기록이 다른 이용자 화면에 보일 수 있음, 14일 뒤 자동 삭제)<br>
+이전 개정: 2026년 9월 15일 (사용 통계·오류 보고 추가)</p>
 
 <p>로켓 탈출(패키지 <code>com.mobs.rocketescape</code>, 이하 "본 게임")은 가입 없이 바로 시작합니다.
 처음 실행할 때 이름이나 연락처 없이 <strong>익명 계정</strong>이 자동으로 만들어지고, 원하면 설정에서
@@ -67,6 +68,12 @@
     <td>순위표 이름(닉네임), 최고 탈출 배수, 한 판에 회수한 최고 연료, 탄 로켓 종류, 기록 시각</td>
     <td>자기 최고 기록을 넘었을 때, 이름을 바꿀 때</td>
     <td>이번 주·전체·한 판 최고 순위표. <strong>다른 이용자에게 공개됩니다.</strong> 이름을 정하지 않으면 "파일럿1234" 같은 이름이 붙습니다.</td>
+  </tr>
+  <tr>
+    <td>고스트 기록: 순위표 이름(닉네임), 탄 로켓 종류와 겉모습(도장·불꽃 등), 그 판의 폭발 지점과 탈출한 배수, 기록 시각</td>
+    <td>한 판이 끝날 때마다</td>
+    <td>고스트 레이스. 다른 이용자의 비행 화면에 반투명한 로켓으로 같이 날며 이름과 배수가 <strong>보입니다.</strong>
+    지금 접속한 사람이 아니라 지난 기록이라고 표시합니다. <strong>14일</strong>이 지나면 자동으로 지워집니다. 고스트 표시는 설정에서 끌 수 있습니다.</td>
   </tr>
   <tr>
     <td>기록 제출 시각과 횟수</td>
@@ -106,7 +113,7 @@
 <ul>
   <li>보유한 연료, 라운드 수, 최근 폭발 지점 기록(최대 60개)</li>
   <li>보유한 로켓, 기체마다의 강화 단계, 도장, 예비 부스터 개수</li>
-  <li>넣을 연료 단계, 탈출 예약 배수, 효과음 설정</li>
+  <li>넣을 연료 단계, 탈출 예약 배수, 효과음·배경음악·고스트 레이스 설정</li>
   <li>플레이 통계, 발견한 우주 구역, 오늘의 미션 진행, 연속 출석 일수</li>
   <li>마지막으로 보상형 광고를 본 시각, 광고 제거와 외형 로켓 구매 여부</li>
 </ul>
@@ -115,7 +122,8 @@
 <h2>3. 보관 기간과 삭제</h2>
 
 <p>1항의 서버 정보는 <strong>계정을 삭제할 때까지</strong> 보관합니다. 게임의 <strong>설정 → 계정 → 계정 삭제</strong>를
-누르면 클라우드 저장, 순위표 기록, 닉네임, 구매 확인 기록, 로그인 계정이 곧바로 지워지며 되돌릴 수 없습니다.
+누르면 클라우드 저장, 순위표 기록, 고스트 기록, 닉네임, 구매 확인 기록, 로그인 계정이 곧바로 지워지며 되돌릴 수 없습니다.
+고스트 기록은 계정을 지우지 않아도 <strong>14일</strong>이 지나면 자동으로 지워집니다.
 앱을 쓸 수 없는 경우의 요청 방법은 <a href="delete-account.html">계정 삭제 안내</a>에 있습니다.
 기기 안의 진행은 앱을 삭제하거나 브라우저 사이트 데이터를 지우면 함께 지워집니다.
 Google Play의 결제 기록은 Google이 자체 방침에 따라 보관합니다.</p>
@@ -226,7 +234,8 @@ Google Play의 결제 기록은 Google이 자체 방침에 따라 보관합니�
 <hr>
 
 <h1>Rocket Escape Privacy Policy</h1>
-<p class="meta">Effective: September 15, 2026 (usage analytics and crash reporting added: Google Analytics for Firebase, Firebase Crashlytics)</p>
+<p class="meta">Effective: September 21, 2026 (Ghost Race added: a round's record may be shown on other players' screens and is deleted after 14 days)<br>
+Previous revision: September 15, 2026 (usage analytics and crash reporting added)</p>
 
 <p>Rocket Escape (package <code>com.mobs.rocketescape</code>, "the Game") needs no sign-up. On first launch an
 <strong>anonymous account</strong> is created automatically, with no name or contact details; you can link a Google account in Settings if you want.
@@ -241,6 +250,7 @@ To improve the Game we use usage analytics (Google Analytics for Firebase) and c
   <tr><td>Google account identifier, e-mail address, name, profile photo URL</td><td>Only if you tap <strong>Link Google account</strong></td><td>Sign-in so the same progress loads on other devices and on the web. Your name (or e-mail) is shown only to you, never to other players.</td></tr>
   <tr><td>Game progress (see section 2) and a random per-device number</td><td>While playing, at most every 90 seconds, and when the app closes</td><td>Cloud save, and letting you choose when two devices disagree</td></tr>
   <tr><td>Leaderboard name, best escape multiplier, most fuel brought back in one round, rocket type, time of the record</td><td>When you beat your best, or change your name</td><td>Weekly, all-time and best-haul leaderboards. <strong>Visible to other players.</strong> Without a chosen name you appear as e.g. "Pilot1234".</td></tr>
+  <tr><td>Ghost record: leaderboard name, rocket type and look (paint, flame etc.), that round's explosion point and escape multiplier, time of the record</td><td>At the end of every round</td><td>Ghost Race. The round flies as a semi-transparent rocket on other players' flight screens, <strong>showing your name and multiplier.</strong> It is labelled as a past record, not a live player. Deleted automatically after <strong>14 days</strong>. Showing ghosts can be turned off in Settings.</td></tr>
   <tr><td>Times and counts of record submissions</td><td>When a record is submitted</td><td>Filtering out tampered records</td></tr>
   <tr><td>Purchase token (stored as a hash), order ID, product, test-purchase flag, list of owned products</td><td>When you buy or restore a purchase in the Android app</td><td>Verifying the purchase with Google Play and granting or restoring it</td></tr>
   <tr><td>App integrity results (Firebase App Check, Google Play Integrity)</td><td>When the app contacts the server</td><td>Blocking modified apps and bots</td></tr>
@@ -255,7 +265,7 @@ To improve the Game we use usage analytics (Google Analytics for Firebase) and c
 <ul>
   <li>Fuel held, number of rounds, recent crash points (up to 60)</li>
   <li>Rockets owned, upgrade levels, paint jobs, spare boosters</li>
-  <li>Selected fuel amount, auto-escape multiplier, sound setting</li>
+  <li>Selected fuel amount, auto-escape multiplier, sound, music and Ghost Race settings</li>
   <li>Play statistics, discovered space zones, today's mission progress, login streak</li>
   <li>Time of the last rewarded ad, whether Remove Ads or cosmetic rockets were purchased</li>
 </ul>
@@ -263,7 +273,8 @@ To improve the Game we use usage analytics (Google Analytics for Firebase) and c
 
 <h2>3. Retention and deletion</h2>
 <p>Server data in section 1 is kept <strong>until you delete your account</strong>. <strong>Settings → Account → Delete account</strong> in the Game
-immediately and permanently deletes your cloud save, leaderboard records, name, purchase verification records and sign-in account.
+immediately and permanently deletes your cloud save, leaderboard records, ghost records, name, purchase verification records and sign-in account.
+Ghost records are also deleted automatically after <strong>14 days</strong> even if you keep your account.
 If you cannot use the app, see <a href="delete-account.html">how to request deletion</a>. Progress on the device is removed when you uninstall
 the app or clear the site data in your browser. Google keeps Google Play payment records under its own policies.</p>
 <p>Usage analytics and crash reports are not linked to your account, so deleting your account does not remove them; analytics data is deleted automatically after
