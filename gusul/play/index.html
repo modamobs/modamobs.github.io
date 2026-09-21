@@ -1792,7 +1792,7 @@ function newOfflineGame(name){
   toast(T('넓은 맵 · 봇 40마리 · 끝없이'),'#FFE08A'); // 다른 모드처럼 시작 안내 — 토스트 셰이더도 이때 컴파일된다
   cam.x=me.x;cam.y=me.y;
   netText.textContent=T('오프라인');netEl.classList.remove('on');
-  updateHud();running=true;startEl.hidden=true;
+  updateHud();running=true;startEl.hidden=true;pushGameState();
 }
 async function startOnlineGame(name){
   wantOnline=true;online=true;resetWorld();
@@ -1869,7 +1869,7 @@ function goHome(){
   for(const id of ['result','dead','revive','pass','quit','exitAsk','rankPanel','delAsk','turn','missions','skinsPanel','rules','settings','tut'])$(id).hidden=true;
   startEl.hidden=false;startBtn.disabled=false;altBtn.disabled=false;
   refreshStartCard();
-  if(wasPushed){try{history.back();}catch(e){}} // 쌓아둔 히스토리 한 칸 반납 → 메인에서 뒤로 가기 = 앱 종료
+  if(wasPushed){try{selfBack=true;history.back();}catch(e){selfBack=false;}} // 쌓아둔 히스토리 한 칸 반납 → 메인에서 뒤로 가기 = 앱 종료
 }
 function askQuit(){
   if(!$('quit').hidden)return;
@@ -1883,13 +1883,14 @@ $('quitNo').addEventListener('click',()=>{$('quit').hidden=true;if($('boost').hi
 $('quitYes').addEventListener('click',()=>{sfx('flick');track('quit_to_main',{mode:mode});goHome();});
 
 /* 브라우저 뒤로 가기: 판이 돌아가는 중이면 확인창. 앱은 아래 onBack(캐패시터 App 플러그인)이 따로 받는다. */
-let histGuard=false;
+let histGuard=false,selfBack=false; // selfBack: goHome 이 부른 history.back 의 popstate 가 아직 안 왔다
 function pushGameState(){if(histGuard)return;try{history.pushState({g:1},'');histGuard=true;}catch(e){}}
 function closeTopOverlay(){
   for(const id of ['delAsk','quit','rankPanel','missions','skinsPanel','rules','settings']){const el=$(id);if(el&&!el.hidden){el.hidden=true;if(id==='quit'&&$('boost').hidden)paused=false;if(id==='settings'){saveName();refreshStartCard();}return true;}}
   return false;
 }
 window.addEventListener('popstate',()=>{
+  if(selfBack){selfBack=false;if(histGuard&&!history.state){histGuard=false;pushGameState();}return;} // 우리가 돌려준 칸 — 사람이 누른 뒤로 가기가 아니다. 그 사이 새 판이 쌓은 칸까지 되돌려졌으면 다시 쌓는다
   if(!histGuard)return;            // 메인 화면 → 기본 동작(앱 종료)
   histGuard=false;
   if(!startEl.hidden)return;
@@ -1914,7 +1915,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.17';
+const APP_VER='0.4.18';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
