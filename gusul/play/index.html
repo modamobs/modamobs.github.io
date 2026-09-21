@@ -14,7 +14,7 @@
   --panel-dim:#CDB48E;
   --me:#2EB6FF;
 }
-html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);color:var(--ink);font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap:break-word;background:var(--ground-out);color:var(--ink);font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 #game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 #hud{position:fixed;inset:0;pointer-events:none}
 #hud *{pointer-events:none}
@@ -206,7 +206,8 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ground-out);colo
   #myName{font-size:14px}
   #hint{bottom:132px;font-size:14px;white-space:normal;max-width:78vw;text-align:center}
   #mini{width:100px;height:100px}
-  #toasts{top:120px}
+  #toasts{top:max(200px,30vh)}
+  body:has(.overlay:not([hidden])) #toasts{top:120px} /* 가운데 창이 떠 있으면 원래 자리(창 제목 위) */
 }
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.toast{animation-duration:.01s}}
@@ -869,6 +870,7 @@ function findSpot(p){
     if(ok)for(const o of obst){if(hyp(o.x-wx,o.y-wy)<o.r+140){ok=false;break;}}
     if(ok)return{cx,cy};
   }
+  for(let t=0;t<200;t++){const cx=7+Math.floor(Math.random()*(COLS-14)),cy=7+Math.floor(Math.random()*(ROWS-14));if(!inRock((cx+.5)*CELL,(cy+.5)*CELL))return{cx,cy};}
   return{cx:7+Math.floor(Math.random()*(COLS-14)),cy:7+Math.floor(Math.random()*(ROWS-14))};
 }
 function placeSpawn(p,cx,cy){
@@ -893,10 +895,13 @@ function ownStats(p){
   for(let y=b.y0;y<=b.y1;y++){const r=y*COLS;for(let x=b.x0;x<=b.x1;x++)if(owner[r+x]===id){n++;sx+=x;sy+=y;}}
   if(!n)return null;
   const cx=(sx/n+.5)*CELL,cy=(sy/n+.5)*CELL;
-  let bd=1e18,bmd=1e18,bcx=0,bcy=0,bmx=0,bmy=0;
+  // center·nearest 는 순간이동할 자리로도 쓴다 — 돌 위 칸은 건너뛴다(돌 검사는 더 가까운 후보일 때만 해서 싸다). 전부 돌 위면 돌을 무시한 값.
+  let bd=1e18,bmd=1e18,bcx=0,bcy=0,bmx=0,bmy=0,rd=1e18,rmd=1e18,rcx=0,rcy=0,rmx=0,rmy=0;
   for(let gy=b.y0;gy<=b.y1;gy++){const r=gy*COLS;for(let gx=b.x0;gx<=b.x1;gx++){if(owner[r+gx]!==id)continue;const x=(gx+.5)*CELL,y=(gy+.5)*CELL;
-    const d1=(x-cx)**2+(y-cy)**2;if(d1<bd){bd=d1;bcx=x;bcy=y;}
-    const d2=(x-p.x)**2+(y-p.y)**2;if(d2<bmd){bmd=d2;bmx=x;bmy=y;}}}
+    const d1=(x-cx)**2+(y-cy)**2,d2=(x-p.x)**2+(y-p.y)**2;
+    if(d1<rd){rd=d1;rcx=x;rcy=y;}if(d2<rmd){rmd=d2;rmx=x;rmy=y;}
+    if((d1<bd||d2<bmd)&&!inRock(x,y)){if(d1<bd){bd=d1;bcx=x;bcy=y;}if(d2<bmd){bmd=d2;bmx=x;bmy=y;}}}}
+  if(bd===1e18){bcx=rcx;bcy=rcy;bmx=rmx;bmy=rmy;}
   return{cx,cy,center:{x:bcx,y:bcy},nearest:{x:bmx,y:bmy}};
 }
 function kill(q,by,reason){
@@ -983,6 +988,8 @@ function genObstacles(level,keep){
 function rockHit(p,x,y,v){let hit=false;const L=obstNear(x,y);for(let k=0;k<L.length;k++){const o=L[k];if(o.t!==0)continue;const dx=x-o.x,dy=y-o.y,d=hyp(dx,dy);if(d>=R+o.r||d===0)continue;
   const nx=dx/d,ny=dy/d;x=o.x+nx*(R+o.r);y=o.y+ny*(R+o.r);const vn=v.vx*nx+v.vy*ny;if(vn<0){v.vx-=1.8*vn*nx;v.vy-=1.8*vn*ny;}hit=true;}
   v.x=x;v.y=y;return hit;}
+/** 구슬이 (x,y)에 서면 돌에 겹치나. */
+function inRock(x,y){const L=obstNear(x,y);for(let k=0;k<L.length;k++){const o=L[k];if(o.t===0&&hyp(x-o.x,y-o.y)<o.r+R)return true;}return false;}
 function dragAt(x,y){let d=1;const L=obstNear(x,y);for(let k=0;k<L.length;k++){const o=L[k];if(o.t===0)continue;if(hyp(x-o.x,y-o.y)<o.r){const f=o.t===1?.86:.96;if(f<d)d=f;}}return d;}
 function drawObst(o){
   if(artReady){const k=o.t===0?OB_ROCKS[Math.floor((o.s||0)*OB_ROCKS.length)%OB_ROCKS.length]:o.t===1?'ob_puddle':'ob_sand';const im=IMG[k];
@@ -1108,6 +1115,7 @@ let last=performance.now(),acc=0,alpha=0,drift=0;
 const rx=p=>p.px+(p.x-p.px)*alpha+p.ox,ry=p=>p.py+(p.y-p.py)*alpha+p.oy;
 function advance(now){
   let dt=(now-last)/1000;last=now;if(dt>1.5)dt=1.5;if(dt<0)dt=0;
+  if(!online&&dt>0.25)dt=1/60; // 혼자 하는 판: 가려졌다 돌아온 것 — 밀린 시간을 몰아서 굴리지 않는다
   if(running){
     if(Math.abs(dt-1/60)<0.004){ // 60Hz 화면: 프레임당 정확히 한 스텝 (멈춤/두 배 프레임 방지), 누적 오차는 따로 보정
       drift+=dt-1/60;step(1/60);if(drift>1/60){step(1/60);drift-=1/60;}else if(drift<-1/60){drift+=1/60;/* 다음 프레임에 스텝 하나 건너뛰는 대신 시간만 되돌린다 */}
@@ -1141,7 +1149,7 @@ function loop(now){
   else if(players.length&&players[0].alive){cam.x+=(players[0].x-cam.x)*.03;cam.y+=(players[0].y-cam.y)*.03;}
   render();
 }
-setInterval(()=>{if(document.hidden)advance(performance.now());},250);
+setInterval(()=>{if(document.hidden&&online)advance(performance.now());},250); // 가려진 동안에도 서버와 맞춰야 하는 온라인만
 
 /* ---------- render ---------- */
 /* 땅 테두리 선: 보이는 칸(+여유 6칸)의 테두리를 주인별 Path2D 로 한 번 만들어 두고, 그 안의 땅이 바뀌거나(markTerr·전체 다시 그림)
@@ -1382,13 +1390,13 @@ function hudRow(k,p,i){
   setText(r.n,i+1);
   if(r.color!==p.color){r.color=p.color;r.c.style.background=p.color;}
   setText(r.nm,p===me?TF('{name} (나)',{name:p.name}):p.name);
-  setText(r.pc,fmtPct(p.cells/TOTAL*100));
+  setText(r.pc,(!p.alive&&isSurv()&&!online)?T('탈락'):fmtPct(p.cells/TOTAL*100));
   if(r.me!==(p===me)){r.me=p===me;r.li.className=r.me?'me':'';}
   return r.li;
 }
 function updateHud(){
   if(online)recount(null);
-  const sorted=players.slice().sort((a,b)=>b.cells-a.cells);
+  const sorted=(isSurv()&&!online)?rankAll():players.slice().sort((a,b)=>b.cells-a.cells);
   const rows=[];for(let k=0;k<6&&k<sorted.length;k++)rows.push(hudRow(k,sorted[k],k));
   const myIdx=me?sorted.indexOf(me):-1;
   if(myIdx>=6)rows.push(hudGap,hudRow(6,me,myIdx));
@@ -1425,7 +1433,8 @@ function endRound(){
     const n=document.createElement('span');n.className='n';n.textContent=i+1;const c=document.createElement('span');c.className='c';c.style.background=p.color;
     const nm=document.createElement('span');nm.className='name';nm.textContent=p===me?TF('{name} (나)',{name:p.name}):p.name;const pc=document.createElement('span');pc.className='p';pc.textContent=p.alive?fmtPct(p.cells/TOTAL*100):T('탈락');
     li.append(n,c,nm,pc);return li;}));
-  let wins=0;try{wins=parseInt(localStorage.getItem('gusul-wins'))||0;if(myRank===1&&!devRound){wins++;localStorage.setItem('gusul-wins',String(wins));}}catch(e){}
+  const wins=meta.stats.wins+(myRank===1&&!devRound?1:0); // meta.onRoundEnd 가 아래에서 올린다
+  try{if(myRank===1&&!devRound)localStorage.setItem('gusul-wins',String(wins));}catch(e){}
   if(mode==='daily'){const land=me.alive?me.cells/TOTAL*100:0;const sc=dailyScore(myRank,land);const ds=dailyStore();const isBest=!devRound&&sc>ds.best;if(!devRound){if(isBest)ds.best=sc;dailySave(ds);platform.submitScore(ds.best);}track('daily_score',{score:sc,best:ds.best,plays:ds.plays,is_best:isBest?1:0});
     $('resTitle').textContent=TF('{s}점',{s:sc});$('resSub').textContent=(myRank===1?T('1등'):rankStr(myRank))+TF(' · 땅 {p}',{p:fmtPct(land)})+(isBest?T(' · 오늘 최고 기록!'):TF(' · 오늘 최고 {b}점',{b:ds.best}));
     const y=ds.hist&&ds.hist.length?ds.hist[ds.hist.length-1]:null;$('resWins').textContent=(y?TF('어제 {b}점 · ',{b:y.best}):'')+TF('오늘 {n}번 도전',{n:ds.plays});restoreRandom();}
@@ -1439,7 +1448,7 @@ function endRound(){
 const classic=(()=>{
   const ROUNDS=6,GRID=40;
   let order=[],idx=0,round=1,cur=null,turnActive=false,wasOut=false,waitHuman=false,fouled=false,captured=false,ended=false,p1=null;
-  function banner(){const el=$('turn');if(mode!=='classic'){el.hidden=true;return;}el.hidden=false;
+  function banner(){const el=$('turn');if(mode!=='classic'||!running){el.hidden=true;return;}el.hidden=false;
     const left=cur?Math.max(0,3-cur.flicks):3;$('turnWho').textContent=cur?(cur.human?(order.filter(q=>q.human).length>1?TF('{name} 차례',{name:cur.name}):T('내 차례')):TF('{name} 차례',{name:cur.name})):'';
     $('turnDots').textContent='●'.repeat(left)+'○'.repeat(3-left);$('turnRound').textContent=TF('{r} / {t} 라운드',{r:round,t:ROUNDS});}
   function start(name,opp){
@@ -1453,7 +1462,7 @@ const classic=(()=>{
     const spots=[[8,8],[GRID-9,GRID-9],[GRID-9,8],[8,GRID-9]].slice(0,players.length).sort(()=>Math.random()-.5);
     players.forEach((p,i)=>{placeSpawn(p,spots[i][0],spots[i][1]);p.trail=[];p.out=false;p.flicks=0;});
     order=players.slice();idx=0;round=1;cur=null;turnActive=false;waitHuman=false;
-    me.kills=0;me.peak=0;$('myName').textContent=me.name;
+    me.kills=0;me.peak=0;$('myName').textContent=me.name;boost.reset();
     cam.x=p1.x;cam.y=p1.y;spawnT=0;presimLeft=0;
     netText.textContent=T('클래식 · 턴제');netEl.classList.remove('on');
     meta.onRoundStart('classic');track('round_start',{mode:'classic',opp:opp,obstacles:obstLevel()});
@@ -1543,7 +1552,7 @@ const boost=(()=>{
     reset(){caps=0;pending=false;have={};paint();},
     count(){return Object.values(have).reduce((a,b)=>a+b,0);},
     onCapture(){caps++;if(caps%2===1)pending=true;},
-    maybeOffer(){if(!pending||!running||online||roundOver)return;pending=false;offer();},
+    maybeOffer(){if(!pending||!running||online||roundOver||!isSurv())return;pending=false;offer();},
   };
 })();
 const _realRandom=Math.random;
@@ -1778,7 +1787,7 @@ function newOfflineGame(name){
   while(presimLeft>600){step(1/60);presimLeft--;}
   presimLeft=0;
   me=mkPlayer(name,HUMAN_COLORS[0],false);addPlayer(me);
-  spawn(me);me.kills=0;me.peak=0;$('myName').textContent=me.name;
+  spawn(me);me.kills=0;me.peak=0;$('myName').textContent=me.name;boost.reset();
   track('round_start',{mode:'io',obstacles:obstLevel(),bots:NBOTS_OFFLINE});
   toast(T('넓은 맵 · 봇 40마리 · 끝없이'),'#FFE08A'); // 다른 모드처럼 시작 안내 — 토스트 셰이더도 이때 컴파일된다
   cam.x=me.x;cam.y=me.y;
@@ -1855,9 +1864,9 @@ $('deadHome').addEventListener('click',()=>{sfx('flick');ads.leaveResult(goHome)
 /* ---------- 메인으로 나가기 ---------- */
 function goHome(){
   const wasPushed=histGuard;histGuard=false;
-  running=false;aim=null;wantOnline=false;paused=false;$('boost').hidden=true;
+  running=false;aim=null;wantOnline=false;paused=false;$('boost').hidden=true;restoreRandom();
   if(online){online=false;if(ws){try{ws.close();}catch(e){}ws=null;}netEl.classList.remove('on');}
-  for(const id of ['result','dead','revive','pass','quit','exitAsk','rankPanel','delAsk','turn','missions','skinsPanel','rules','settings'])$(id).hidden=true;
+  for(const id of ['result','dead','revive','pass','quit','exitAsk','rankPanel','delAsk','turn','missions','skinsPanel','rules','settings','tut'])$(id).hidden=true;
   startEl.hidden=false;startBtn.disabled=false;altBtn.disabled=false;
   refreshStartCard();
   if(wasPushed){try{history.back();}catch(e){}} // 쌓아둔 히스토리 한 칸 반납 → 메인에서 뒤로 가기 = 앱 종료
@@ -1867,16 +1876,17 @@ function askQuit(){
   track('quit_ask',{mode:mode});
   $('quitWhy').textContent=mode==='daily'?T('오늘의 도전은 이번 판을 다시 할 수 없어요.'):T('지금 하던 판은 사라집니다.');
   $('quit').hidden=false;sfx('hit');
+  if(!online){paused=true;aim=null;} // 묻는 동안 판을 멈춘다
 }
 $('exitBtn').addEventListener('click',()=>{askQuit();});
-$('quitNo').addEventListener('click',()=>{$('quit').hidden=true;sfx('hit');pushGameState();});
+$('quitNo').addEventListener('click',()=>{$('quit').hidden=true;if($('boost').hidden)paused=false;sfx('hit');pushGameState();});
 $('quitYes').addEventListener('click',()=>{sfx('flick');track('quit_to_main',{mode:mode});goHome();});
 
 /* 브라우저 뒤로 가기: 판이 돌아가는 중이면 확인창. 앱은 아래 onBack(캐패시터 App 플러그인)이 따로 받는다. */
 let histGuard=false;
 function pushGameState(){if(histGuard)return;try{history.pushState({g:1},'');histGuard=true;}catch(e){}}
 function closeTopOverlay(){
-  for(const id of ['delAsk','quit','rankPanel','missions','skinsPanel','rules','settings']){const el=$(id);if(el&&!el.hidden){el.hidden=true;return true;}}
+  for(const id of ['delAsk','quit','rankPanel','missions','skinsPanel','rules','settings']){const el=$(id);if(el&&!el.hidden){el.hidden=true;if(id==='quit'&&$('boost').hidden)paused=false;if(id==='settings'){saveName();refreshStartCard();}return true;}}
   return false;
 }
 window.addEventListener('popstate',()=>{
@@ -1904,7 +1914,7 @@ if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack())
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.16';
+const APP_VER='0.4.17';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -1968,6 +1978,7 @@ const meta=(()=>{
   const def={games:0,wins:0,kills:0,maxCap:0,top3:0,survGames:0,tutorialDone:0,dayKey:'',d:{},dailyClears:0};
   let stats=Object.assign({},def);
   try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');stats=Object.assign({},def,s);}catch(e){}
+  try{const w=parseInt(localStorage.getItem('gusul-wins'))||0;if(w>stats.wins)stats.wins=w;}catch(e){} // 옛 1등 횟수(카드가 따로 세던 것)
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(stats));}catch(e){}};
   const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();};
   function rollDay(){const k=todayKey();if(stats.dayKey!==k){stats.dayKey=k;stats.d={games:0,kills:0,bigCap:0,top3:0,wins:0,land:0,cleared:0};save();}}
@@ -2116,7 +2127,7 @@ const tutorial=(()=>{
   function start(name){
     restoreRandom();wantOnline=false;online=false;mode='tutorial';roundOver=false;elimOrder=[];step=0;timer=0;botp=null;
     setGrid(40,40);resetWorld();genObstacles(0);
-    me=mkPlayer(name,HUMAN_COLORS[0],false);addPlayer(me);placeSpawn(me,20,20);me.kills=0;me.peak=0;$('myName').textContent=me.name;
+    me=mkPlayer(name,HUMAN_COLORS[0],false);addPlayer(me);placeSpawn(me,20,20);me.kills=0;me.peak=0;$('myName').textContent=me.name;boost.reset();
     cam.x=me.x;cam.y=me.y;spawnT=0;
     netText.textContent=T('튜토리얼');netEl.classList.remove('on');
     updateHud();running=true;startEl.hidden=true;$('result').hidden=true;deadEl.hidden=true;hintEl.style.opacity=0;pushGameState();
@@ -2124,7 +2135,7 @@ const tutorial=(()=>{
   }
   function spawnBot(){botp=mkPlayer(T('연습봇'),'#22C55E',true);botp.passive=true;addPlayer(botp);placeSpawn(botp,20,9);botp.thinkT=.5;}
   function next(){step++;if(step===2)spawnBot();if(step>=3){show();setTimeout(finish,1600);return;}show();sfx('capture');}
-  function finish(){$('tut').hidden=true;track('tutorial_done',{step:step});meta.finishTutorial();running=false;mode='io';startEl.hidden=false;startBtn.disabled=false;altBtn.disabled=false;refreshStartCard();toast(T('튜토리얼 완료'),'#FFE08A');}
+  function finish(){if(mode!=='tutorial')return;$('tut').hidden=true;track('tutorial_done',{step:step});meta.finishTutorial();mode='io';goHome();toast(T('튜토리얼 완료'),'#FFE08A');}
   return {
     start,
     onFlick(){if(mode!=='tutorial')return;if(step===0)next();},
@@ -2162,15 +2173,16 @@ $('settingsBtn').addEventListener('click',()=>{sfx('hit');$('netStat').textConte
 // 이름 칸은 '이름 · 설정'으로 열 때만 잡는다 — 설정 탭으로 열 때 잡으면 폰에서 키보드가 올라와 설정을 가린다.
 $('whoBtn').addEventListener('click',()=>{$('settingsBtn').click();setTimeout(()=>nameIn.focus(),50);});
 $('settingsClose').addEventListener('click',()=>{saveName();$('settings').hidden=true;sfx('hit');refreshStartCard();});
+nameIn.addEventListener('change',()=>{saveName();refreshStartCard();});
 function applyLang(){$('langTg').textContent=LANG==='en'?'English':'한국어';}
 applyLang();
-$('langTg').addEventListener('click',()=>{sfx('hit');const nx=LANG==='en'?'ko':'en';try{localStorage.setItem('gusul-lang',nx);}catch(e){}
+$('langTg').addEventListener('click',()=>{sfx('hit');saveName();const nx=LANG==='en'?'ko':'en';try{localStorage.setItem('gusul-lang',nx);}catch(e){}
   const u=new URL(location.href);u.searchParams.delete('lang');location.replace(u.toString());});
 function applySound(){$('soundTg').textContent=muted?T('꺼짐'):T('켜짐');$('soundTg').classList.toggle('off',muted);}
 $('soundTg').addEventListener('click',()=>{muted=!muted;try{localStorage.setItem('gusul-mute',muted?'1':'0');}catch(e){}applySound();sfx('hit');});
 applySound();
 function refreshStartCard(){
-  const s=meta.stats,ds=dailyStore();let wins=0;try{wins=parseInt(localStorage.getItem('gusul-wins'))||0;}catch(e){}
+  const s=meta.stats,ds=dailyStore(),wins=s.wins;
   $('whoName').textContent=myName;
   $('whoStat').textContent=TF('1등 {w}번 · {g}판 · {s}',{w:wins,g:s.games,s:T((skins.LIST.find(x=>x.id===skins.current())||{}).name||'')});
   {const c=$('whoMarble'),g2=c.getContext('2d');g2.clearRect(0,0,c.width,c.height);const sp=skins.sprite(skins.current(),HUMAN_COLORS[0]);g2.drawImage(sp,0,0,c.width,c.height);}
