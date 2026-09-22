@@ -99,6 +99,7 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
 .card.left{text-align:left}
 .card h3{font-family:'Jua',sans-serif;font-size:16px;margin:18px 0 6px;color:#6d5535}
 .mlist,.alist{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+#achList{max-height:52vh;overflow-y:auto;padding:2px}
 .mlist li{position:relative;display:grid;grid-template-columns:1fr auto;gap:8px;background:#efe3c8;border-radius:10px;padding:9px 12px 12px;font-size:14px;overflow:hidden}
 .mlist li i{position:absolute;left:0;bottom:0;height:4px;background:var(--me);border-radius:0 3px 3px 0}
 .mlist li.done{background:#dff2c8}.mlist li.done i{background:#4caf50}
@@ -250,8 +251,8 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
     <div class="tabbar">
       <button type="button" class="tab" id="missionBtn"><span class="ti" data-ic="missions"></span>미션<span class="badge" id="missionBadge" hidden>0/3</span></button>
       <button type="button" class="tab" id="skinBtn"><span class="ti" data-ic="marbles"></span>구슬</button>
-      <button type="button" class="tab" id="rulesBtn"><span class="ti" data-ic="rules"></span>규칙</button>
-      <button type="button" class="tab" id="rankBtn" hidden><span class="ti" data-ic="trophy"></span>순위</button>
+      <button type="button" class="tab" id="achBtn"><span class="ti" data-ic="trophy"></span>업적</button>
+      <button type="button" class="tab" id="rankBtn" hidden><span class="ti" data-ic="crown"></span>순위</button>
       <button type="button" class="tab" id="settingsBtn"><span class="ti" data-ic="settings"></span>설정</button>
     </div>
   </div>
@@ -278,6 +279,7 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
     <div class="srow"><span class="sl">이름</span><input id="nameIn" maxlength="10" autocomplete="off" spellcheck="false"></div>
     <div class="srow"><span class="sl">소리</span><button type="button" class="tg" id="soundTg">켜짐</button></div>
     <div class="srow"><span class="sl">언어</span><button type="button" class="tg" id="langTg">한국어</button></div>
+    <div class="srow"><span class="sl">규칙 · 연습하기</span><button type="button" class="tg" id="rulesBtn">열기</button></div>
     <div class="srow" id="acctRow" hidden><span class="sl">계정</span><button type="button" class="tg" id="acctBtn">구글 연결</button></div>
     <div class="srow" id="adPrivRow" hidden><span class="sl">광고 개인정보 설정</span><button type="button" class="tg" id="adPrivBtn">열기</button></div>
     <div class="acct" id="acctInfo" hidden><span id="acctText"></span> · <a href="#" id="acctDel">계정 삭제</a></div>
@@ -345,10 +347,17 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
   <div class="card left">
     <h2>오늘의 미션</h2>
     <ul id="dailyList" class="mlist"></ul>
-    <h3>업적</h3>
-    <ul id="achList" class="alist"></ul>
-    <p id="statLine" class="stat-line"></p>
+    <p id="dailyLine" class="stat-line"></p>
     <div class="btnrow"><button class="btn" id="missionsClose">닫기</button></div>
+  </div>
+</div>
+
+<div id="achPanel" class="overlay" hidden>
+  <div class="card left">
+    <h2>업적</h2>
+    <ul id="achList" class="mlist"></ul>
+    <p id="statLine" class="stat-line"></p>
+    <div class="btnrow"><button class="btn" id="achClose">닫기</button></div>
   </div>
 </div>
 
@@ -625,6 +634,10 @@ const EN={
   '부활!':'Back in!',
   '오늘의 미션':'Today\'s missions',
   '업적':'Achievements',
+  '규칙 · 연습하기':'Rules · practice',
+  '코인 500 모으기':'Collect 500 coins',
+  '구슬 3개 사기':'Buy 3 marbles',
+  '오늘의 미션 {n}번 완료':'Daily missions cleared {n}x',
   '완료':'Done',
   '내 구슬':'My marble',
   '사용 중':'In use',
@@ -1926,7 +1939,7 @@ function goHome(){
   const wasPushed=histGuard;histGuard=false;
   running=false;aim=null;wantOnline=false;paused=false;$('boost').hidden=true;restoreRandom();
   if(online){online=false;if(ws){try{ws.close();}catch(e){}ws=null;}netEl.classList.remove('on');}
-  for(const id of ['result','dead','revive','pass','quit','exitAsk','rankPanel','delAsk','turn','missions','skinsPanel','rules','settings','tut'])$(id).hidden=true;
+  for(const id of ['result','dead','revive','pass','quit','exitAsk','rankPanel','delAsk','turn','missions','achPanel','skinsPanel','rules','settings','tut'])$(id).hidden=true;
   startEl.hidden=false;startBtn.disabled=false;altBtn.disabled=false;
   refreshStartCard();
   if(wasPushed){try{selfBack=true;history.back();}catch(e){selfBack=false;}} // 쌓아둔 히스토리 한 칸 반납 → 메인에서 뒤로 가기 = 앱 종료
@@ -1946,7 +1959,7 @@ $('quitYes').addEventListener('click',()=>{sfx('flick');track('quit_to_main',{mo
 let histGuard=false,selfBack=false; // selfBack: goHome 이 부른 history.back 의 popstate 가 아직 안 왔다
 function pushGameState(){if(histGuard)return;try{history.pushState({g:1},'');histGuard=true;}catch(e){}}
 function closeTopOverlay(){
-  for(const id of ['delAsk','quit','rankPanel','missions','skinsPanel','rules','settings']){const el=$(id);if(el&&!el.hidden){el.hidden=true;if(id==='quit'&&$('boost').hidden)paused=false;if(id==='settings'){saveName();refreshStartCard();}return true;}}
+  for(const id of ['delAsk','quit','rankPanel','missions','achPanel','skinsPanel','rules','settings']){const el=$(id);if(el&&!el.hidden){el.hidden=true;if(id==='quit'&&$('boost').hidden)paused=false;if(id==='settings'){saveName();refreshStartCard();}return true;}}
   return false;
 }
 window.addEventListener('popstate',()=>{
@@ -1978,7 +1991,7 @@ if(window.gusulToss&&window.gusulToss.back){const B=window.gusulToss.back;B.hand
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.21';
+const APP_VER='0.4.22';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -2058,15 +2071,18 @@ const meta=(()=>{
   ];
   function seeded(s){return ()=>{s=(s+0x6D2B79F5)|0;let x=Math.imul(s^(s>>>15),1|s);x=(x+Math.imul(x^(x>>>7),61|x))^x;return((x^(x>>>14))>>>0)/4294967296;};}
   function daily(){const k=todayKey();let seed=0;for(const ch of k)seed=(seed*31+ch.charCodeAt(0))|0;const r=seeded(seed);const pool=POOL.slice();const out=[];while(out.length<3&&pool.length){out.push(pool.splice(Math.floor(r()*pool.length),1)[0]);}return out;}
+  /* cur·target 은 업적 창의 진행도 막대에 쓴다. done 은 그대로 판정. */
   const ACH=[
-    {id:'win1',text:'첫 1등',done:s=>s.wins>=1},
-    {id:'win5',text:'1등 5번',done:s=>s.wins>=5},
-    {id:'win10',text:'1등 10번',done:s=>s.wins>=10},
-    {id:'kill10',text:'자르기 10번',done:s=>s.kills>=10},
-    {id:'kill50',text:'자르기 50번',done:s=>s.kills>=50},
-    {id:'cap5',text:'한 번에 5% 먹기',done:s=>s.maxCap>=5},
-    {id:'surv10',text:'서바이벌 10판',done:s=>s.survGames>=10},
-    {id:'games50',text:'50판 플레이',done:s=>s.games>=50},
+    {id:'win1',text:'첫 1등',done:s=>s.wins>=1,cur:s=>s.wins,target:1},
+    {id:'win5',text:'1등 5번',done:s=>s.wins>=5,cur:s=>s.wins,target:5},
+    {id:'win10',text:'1등 10번',done:s=>s.wins>=10,cur:s=>s.wins,target:10},
+    {id:'kill10',text:'자르기 10번',done:s=>s.kills>=10,cur:s=>s.kills,target:10},
+    {id:'kill50',text:'자르기 50번',done:s=>s.kills>=50,cur:s=>s.kills,target:50},
+    {id:'cap5',text:'한 번에 5% 먹기',done:s=>s.maxCap>=5,cur:s=>s.maxCap,target:5,pct:1},
+    {id:'surv10',text:'서바이벌 10판',done:s=>s.survGames>=10,cur:s=>s.survGames,target:10},
+    {id:'games50',text:'50판 플레이',done:s=>s.games>=50,cur:s=>s.games,target:50},
+    {id:'coin500',text:'코인 500 모으기',done:s=>(s.coinsIn|0)>=500,cur:s=>s.coinsIn|0,target:500},
+    {id:'buy3',text:'구슬 3개 사기',done:s=>(s.owned||[]).length>=3,cur:s=>(s.owned||[]).length,target:3},
   ];
   let achDone={};try{achDone=JSON.parse(localStorage.getItem('gusul-ach')||'{}');}catch(e){}
   function checkAch(){for(const a of ACH){if(!achDone[a.id]&&a.done(stats)){achDone[a.id]=1;try{localStorage.setItem('gusul-ach',JSON.stringify(achDone));}catch(e){}toast(TF('업적 달성 · {t}',{t:T(a.text)}),'#FFE08A');sfx('capture');skins.refresh();}}}
@@ -2077,8 +2093,8 @@ const meta=(()=>{
     /* 코인: 잔액 = 모은 것 - 산 구슬 값 합 */
     coins(){let out=0;for(const id of (stats.owned||[]))out+=skins.price(id);return Math.max(0,(stats.coinsIn|0)-out);},
     owns(id){return (stats.owned||[]).includes(id);},
-    earn(n){n=Math.round(n)|0;if(devRound||online||n<=0)return 0;stats.coinsIn=(stats.coinsIn|0)+n;save();return n;},
-    buy(id){const p=skins.price(id);if(!p||this.owns(id)||this.coins()<p)return false;stats.owned=(stats.owned||[]).concat([id]);save();return true;},
+    earn(n){n=Math.round(n)|0;if(devRound||online||n<=0)return 0;stats.coinsIn=(stats.coinsIn|0)+n;save();checkAch();return n;},
+    buy(id){const p=skins.price(id);if(!p||this.owns(id)||this.coins()<p)return false;stats.owned=(stats.owned||[]).concat([id]);save();checkAch();return true;},
     onRoundStart(m){devRound=devOn();if(devRound)return;rollDay();if(m==='survival'||m==='daily'||m==='classic'){if(m==='survival')stats.survGames++;stats.games++;bump('games');save();}},
     onFlick(){},
     onCapture(pct){if(devRound||devOn())return;rollDay();if(pct>stats.maxCap){stats.maxCap=pct;}bump('land',pct);if(pct>=3)bump('bigCap');save();checkAch();checkDaily();},
@@ -2149,8 +2165,16 @@ function renderMissions(){
   ul.replaceChildren(...ms.map(m=>{const li=document.createElement('li');const p=meta.progress(m),done=p>=m.target;li.className=done?'done':'';
     const tx=document.createElement('span');tx.className='mt';tx.textContent=T(m.text);const pr=document.createElement('span');pr.className='mp';pr.textContent=done?T('완료'):(Math.round(p)+' / '+m.target);
     const bar=document.createElement('i');bar.style.width=Math.min(100,p/m.target*100)+'%';li.append(tx,pr,bar);return li;}));
-  const al=$('achList');const s=meta.stats;
-  al.replaceChildren(...meta.ACH.map(a=>{const li=document.createElement('li');const d=!!meta.achDone[a.id]||a.done(s);li.className=d?'done':'';li.textContent=(d?'✓ ':'○ ')+T(a.text);return li;}));
+  $('dailyLine').textContent=TF('오늘의 미션 {n}번 완료',{n:meta.stats.dailyClears|0});
+}
+/* ---------- 업적 패널 ---------- */
+function renderAch(){
+  const s=meta.stats,al=$('achList');
+  al.replaceChildren(...meta.ACH.map(a=>{const li=document.createElement('li');const d=!!meta.achDone[a.id]||a.done(s);li.className=d?'done':'';
+    const cur=Math.max(0,+(a.cur?a.cur(s):0)||0);
+    const tx=document.createElement('span');tx.className='mt';tx.textContent=(d?'✓ ':'')+T(a.text);
+    const pr=document.createElement('span');pr.className='mp';pr.textContent=d?T('완료'):(a.pct?fmtPct(cur)+' / '+a.target+'%':Math.floor(cur)+' / '+a.target);
+    const bar=document.createElement('i');bar.style.width=Math.min(100,cur/a.target*100)+'%';li.append(tx,pr,bar);return li;}));
   $('statLine').textContent=TF('통산 {g}판 · 1등 {w}번 · 자르기 {k}번 · 최대 한 방 {c}',{g:s.games,w:s.wins,k:s.kills,c:fmtPct(s.maxCap)});
 }
 
@@ -2254,7 +2278,9 @@ $('skinBtn').addEventListener('click',()=>{sfx('hit');skins.render();$('skinsPan
 $('missionsClose').addEventListener('click',()=>{$('missions').hidden=true;});
 $('skinsClose').addEventListener('click',()=>{$('skinsPanel').hidden=true;});
 $('tutBtn').addEventListener('click',()=>{sfx('flick');saveName();$('rules').hidden=true;tutorial.start(myName);});
-$('rulesBtn').addEventListener('click',()=>{sfx('hit');$('rules').hidden=false;});
+$('rulesBtn').addEventListener('click',()=>{sfx('hit');$('settings').hidden=true;$('rules').hidden=false;});
+$('achBtn').addEventListener('click',()=>{sfx('hit');renderAch();$('achPanel').hidden=false;track('ach_open',{});});
+$('achClose').addEventListener('click',()=>{sfx('hit');$('achPanel').hidden=true;});
 $('rulesClose').addEventListener('click',()=>{$('rules').hidden=true;});
 $('settingsBtn').addEventListener('click',()=>{sfx('hit');$('netStat').textContent=PREFER_BOTS?T('"친구와 온라인"을 누르면 접속'):(lobbyEl.textContent||'-');if(!ONLINE_OK)$('netRow').hidden=true;$('settings').hidden=false;});
 // 이름 칸은 '이름 · 설정'으로 열 때만 잡는다 — 설정 탭으로 열 때 잡으면 폰에서 키보드가 올라와 설정을 가린다.
