@@ -89,6 +89,10 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
 .reslist .c{width:12px;height:12px;border-radius:50%}
 .reslist .p{font-family:'Jua',sans-serif}
 .wins{font-family:'Jua',sans-serif;color:#8a6a3d;margin-top:12px}
+.coinrow{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:10px;font-family:'Jua',sans-serif;font-size:19px;color:#8a5a00}
+.coin{display:inline-block;width:.95em;height:.95em;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6c2,#ffd24a 45%,#c98a0b);box-shadow:inset 0 0 0 1.5px #a8700a;vertical-align:-.12em;margin-right:5px}
+.btn.sm{padding:7px 14px;font-size:15px;margin-top:0}
+.skinbal{font-family:'Jua',sans-serif;font-size:18px;color:#8a5a00;margin:4px 0 0}
 .metarow{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
 .mbtn{font-family:'Jua',sans-serif;font-size:14px;background:transparent;color:#6d5535;border:2px solid #d9c9a6;border-radius:999px;padding:6px 14px;cursor:pointer}
 .mbtn:active{background:#efe3c8}
@@ -101,13 +105,14 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
 .mlist .mp{font-family:'Jua',sans-serif;color:#6d5535;font-variant-numeric:tabular-nums}
 .alist li{font-size:13px;color:#8a6a3d}.alist li.done{color:var(--ink);font-weight:700}
 .stat-line{font-size:12px;color:#8a6a3d;margin-top:14px}
-.skingrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.skingrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;max-height:56vh;overflow-y:auto;padding:2px}
 .skin{background:#efe3c8;border:2px solid transparent;border-radius:12px;padding:8px 4px;display:grid;justify-items:center;gap:2px;cursor:pointer;font-family:'Noto Sans KR',system-ui,sans-serif}
 .skin canvas{width:56px;height:56px}
 .skin .sn{font-family:'Jua',sans-serif;font-size:14px;color:var(--ink)}
 .skin .sh{font-size:11px;color:#8a6a3d}
 .skin.on{border-color:var(--ink);background:#fff}
 .skin.lock canvas{filter:grayscale(1) opacity(.45)}
+.skin.lock.buy canvas{filter:none;opacity:.95} /* 코인으로 사는 구슬은 색을 보여 준다 */
 .tutbar{position:fixed;left:0;right:0;top:0;padding:calc(var(--st) + 10px) 12px 0;pointer-events:none;z-index:5}
 .tutin{pointer-events:auto;margin:0 auto;max-width:520px;background:var(--panel);color:var(--panel-ink);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:14px;line-height:1.4;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .tutin b{font-family:'Jua',sans-serif;color:#FFE08A}
@@ -350,6 +355,7 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
 <div id="skinsPanel" class="overlay" hidden>
   <div class="card">
     <h2>내 구슬</h2>
+    <p class="skinbal" id="skinBal"></p>
     <div id="skinGrid" class="skingrid"></div>
     <div class="btnrow"><button class="btn" id="skinsClose">닫기</button></div>
   </div>
@@ -361,6 +367,7 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
     <p id="resSub"></p>
     <ol id="resList" class="reslist"></ol>
     <p id="resWins" class="wins"></p>
+    <div class="coinrow" id="resCoin" hidden><span id="resCoinTxt"></span><button type="button" class="btn alt sm" id="resCoinAd">광고 보고 2배</button></div>
     <div class="btnrow"><button class="btn" id="resAgain">한 판 더</button><button class="btn alt" id="resHome">처음으로</button></div>
   </div>
 </div>
@@ -374,6 +381,7 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
       <div class="stat"><b id="sKills">0</b><span>자른 수</span></div>
       <div class="stat"><b id="sBest">0%</b><span>최고 기록</span></div>
     </div>
+    <div class="coinrow" id="deadCoin" hidden><span id="deadCoinTxt"></span><button type="button" class="btn alt sm" id="deadCoinAd">광고 보고 2배</button></div>
     <div class="btnrow"><button class="btn" id="againBtn">다시 하기</button><button class="btn alt" id="deadHome">처음으로</button></div>
   </div>
 </div>
@@ -430,7 +438,18 @@ function tintedMarble(id,color){const k=id+'|'+color;let c=tintCache[k];if(c)ret
     g.globalCompositeOperation='hard-light';g.drawImage(im,0,0,n,n);g.globalCompositeOperation='destination-in';g.drawImage(im,0,0,n,n);}
   return tintCache[k]=c;}
 function drawArtMarble(g2,x,y,id,color){g2.drawImage(tintedMarble(id,color),x-R,y-R,R*2,R*2);
-  if(id==='steel'){g2.beginPath();g2.arc(x,y,R-.9,0,TAU);g2.lineWidth=1.3;g2.strokeStyle=color;g2.stroke();}}
+  if(id==='steel'||COIN_MB[id]){g2.beginPath();g2.arc(x,y,R-.9,0,TAU);g2.lineWidth=1.3;g2.strokeStyle=color;g2.stroke();}}
+/* 코인 구슬: 색을 입히지 않는 그림. 그림(mb_<id>)이 없으면 코드로 그린다. 어느 쪽이든 내 색 테두리를 두른다. */
+const COIN_MB={melon:1,candy:1,ice:1,flame:1,rainbow:1,galaxy:1};
+function drawCoinMarble(g2,x,y,id){const r=R;g2.save();g2.beginPath();g2.arc(x,y,r,0,TAU);g2.clip();
+  if(id==='melon'){g2.fillStyle='#3f9b3a';g2.fillRect(x-r,y-r,2*r,2*r);g2.strokeStyle='#1f5e1d';g2.lineWidth=r*.22;for(let k=-2;k<=2;k++){g2.beginPath();g2.ellipse(x+k*r*.45,y,r*.18,r*1.1,0,0,TAU);g2.stroke();}}
+  else if(id==='candy'){g2.fillStyle='#ff7fb0';g2.fillRect(x-r,y-r,2*r,2*r);g2.strokeStyle='#fff';g2.lineWidth=r*.28;g2.beginPath();for(let t=0;t<9;t+=.2){const a=t,rr=r*t/9;g2.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}g2.stroke();}
+  else if(id==='ice'){const g=g2.createLinearGradient(x-r,y-r,x+r,y+r);g.addColorStop(0,'#e9fbff');g.addColorStop(.5,'#8fd8f0');g.addColorStop(1,'#3a8fc2');g2.fillStyle=g;g2.fillRect(x-r,y-r,2*r,2*r);g2.strokeStyle='rgba(255,255,255,.8)';g2.lineWidth=1;g2.beginPath();g2.moveTo(x-r*.6,y-r*.2);g2.lineTo(x,y+r*.1);g2.lineTo(x+r*.5,y-r*.5);g2.moveTo(x,y+r*.1);g2.lineTo(x+r*.1,y+r*.8);g2.stroke();}
+  else if(id==='flame'){const g=g2.createRadialGradient(x,y+r*.3,r*.1,x,y,r*1.1);g.addColorStop(0,'#fff3a0');g.addColorStop(.35,'#ffb02e');g.addColorStop(.75,'#f0501e');g.addColorStop(1,'#8a1a0a');g2.fillStyle=g;g2.fillRect(x-r,y-r,2*r,2*r);}
+  else if(id==='rainbow'){const g=g2.createConicGradient?g2.createConicGradient(0,x,y):null;if(g){['#ff5a5a','#ffb040','#ffe45a','#6ad06a','#4fa8ff','#8a6cff','#ff5a5a'].forEach((c,i,a)=>g.addColorStop(i/(a.length-1),c));g2.fillStyle=g;}else g2.fillStyle='#ffb040';g2.fillRect(x-r,y-r,2*r,2*r);}
+  else{const g=g2.createRadialGradient(x-r*.2,y-r*.2,r*.1,x,y,r);g.addColorStop(0,'#8a6cff');g.addColorStop(.6,'#2b1d6b');g.addColorStop(1,'#0b0726');g2.fillStyle=g;g2.fillRect(x-r,y-r,2*r,2*r);g2.fillStyle='#fff';for(const [a,b,c] of [[-.4,-.3,.9],[.3,-.5,.6],[.5,.3,.8],[-.2,.5,.5],[.1,.05,.7]]){g2.beginPath();g2.arc(x+a*r,y+b*r,c,0,TAU);g2.fill();}}
+  const h=g2.createRadialGradient(x-r*.4,y-r*.45,r*.05,x-r*.3,y-r*.35,r*.7);h.addColorStop(0,'rgba(255,255,255,.75)');h.addColorStop(1,'rgba(255,255,255,0)');g2.fillStyle=h;g2.fillRect(x-r,y-r,2*r,2*r);
+  g2.restore();}
 const OB_ROCKS=['ob_rock1','ob_rock2','ob_rock3','ob_rock4'];
 let groundPat=null,groundScale=0;
 /* 바닥: 월드→기기 배율 s 로 미리 줄인 타일을 패턴으로. 기기 좌표에서 정수 이동만 하므로 다시 샘플링하지 않는다.
@@ -579,6 +598,22 @@ const EN={
   '광고 보고 이어하기':'Watch an ad to continue',
   '광고 개인정보 설정':'Ad privacy settings',
   '열기':'Open',
+  '광고 보고 2배':'Watch ad: 2x',
+  '+{n} 코인':'+{n} coins',
+  '+{n} 코인 (2배)':'+{n} coins (2x)',
+  '코인 {c}':'{c} coins',
+  '{p} 코인':'{p} coins',
+  '한 번 더 누르면 사요':'Tap again to buy',
+  '코인이 {n}개 모자라요':'{n} more coins needed',
+  '{name} 샀어요!':'Got {name}!',
+  '코인 2배!':'Coins doubled!',
+  '수박구슬':'Watermelon',
+  '사탕구슬':'Candy',
+  '얼음구슬':'Ice',
+  '불꽃구슬':'Flame',
+  '무지개구슬':'Rainbow',
+  '은하구슬':'Galaxy',
+  '1등 {w}번 · {g}판 · 코인 {c}':'{w} wins · {g} rounds · {c} coins',
   '결과 보기':'See results',
   '탈락했어요. 이번 판에 한 번 더 살아날 수 있어요.':'You are out. You can come back once this round.',
   '부활!':'Back in!',
@@ -1445,6 +1480,7 @@ function endRound(){
   else $('resWins').textContent=TF('통산 1등 {n}번',{n:wins});
   sfx(myRank===1?'capture':'fail');
   track('round_end',{mode:mode,rank:myRank,players:order.length,land:+(me.cells/TOTAL*100).toFixed(2),peak:+me.peak.toFixed(2),kills:me.kills,alive:me.alive?1:0,boosts:boost.count()});
+  coinUI.show('res',meta.earn(({1:30,2:15,3:15}[myRank]||8)+me.kills*3),'rank');
   meta.onRoundEnd(myRank,order.length);
   $('result').hidden=false;refreshStartCard();
 }
@@ -1495,7 +1531,7 @@ const classic=(()=>{
     const ol=$('resList');ol.replaceChildren(...orderR.map((p,i)=>{const li=document.createElement('li');if(p===p1)li.className='me';
       const n=document.createElement('span');n.className='n';n.textContent=i+1;const c=document.createElement('span');c.className='c';c.style.background=p.color;
       const nm=document.createElement('span');nm.className='name';nm.textContent=p===p1?TF('{name} (나)',{name:p.name}):p.name;const pc=document.createElement('span');pc.className='p';pc.textContent=fmtPct(p.cells/TOTAL*100);li.append(n,c,nm,pc);return li;}));
-    $('resWins').textContent='';track('round_end',{mode:'classic',rank:myRank,players:orderR.length,land:+(p1.cells/TOTAL*100).toFixed(2),rounds:ROUNDS});meta.onRoundEnd(myRank,orderR.length);sfx(myRank===1?'capture':'fail');$('turn').hidden=true;$('result').hidden=false;refreshStartCard();
+    $('resWins').textContent='';track('round_end',{mode:'classic',rank:myRank,players:orderR.length,land:+(p1.cells/TOTAL*100).toFixed(2),rounds:ROUNDS});coinUI.show('res',meta.earn(myRank===1?20:8),'classic');meta.onRoundEnd(myRank,orderR.length);sfx(myRank===1?'capture':'fail');$('turn').hidden=true;$('result').hidden=false;refreshStartCard();
   }
   return {
     ROUNDS,get cur(){return cur;},get turnActive(){return turnActive;},
@@ -1598,6 +1634,19 @@ function newSurvivalGame(name){
   boost.reset();reviveUsed=false;meta.onRoundStart('survival');track('round_start',{mode:'survival',obstacles:obstLevel(),bots:SURV.bots});toast(TF('{s}초 · 마지막까지 살아남기',{s:SURV.time}),'#FFE08A');
   updateHud();running=true;startEl.hidden=true;$('result').hidden=true;deadEl.hidden=true;pushGameState();
 }
+/* 판이 끝나면 코인. 결과(res)·잘림(dead) 화면에 '+N 코인' 과 '광고 보고 2배'. */
+function coinIc(){const i=document.createElement('span');i.className='coin';return i;}
+const coinUI=(()=>{let n=0,where=null,doubled=false;
+  function show(pre,got,why){where=pre;n=got;doubled=false;for(const p of ['res','dead'])if(p!==pre)$(p+'Coin').hidden=true;
+    const row=$(pre+'Coin');if(!(got>0)){row.hidden=true;return;}row.hidden=false;
+    $(pre+'CoinTxt').replaceChildren(coinIc(),TF('+{n} 코인',{n:got}));const b=$(pre+'CoinAd');b.hidden=!ads.has;b.disabled=false;
+    track('coin_earn',{n:got,why:why,mode:mode});refreshStartCard();}
+  async function dbl(pre){if(pre!==where||doubled||!(n>0))return;const b=$(pre+'CoinAd');b.disabled=true;sfx('flick');
+    const r=await ads.showReward();
+    if(r==='earned'){meta.earn(n);doubled=true;$(pre+'CoinTxt').replaceChildren(coinIc(),TF('+{n} 코인 (2배)',{n:n*2}));b.hidden=true;toast(T('코인 2배!'),'#FFE08A');sfx('capture');track('coin_double',{n:n,mode:mode});refreshStartCard();}
+    else b.disabled=false;}
+  $('resCoinAd').addEventListener('click',()=>dbl('res'));$('deadCoinAd').addEventListener('click',()=>dbl('dead'));
+  return{show};})();
 function showDead(by,reason){
   ads.noteFinished();
   const who=by?(by===me?T('나'):by.name):T('누군가');
@@ -1606,6 +1655,7 @@ function showDead(by,reason){
   $('sKills').textContent=me.kills;
   if(me.peak>bestEver){bestEver=me.peak;try{localStorage.setItem('gusul-best',String(bestEver));}catch(e){}}
   $('sBest').textContent=fmtPct(bestEver);
+  if(!online)coinUI.show('dead',meta.earn(Math.min(40,5+Math.floor(me.peak*4)+me.kills*3)),'io');else $('deadCoin').hidden=true;
   againBtn.disabled=false;
   deadEl.hidden=false;
 }
@@ -1922,7 +1972,7 @@ if(window.gusulToss&&window.gusulToss.back){const B=window.gusulToss.back;B.hand
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.18';
+const APP_VER='0.4.19';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -1983,7 +2033,7 @@ window.__gusul={die:()=>kill(me,null,'cut'),stats:()=>meta.stats,roundT:s=>{roun
 /* ================= meta: 통계·미션·업적·스킨·튜토리얼·부활 ================= */
 const meta=(()=>{
   const KEY='gusul-stats';
-  const def={games:0,wins:0,kills:0,maxCap:0,top3:0,survGames:0,tutorialDone:0,dayKey:'',d:{},dailyClears:0};
+  const def={games:0,wins:0,kills:0,maxCap:0,top3:0,survGames:0,tutorialDone:0,dayKey:'',d:{},dailyClears:0,coinsIn:0,owned:[]};
   let stats=Object.assign({},def);
   try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');stats=Object.assign({},def,s);}catch(e){}
   try{const w=parseInt(localStorage.getItem('gusul-wins'))||0;if(w>stats.wins)stats.wins=w;}catch(e){} // 옛 1등 횟수(카드가 따로 세던 것)
@@ -2018,6 +2068,11 @@ const meta=(()=>{
   const bump=(k,v)=>{stats.d[k]=(stats.d[k]||0)+(v==null?1:v);};
   return {
     get stats(){return stats;},ACH,achDone,daily,
+    /* 코인: 잔액 = 모은 것 - 산 구슬 값 합 */
+    coins(){let out=0;for(const id of (stats.owned||[]))out+=skins.price(id);return Math.max(0,(stats.coinsIn|0)-out);},
+    owns(id){return (stats.owned||[]).includes(id);},
+    earn(n){n=Math.round(n)|0;if(devRound||online||n<=0)return 0;stats.coinsIn=(stats.coinsIn|0)+n;save();return n;},
+    buy(id){const p=skins.price(id);if(!p||this.owns(id)||this.coins()<p)return false;stats.owned=(stats.owned||[]).concat([id]);save();return true;},
     onRoundStart(m){devRound=devOn();if(devRound)return;rollDay();if(m==='survival'||m==='daily'||m==='classic'){if(m==='survival')stats.survGames++;stats.games++;bump('games');save();}},
     onFlick(){},
     onCapture(pct){if(devRound||devOn())return;rollDay();if(pct>stats.maxCap){stats.maxCap=pct;}bump('land',pct);if(pct>=3)bump('bigCap');save();checkAch();checkDaily();},
@@ -2038,13 +2093,23 @@ const skins=(()=>{
     {id:'cap',name:'병뚜껑',unlock:()=>meta.stats.survGames>=10,how:'서바이벌 10판'},
     {id:'shard',name:'사금파리',unlock:()=>meta.stats.maxCap>=5,how:'한 번에 5% 먹기'},
     {id:'gold',name:'황금구슬',unlock:()=>meta.stats.wins>=10,how:'1등 10번'},
+    {id:'melon',name:'수박구슬',price:200},
+    {id:'candy',name:'사탕구슬',price:300},
+    {id:'ice',name:'얼음구슬',price:500},
+    {id:'flame',name:'불꽃구슬',price:700},
+    {id:'rainbow',name:'무지개구슬',price:1000},
+    {id:'galaxy',name:'은하구슬',price:1500},
   ];
+  for(const s of LIST)if(s.price){s.unlock=()=>meta.owns(s.id);s.how=null;}
+  const price=id=>{const s=LIST.find(x=>x.id===id);return s&&s.price||0;};
+  let pendingBuy=null;
   let cur='glass';try{cur=localStorage.getItem('gusul-skin')||'glass';}catch(e){}
   if(!LIST.find(s=>s.id===cur&&s.unlock()))cur='glass';
   function draw(g2,x,y,id,color){
     const R_=R;
     g2.beginPath();g2.arc(x+2,y+3,R_,0,TAU);g2.fillStyle='rgba(40,25,10,.28)';g2.fill();
     if(artReady&&IMG['mb_'+id]){drawArtMarble(g2,x,y,id,color);return;}
+    if(COIN_MB[id]){drawCoinMarble(g2,x,y,id);g2.beginPath();g2.arc(x,y,R_-.9,0,TAU);g2.lineWidth=1.3;g2.strokeStyle=color;g2.stroke();return;}
     if(id==='steel'){const g=g2.createRadialGradient(x-R_*.4,y-R_*.45,R_*.1,x,y,R_);g.addColorStop(0,'#ffffff');g.addColorStop(.3,'#d9dde3');g.addColorStop(.75,'#8a919b');g.addColorStop(1,'#3f454d');g2.beginPath();g2.arc(x,y,R_,0,TAU);g2.fillStyle=g;g2.fill();g2.beginPath();g2.arc(x,y,R_-1.2,0,TAU);g2.lineWidth=1.6;g2.strokeStyle=color;g2.stroke();}
     else if(id==='gold'){const g=g2.createRadialGradient(x-R_*.4,y-R_*.45,R_*.1,x,y,R_);g.addColorStop(0,'#fff8d6');g.addColorStop(.35,'#ffd966');g.addColorStop(.8,'#d99a1e');g.addColorStop(1,'#7a4f08');g2.beginPath();g2.arc(x,y,R_,0,TAU);g2.fillStyle=g;g2.fill();g2.fillStyle='rgba(255,255,255,.9)';for(const [sx,sy,sr] of [[x-R_*.35,y-R_*.5,1.6],[x+R_*.45,y+R_*.2,1.1]]){g2.beginPath();g2.moveTo(sx,sy-sr*2);g2.lineTo(sx+sr*.6,sy-sr*.6);g2.lineTo(sx+sr*2,sy);g2.lineTo(sx+sr*.6,sy+sr*.6);g2.lineTo(sx,sy+sr*2);g2.lineTo(sx-sr*.6,sy+sr*.6);g2.lineTo(sx-sr*2,sy);g2.lineTo(sx-sr*.6,sy-sr*.6);g2.closePath();g2.fill();}}
     else if(id==='cateye'){const g=g2.createRadialGradient(x-R_*.4,y-R_*.45,R_*.15,x,y,R_);g.addColorStop(0,'#ffffff');g.addColorStop(.22,shade(color,.35));g.addColorStop(.7,color);g.addColorStop(1,shade(color,-.45));g2.beginPath();g2.arc(x,y,R_,0,TAU);g2.fillStyle=g;g2.fill();g2.beginPath();g2.ellipse(x,y,R_*.22,R_*.78,0,0,TAU);g2.fillStyle='rgba(30,20,10,.85)';g2.fill();g2.beginPath();g2.ellipse(x-R_*.06,y-R_*.3,R_*.07,R_*.3,0,0,TAU);g2.fillStyle='rgba(255,255,255,.7)';g2.fill();}
@@ -2056,12 +2121,17 @@ const skins=(()=>{
   function sprite(id,color){const k=id+'|'+color+(artReady?'|a':'');let c=cache[k];if(c)return c;const s=(SPR_R*2)*SPR;c=document.createElement('canvas');c.width=s;c.height=s;const g2=c.getContext('2d');g2.scale(SPR,SPR);draw(g2,SPR_R,SPR_R,id,color);return cache[k]=c;}
   function render(){
     const grid=$('skinGrid');if(!grid)return;
-    grid.replaceChildren(...LIST.map(s=>{const b=document.createElement('button');b.className='skin'+(s.id===cur?' on':'')+(s.unlock()?'':' lock');b.type='button';
+    $('skinBal').replaceChildren(coinIc(),TF('코인 {c}',{c:meta.coins()}));
+    grid.replaceChildren(...LIST.map(s=>{const b=document.createElement('button');b.className='skin'+(s.id===cur?' on':'')+(s.unlock()?'':' lock')+(s.price?' buy':'');b.type='button';
       const cv2=document.createElement('canvas');cv2.width=72;cv2.height=72;const g2=cv2.getContext('2d');g2.scale(72/(SPR_R*2),72/(SPR_R*2));draw(g2,SPR_R,SPR_R,s.id,HUMAN_COLORS[0]);
-      const nm=document.createElement('span');nm.className='sn';nm.textContent=T(s.name);const hw=document.createElement('span');hw.className='sh';hw.textContent=s.unlock()?(s.id===cur?T('사용 중'):T('선택')):T(s.how);if(!s.unlock())hw.prepend(icImg('lock'));
-      b.append(cv2,nm,hw);b.addEventListener('click',()=>{if(!s.unlock()){toast(TF('{how} 하면 열려요',{how:T(s.how)}),'#FFD7C2');return;}cur=s.id;try{localStorage.setItem('gusul-skin',cur);}catch(e){}sfx('hit');track('skin_select',{id:cur});render();});return b;}));
+      const nm=document.createElement('span');nm.className='sn';nm.textContent=T(s.name);const hw=document.createElement('span');hw.className='sh';hw.textContent=s.unlock()?(s.id===cur?T('사용 중'):T('선택')):s.price?(pendingBuy===s.id?T('한 번 더 누르면 사요'):TF('{p} 코인',{p:s.price})):T(s.how);if(!s.unlock())hw.prepend(s.price?coinIc():icImg('lock'));
+      b.append(cv2,nm,hw);b.addEventListener('click',()=>{
+        if(!s.unlock()&&s.price){const c=meta.coins();if(c<s.price){pendingBuy=null;toast(TF('코인이 {n}개 모자라요',{n:s.price-c}),'#FFD7C2');sfx('fail');render();return;}
+          if(pendingBuy!==s.id){pendingBuy=s.id;sfx('hit');render();return;}
+          pendingBuy=null;if(!meta.buy(s.id))return;track('skin_buy',{id:s.id,price:s.price,left:meta.coins()});toast(TF('{name} 샀어요!',{name:T(s.name)}),'#FFE08A');sfx('capture');}
+        if(!s.unlock()){toast(TF('{how} 하면 열려요',{how:T(s.how)}),'#FFD7C2');return;}pendingBuy=null;cur=s.id;try{localStorage.setItem('gusul-skin',cur);}catch(e){}sfx('hit');track('skin_select',{id:cur});render();});return b;}));
   }
-  return {LIST,current:()=>cur,sprite,render,refresh:render};
+  return {LIST,current:()=>cur,sprite,render,refresh:render,price};
 })();
 function skinSprite(id,color){return skins.sprite(id,color);}
 
@@ -2193,7 +2263,7 @@ applySound();
 function refreshStartCard(){
   const s=meta.stats,ds=dailyStore(),wins=s.wins;
   $('whoName').textContent=myName;
-  $('whoStat').textContent=TF('1등 {w}번 · {g}판 · {s}',{w:wins,g:s.games,s:T((skins.LIST.find(x=>x.id===skins.current())||{}).name||'')});
+  $('whoStat').textContent=TF('1등 {w}번 · {g}판 · 코인 {c}',{w:wins,g:s.games,c:meta.coins()});
   {const c=$('whoMarble'),g2=c.getContext('2d');g2.clearRect(0,0,c.width,c.height);const sp=skins.sprite(skins.current(),HUMAN_COLORS[0]);g2.drawImage(sp,0,0,c.width,c.height);}
   $('mbSurv').textContent=s.survGames?TF('서바이벌 {n}판',{n:s.survGames}):'';
   $('mbDaily').textContent=ds.best?TF('오늘 최고 {b}점',{b:ds.best}):(ds.plays?TF('오늘 {n}번 도전',{n:ds.plays}):'');
@@ -2222,7 +2292,8 @@ const cloud=(()=>{
   function snap(){const o={};for(const k of KEYS){try{const v=localStorage.getItem(k);if(v!=null&&v!=='')o[k]=v;}catch(e){}}return o;}
   function mergeStats(a,b){
     const o=Object.assign({},b,a);
-    for(const k of ['games','wins','kills','maxCap','top3','survGames','tutorialDone','dailyClears'])o[k]=Math.max(+a[k]||0,+b[k]||0);
+    for(const k of ['games','wins','kills','maxCap','top3','survGames','tutorialDone','dailyClears','coinsIn'])o[k]=Math.max(+a[k]||0,+b[k]||0);
+    o.owned=[...new Set([...(Array.isArray(a.owned)?a.owned:[]),...(Array.isArray(b.owned)?b.owned:[])])];
     if(dayNum(a.dayKey)===dayNum(b.dayKey)){o.dayKey=a.dayKey||b.dayKey;o.d={};for(const k of new Set([...Object.keys(a.d||{}),...Object.keys(b.d||{})]))o.d[k]=Math.max(+(a.d||{})[k]||0,+(b.d||{})[k]||0);}
     else{const n=dayNum(a.dayKey)>dayNum(b.dayKey)?a:b;o.dayKey=n.dayKey;o.d=Object.assign({},n.d||{});}
     return o;}
