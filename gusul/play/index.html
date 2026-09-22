@@ -214,7 +214,6 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
   #mini{width:100px;height:100px}
   #toasts{top:max(calc(var(--st) + 200px),30vh)}
   body:has(.overlay:not([hidden])) #toasts{top:calc(var(--st) + 120px)} /* 가운데 창이 떠 있으면 원래 자리(창 제목 위) */
-  body:has(#skinsPanel:not([hidden])) #toasts{top:calc(var(--st) + 40px)} /* 구슬 창은 길어서 제목 위로 */
 }
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.toast{animation-duration:.01s}}
@@ -1979,7 +1978,7 @@ if(window.gusulToss&&window.gusulToss.back){const B=window.gusulToss.back;B.hand
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.20';
+const APP_VER='0.4.21';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -2109,7 +2108,9 @@ const skins=(()=>{
   ];
   for(const s of LIST)if(s.price){s.unlock=()=>meta.owns(s.id);s.how=null;}
   const price=id=>{const s=LIST.find(x=>x.id===id);return s&&s.price||0;};
-  let pendingBuy=null;
+  let pendingBuy=null,sayT=0;
+  /* 창 안 잔액 줄에 잠깐 알림 (토스트는 창 제목을 가린다) */
+  function say(text,color){const el=$('skinBal');el.replaceChildren(text);el.style.color=color||'';clearTimeout(sayT);sayT=setTimeout(()=>{el.style.color='';el.replaceChildren(coinIc(),TF('코인 {c}',{c:meta.coins()}));},1800);}
   let cur='glass';try{cur=localStorage.getItem('gusul-skin')||'glass';}catch(e){}
   if(!LIST.find(s=>s.id===cur&&s.unlock()))cur='glass';
   function draw(g2,x,y,id,color){
@@ -2128,15 +2129,15 @@ const skins=(()=>{
   function sprite(id,color){const k=id+'|'+color+(artReady?'|a':'');let c=cache[k];if(c)return c;const s=(SPR_R*2)*SPR;c=document.createElement('canvas');c.width=s;c.height=s;const g2=c.getContext('2d');g2.scale(SPR,SPR);draw(g2,SPR_R,SPR_R,id,color);return cache[k]=c;}
   function render(){
     const grid=$('skinGrid');if(!grid)return;
-    $('skinBal').replaceChildren(coinIc(),TF('코인 {c}',{c:meta.coins()}));
+    clearTimeout(sayT);$('skinBal').style.color='';$('skinBal').replaceChildren(coinIc(),TF('코인 {c}',{c:meta.coins()}));
     grid.replaceChildren(...LIST.map(s=>{const b=document.createElement('button');b.className='skin'+(s.id===cur?' on':'')+(s.unlock()?'':' lock')+(s.price?' buy':'');b.type='button';
       const cv2=document.createElement('canvas');cv2.width=72;cv2.height=72;const g2=cv2.getContext('2d');g2.scale(72/(SPR_R*2),72/(SPR_R*2));draw(g2,SPR_R,SPR_R,s.id,HUMAN_COLORS[0]);
       const nm=document.createElement('span');nm.className='sn';nm.textContent=T(s.name);const hw=document.createElement('span');hw.className='sh';hw.textContent=s.unlock()?(s.id===cur?T('사용 중'):T('선택')):s.price?(pendingBuy===s.id?T('한 번 더 누르면 사요'):TF('{p} 코인',{p:s.price})):T(s.how);if(!s.unlock())hw.prepend(s.price?coinIc():icImg('lock'));
       b.append(cv2,nm,hw);b.addEventListener('click',()=>{
-        if(!s.unlock()&&s.price){const c=meta.coins();if(c<s.price){pendingBuy=null;toast(TF('코인이 {n}개 모자라요',{n:s.price-c}),'#FFD7C2');sfx('fail');render();return;}
+        if(!s.unlock()&&s.price){const c=meta.coins();if(c<s.price){pendingBuy=null;sfx('fail');render();say(TF('코인이 {n}개 모자라요',{n:s.price-c}),'#c0392b');return;}
           if(pendingBuy!==s.id){pendingBuy=s.id;sfx('hit');render();return;}
-          pendingBuy=null;if(!meta.buy(s.id))return;track('skin_buy',{id:s.id,price:s.price,left:meta.coins()});toast(TF('{name} 샀어요!',{name:T(s.name)}),'#FFE08A');sfx('capture');}
-        if(!s.unlock()){toast(TF('{how} 하면 열려요',{how:T(s.how)}),'#FFD7C2');return;}pendingBuy=null;cur=s.id;try{localStorage.setItem('gusul-skin',cur);}catch(e){}sfx('hit');track('skin_select',{id:cur});render();});return b;}));
+          pendingBuy=null;if(!meta.buy(s.id))return;track('skin_buy',{id:s.id,price:s.price,left:meta.coins()});sfx('capture');setTimeout(()=>say(TF('{name} 샀어요!',{name:T(s.name)}),'#2e7d32'),0);}
+        if(!s.unlock()){say(TF('{how} 하면 열려요',{how:T(s.how)}),'#8a6a3d');return;}pendingBuy=null;cur=s.id;try{localStorage.setItem('gusul-skin',cur);}catch(e){}sfx('hit');track('skin_select',{id:cur});render();});return b;}));
   }
   return {LIST,current:()=>cur,sprite,render,refresh:render,price};
 })();
