@@ -769,7 +769,14 @@ const L10N={en:EN,ja:JA,zh:ZH,es:ES,pt:PT};
 function T(s){const d=L10N[LANG];const v=d?d[s]:undefined;return v===undefined?s:v;}
 function TF(s,p){let t=T(s);for(const k in p)t=t.split('{'+k+'}').join(p[k]);return t;}
 /* 1등 / 1st — 등수는 말마다 꼴이 다르다. */
-function rankStr(n){if(LANG!=='en')return n+'등';const t=n%100;const o=(t>=11&&t<=13)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th');return n+o;}
+function rankStr(n){
+  if(LANG==='en'){const t=n%100;return n+((t>=11&&t<=13)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));}
+  if(LANG==='ja')return n+'位';
+  if(LANG==='zh')return '第'+n+'名';
+  if(LANG==='es')return 'n.º '+n;
+  if(LANG==='pt')return n+'º';
+  return n+'등';
+}
 function sweep(root){
   const D=L10N[LANG];if(!D)return; // 한국어는 마크업 그대로
   document.title=T(document.title);
@@ -2017,7 +2024,7 @@ if(window.gusulToss&&window.gusulToss.back){const B=window.gusulToss.back;B.hand
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.25';
+const APP_VER='0.4.26';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
