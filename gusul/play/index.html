@@ -2024,7 +2024,7 @@ if(window.gusulToss&&window.gusulToss.back){const B=window.gusulToss.back;B.hand
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.26';
+const APP_VER='0.4.27';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
@@ -2122,7 +2122,7 @@ const meta=(()=>{
   function checkDaily(){const ms=daily();const all=ms.every(m=>(stats.d[m.stat]||0)>=m.target);if(all&&!stats.d.cleared){stats.d.cleared=1;stats.dailyClears++;save();toast(T('오늘의 미션 완료!'),'#FFE08A');track('mission_clear',{total:stats.dailyClears});}}
   const bump=(k,v)=>{stats.d[k]=(stats.d[k]||0)+(v==null?1:v);};
   return {
-    get stats(){return stats;},ACH,achDone,daily,
+    get stats(){return stats;},ACH,achDone,daily,roll:rollDay,
     /* 코인: 잔액 = 모은 것 - 산 구슬 값 합 */
     coins(){let out=0;for(const id of (stats.owned||[]))out+=skins.price(id);return Math.max(0,(stats.coinsIn|0)-out);},
     owns(id){return (stats.owned||[]).includes(id);},
@@ -2194,6 +2194,7 @@ function skinSprite(id,color){return skins.sprite(id,color);}
 
 /* ---------- 미션 패널 ---------- */
 function renderMissions(){
+  meta.roll(); // 자정을 넘겼으면 오늘 것으로
   const ms=meta.daily();const ul=$('dailyList');
   ul.replaceChildren(...ms.map(m=>{const li=document.createElement('li');const p=meta.progress(m),done=p>=m.target;li.className=done?'done':'';
     const tx=document.createElement('span');tx.className='mt';tx.textContent=T(m.text);const pr=document.createElement('span');pr.className='mp';pr.textContent=done?T('완료'):(Math.round(p)+' / '+m.target);
@@ -2219,7 +2220,7 @@ function renderAch(){
 const ads=(()=>{
   const A=window.gusulAds||null;
   const EVERY=2,COOLDOWN=120000,AFTER_REWARD=60000;
-  let finished=0,finishedAtShow=0,lastShown=0,lastReward=0,busy=false;
+  let finished=0,finishedAtShow=0,lastShown=0,lastReward=0,busy=false,leaving=false;
   if(A){try{A.init();}catch(e){}}
   return{
     has:!!A,
@@ -2233,7 +2234,8 @@ const ads=(()=>{
     noteFinished(){finished++;},
     /** 결과 화면을 떠날 때. 띄울 차례면 띄우고, 닫힌 뒤에 next 를 부른다. 아니면 바로 next. */
     async leaveResult(next){
-      if(busy)return;
+      if(busy||leaving)return; // 두 번 눌러도 한 번만 (빠르게 두 번 누르면 판이 두 번 시작됐다)
+      leaving=true;setTimeout(()=>{leaving=false;},400);
       const now=Date.now();
       if(A&&finished-finishedAtShow>=EVERY&&now-lastShown>=COOLDOWN&&now-lastReward>=AFTER_REWARD){
         busy=true;finishedAtShow=finished;lastShown=now;
@@ -2254,7 +2256,9 @@ function showRevive(){
   $('reviveYes').textContent=T(ads.has?'광고 보고 이어하기':'한 번 이어하기');
   $('revive').hidden=false;
 }
+let reviving=false;
 $('reviveYes').addEventListener('click',async()=>{
+  if(reviving)return;reviving=true;setTimeout(()=>{reviving=false;},400);
   sfx('flick');$('revive').hidden=true;reviveUsed=true;track('revive_use',{mode:mode,sec:Math.round(SURV.time-roundT)});
   const r=await ads.showReward();
   const ok=r!=='closed';            // 중간에 닫았을 때만 부활 없음. 광고를 못 불러온 건 사람 탓이 아니니 그냥 살린다.
@@ -2328,6 +2332,7 @@ function applySound(){$('soundTg').textContent=muted?T('꺼짐'):T('켜짐');$('
 $('soundTg').addEventListener('click',()=>{muted=!muted;try{localStorage.setItem('gusul-mute',muted?'1':'0');}catch(e){}applySound();sfx('hit');});
 applySound();
 function refreshStartCard(){
+  meta.roll();
   const s=meta.stats,ds=dailyStore(),wins=s.wins;
   $('whoName').textContent=myName;
   $('whoStat').textContent=TF('1등 {w}번 · {g}판 · 코인 {c}',{w:wins,g:s.games,c:meta.coins()});
