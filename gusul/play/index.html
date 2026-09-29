@@ -222,6 +222,8 @@ html,body{height:100%;margin:0;overflow:hidden;word-break:keep-all;overflow-wrap
 #brand .bm{width:92px;height:92px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#ffffff 0%,#bfe6ff 22%,#4aa3e0 62%,#14568f 100%);box-shadow:0 8px 0 rgba(0,0,0,.18),inset 0 -6px 12px rgba(0,0,0,.25)}
 #brand img{width:min(52vw,210px);height:auto}
 #brand small{font-family:'Jua',sans-serif;font-size:13px;letter-spacing:.3em;color:#8a6a3d}
+.overlay>.card{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);overflow-y:auto;box-sizing:border-box} /* 낮은 화면에서는 창 안에서 스크롤 */
+@media (max-height:520px){#mine{left:auto;right:12px;transform:none;text-align:right}#dots{justify-content:flex-end}}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.toast{animation-duration:.01s}}
 </style>
@@ -843,7 +845,7 @@ function cellOf(x,y){const cx=Math.floor(x/CELL),cy=Math.floor(y/CELL);if(cx<0||
 function distSeg2(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy;let t=l2?((px-ax)*dx+(py-ay)*dy)/l2:0;t=t<0?0:t>1?1:t;const ex=px-(ax+dx*t),ey=py-(ay+dy*t);return ex*ex+ey*ey;} // 점과 선분 사이 거리의 제곱
 function cross(ax,ay,bx,by,cx,cy){return (bx-ax)*(cy-ay)-(by-ay)*(cx-ax);}
 function segInter(a,b,c,d,e,f,g,h){const d1=cross(e,f,g,h,a,b),d2=cross(e,f,g,h,c,d),d3=cross(a,b,c,d,e,f),d4=cross(a,b,c,d,g,h);return ((d1>0&&d2<0)||(d1<0&&d2>0))&&((d3>0&&d4<0)||(d3<0&&d4>0));}
-function cleanName(s){s=String(s||"").replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g,"").trim().slice(0,10);return s||"???";}
+function cleanName(s){s=String(s||"").replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g,"").trim();s=Array.from(s).slice(0,10).join("").trim();return s||"???";}
 function cleanColor(c){return /^#[0-9a-fA-F]{6}$/.test(String(c||''))?c:null;}
 const num=(v,d)=>{v=Number(v);return Number.isFinite(v)?v:d;};
 const fmtPct=v=>(v<10?v.toFixed(2):v.toFixed(1))+'%';
@@ -2043,7 +2045,7 @@ if(window.gusulToss&&window.gusulToss.back){const B=window.gusulToss.back;B.hand
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.28';
+const APP_VER='0.4.29';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
