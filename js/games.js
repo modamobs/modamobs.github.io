@@ -101,7 +101,7 @@ const GAMES = [
     play: "/rocketescape/play/",
     about: "/rocketescape/",
     thumb: "/assets/images/rocketescape.png",
-    accent: "#ff8c3a",
+    accent: "#38e8ff",
     portrait: true
   },
   {

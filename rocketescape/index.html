@@ -19,12 +19,14 @@
 <link rel="stylesheet" href="../games/game.css">
 
 <style>
-  /* 머리: 노을에서 심우주로 */
+  /* 머리: 네온사인 밤하늘 (게임 화면과 같은 남보라 + 아래 자홍 빛) */
   .hero {
     background:
-      radial-gradient(90% 70% at 50% 115%, rgba(255, 140, 58, .22), transparent 60%),
-      linear-gradient(180deg, #05040e 0%, #101c3e 70%, #2d3f6e 130%);
+      radial-gradient(90% 70% at 50% 115%, rgba(255, 63, 216, .22), transparent 60%),
+      radial-gradient(60% 50% at 50% 0%, rgba(56, 232, 255, .10), transparent 70%),
+      linear-gradient(180deg, #05040d 0%, #0b0b2a 70%, #1e1646 130%);
   }
+  .hero .title { text-shadow: 0 0 18px rgba(56, 232, 255, .55); }
   .hero .cta { margin: 4px 0 22px; }
   .hero .btn { font-size: 1rem; }
 
@@ -43,8 +45,8 @@
     background: hsl(var(--game-hue) 90% 55% / .12);
     color: var(--heading);
   }
-  .loop span.ok  { background: rgba(61, 220, 151, .14); color: #3ddc97; }
-  .loop span.bad { background: rgba(255, 79, 106, .14); color: #ff4f6a; }
+  .loop span.ok  { background: rgba(61, 255, 162, .14); color: #3dffa2; }
+  .loop span.bad { background: rgba(255, 63, 110, .14); color: #ff3f6e; }
   .loop em { font-style: normal; color: var(--muted); }
 
   .pull {
@@ -70,7 +72,8 @@
   .shots img {
     width: 100%;
     border-radius: 14px;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(56, 232, 255, .45);
+    box-shadow: 0 0 18px rgba(56, 232, 255, .18);
     background: var(--bg-soft);
   }
   .shots figcaption {
@@ -110,8 +113,8 @@
 </style>
 </head>
 
-<!-- 엔진 불꽃 주황 -->
-<body style="--game-accent:#ff8c3a; --game-accent2:#ffd166; --game-hue:25">
+<!-- 네온 청록 + 자홍 -->
+<body style="--game-accent:#38e8ff; --game-accent2:#ff3fd8; --game-hue:188">
 
 <div class="topbar">
   <div class="wrap">
@@ -221,6 +224,10 @@
       <figure>
         <img src="assets/escaped.jpg" alt="탈출에 성공하고 원래 폭발 지점 선이 표시된 화면" loading="lazy">
         <figcaption>탈출, 그리고 폭발 지점</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/race.jpg" alt="다른 사람의 지난 비행 기록과 함께 나는 고스트 레이스 화면" loading="lazy">
+        <figcaption>고스트 레이스</figcaption>
       </figure>
       <figure>
         <img src="assets/hangar.jpg" alt="기체를 고르고 능력치를 강화하는 격납고 화면" loading="lazy">
