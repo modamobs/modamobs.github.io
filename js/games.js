@@ -150,7 +150,7 @@ const GAMES = [
     desc: "5×4 릴을 굴려 페이라인이 서면 보스를 때리는 슬롯머신 로그라이크.",
     genres: ["로그라이크"],
     status: "web",
-    playable: true,
+    playable: false,
     play: "/reeldungeon/play/",
     about: "/reeldungeon/",
     thumb: "/assets/images/reeldungeon.png",
