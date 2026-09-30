@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="AI로 내 게임 만들기 실습 가이드">
+<style>body{margin:0} img{max-width:100%} [hidden]{display:none!important}</style>
+<title>AI 게임 제작 실습장</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --ground: #f4f7fb;
+    --surface: #ffffff;
+    --ink: #121a3a;
+    --ink-soft: #4a5578;
+    --line: #d5dcea;
+    --sea: #17607a;
+    --sea-tint: #e3f0f4;
+    --lamp: #f2b632;
+    --lamp-ink: #2a1e00;
+    --prompt-bg: #101735;
+    --prompt-ink: #eaf0ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0f26; --surface: #121a3a; --ink: #eaf0ff; --ink-soft: #a5b0d0;
+      --line: #2a3563; --sea: #7cc4dc; --sea-tint: #16294a; --lamp: #ffd166; --lamp-ink: #2a1e00;
+      --prompt-bg: #060a1c; --prompt-ink: #eaf0ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0a0f26; --surface: #121a3a; --ink: #eaf0ff; --ink-soft: #a5b0d0;
+    --line: #2a3563; --sea: #7cc4dc; --sea-tint: #16294a; --lamp: #ffd166; --lamp-ink: #2a1e00;
+    --prompt-bg: #060a1c; --prompt-ink: #eaf0ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground); color: var(--ink);
+    font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 16px; line-height: 1.7;
+    padding-inline: 16px; padding-block: 28px 64px;
+  }
+  .wrap { max-width: 720px; margin-inline: auto; display: flex; flex-direction: column; gap: 36px; }
+  h1, h2 { font-family: "Jua", "Noto Sans KR", sans-serif; font-weight: 400; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 7vw, 42px); line-height: 1.2; }
+  h2 { font-size: 26px; line-height: 1.3; }
+  h3 { font-size: 16px; font-weight: 700; margin: 0; }
+  p { margin: 0; }
+  a { color: var(--sea); }
+  header { display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow { font-size: 13px; letter-spacing: .08em; color: var(--ink-soft); font-weight: 500; }
+  .lead { font-size: 18px; color: var(--ink-soft); max-width: 34em; }
+
+  .route { display: flex; flex-wrap: wrap; gap: 6px 8px; list-style: none; padding: 0; margin: 0; font-size: 14px; }
+  .route a {
+    display: inline-flex; gap: 6px; align-items: baseline; text-decoration: none;
+    padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface);
+  }
+  .route .min { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  section { display: flex; flex-direction: column; gap: 14px; }
+  .step-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+  .step-head .time { font-size: 14px; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-left: auto; }
+  .goal { background: var(--sea-tint); padding: 10px 14px; border-radius: 6px; font-weight: 500; }
+
+  .prompt { background: var(--prompt-bg); color: var(--prompt-ink); border-radius: 10px; overflow: hidden; }
+  .prompt-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; font-size: 13px; color: #a5b0d0; }
+  .prompt pre { margin: 0; padding: 4px 14px 16px; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; font: inherit; font-size: 15px; line-height: 1.65; user-select: all; -webkit-user-select: all; }
+  .prompt mark { background: none; color: #ffd166; }
+  button.copy {
+    font: inherit; font-size: 13px; font-weight: 700; color: var(--lamp-ink); background: #ffd166;
+    border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; white-space: nowrap;
+  }
+  button.copy:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--sea); outline-offset: 2px; }
+
+  .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-weight: 700; font-size: 15px; }
+  .field .hint { font-size: 13px; color: var(--ink-soft); }
+  .field input, .field textarea {
+    font: inherit; color: var(--ink); background: var(--ground);
+    border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; width: 100%;
+  }
+  .field textarea { resize: vertical; min-height: 64px; }
+
+  ul.plain, ol.plain { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+  .menu { display: flex; flex-direction: column; gap: 12px; }
+  .menu-item { display: flex; flex-direction: column; gap: 6px; }
+
+  .table-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  th { font-size: 13px; color: var(--ink-soft); font-weight: 500; white-space: nowrap; }
+  td:first-child { font-weight: 700; white-space: nowrap; }
+  footer { font-size: 14px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">전남대학교 여수 · 게임기획 특강 · 실습 55분</p>
+    <h1>AI로 내 게임 만들기</h1>
+    <p class="lead">오늘 12시에 여러분은 직접 기획한 게임의 링크를 친구에게 보내게 됩니다. 코딩은 몰라도 됩니다. 아래 순서대로 따라오세요.</p>
+    <ol class="route" aria-label="실습 순서">
+      <li><a href="#s0">준비 <span class="min">쉬는 시간</span></a></li>
+      <li><a href="#s1">1 아이디어 <span class="min">5분</span></a></li>
+      <li><a href="#s2">2 기획서 <span class="min">10분</span></a></li>
+      <li><a href="#s3">3 프로토타입 <span class="min">20분</span></a></li>
+      <li><a href="#s4">4 개선 <span class="min">20분</span></a></li>
+      <li><a href="#s5">5 공유·발표</a></li>
+      <li><a href="#s7">집에서 GitHub</a></li>
+    </ol>
+  </header>
+
+  <section id="s0">
+    <div class="step-head"><h2>준비: AI 하나 열기</h2><span class="time">쉬는 시간에</span></div>
+    <p>이미 쓰던 서비스가 있으면 그걸 쓰세요. 없으면 아래 중 하나에 가입하고 로그인합니다. 모두 무료 계정으로 충분합니다.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>서비스</th><th>게임을 보려면</th><th>링크로 공유하려면</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://claude.ai" target="_blank" rel="noopener">Claude</a></td><td>게임이 오른쪽 창에 자동으로 뜹니다</td><td>창 위쪽의 게시(Publish) 버튼</td></tr>
+          <tr><td><a href="https://gemini.google.com" target="_blank" rel="noopener">Gemini</a></td><td>입력창의 도구에서 Canvas를 켜고 요청합니다</td><td>Canvas의 "공유 및 내보내기"</td></tr>
+          <tr><td><a href="https://chatgpt.com" target="_blank" rel="noopener">ChatGPT</a></td><td>코드 블록의 미리보기·실행 버튼</td><td>아래 "파일로 저장하기" 방법</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>2명이 한 조입니다. 한 명은 <strong>입력 담당</strong>, 한 명은 <strong>플레이·잔소리 담당</strong>. 중간에 역할을 바꾸세요.</p>
+  </section>
+
+  <section id="s1">
+    <div class="step-head"><h2>1. 아이디어 고르기</h2><span class="time">10:48 · 5분</span></div>
+    <p class="goal">끝나면: 만들 게임을 한 문장으로 말할 수 있다.</p>
+    <p>이미 만들고 싶은 게 있으면 건너뛰세요. 없으면 AI에게 물어봅니다. 노란 부분은 여러분의 관심사로 바꾸세요.</p>
+    <div class="prompt">
+      <div class="prompt-bar"><span>AI에게 보낼 말</span><button class="copy" type="button" data-copy="p1">복사</button></div>
+      <pre id="p1">나는 게임 기획을 처음 해 보는 대학생이야. <mark>[좋아하는 것: 예) 여수, 고양이, 축구, 시험기간]</mark>을 소재로 한 아주 단순한 웹 미니게임 아이디어를 5개 제안해 줘.
+조건: 한 손으로 1분 안에 한 판이 끝나고, 규칙을 한 문장으로 설명할 수 있어야 해.
+각 아이디어마다 "플레이어가 반복하는 행동"과 "재미 포인트"를 한 줄씩 써 줘.</pre>
+    </div>
+    <p>고르는 기준은 하나입니다. <strong>작을수록 좋다.</strong> RPG나 오픈월드가 떠오르면 그 게임의 10초짜리 한 장면만 떼어 오세요.</p>
+  </section>
+
+  <section id="s2">
+    <div class="step-head"><h2>2. 1장 기획서 쓰기</h2><span class="time">10:53 · 10분</span></div>
+    <p class="goal">끝나면: 아래 5칸이 채워져 있다. 이 5칸이 곧 AI에게 줄 설계도다.</p>
+    <p>조원과 이야기하며 직접 채우세요. 막히는 칸은 AI에게 "이 칸을 어떻게 채우면 좋을지 3가지 안을 줘"라고 물어도 됩니다. 단, 고르는 건 여러분입니다.</p>
+    <div class="sheet">
+      <div class="field">
+        <label for="f-title">게임 제목</label>
+        <input id="f-title" type="text" placeholder="예) 여수 밤바다 별 줍기">
+      </div>
+      <div class="field">
+        <label for="f-pitch">① 한 줄 소개</label>
+        <span class="hint">누가, 어디서, 무엇을 하는 게임인가</span>
+        <input id="f-pitch" type="text" placeholder="예) 여수 밤바다에서 배를 움직여 떨어지는 별을 받는 게임">
+      </div>
+      <div class="field">
+        <label for="f-action">② 플레이어가 하는 행동</label>
+        <span class="hint">10초마다 반복하는 조작. 동사로 쓰세요</span>
+        <input id="f-action" type="text" placeholder="예) 배를 좌우로 움직여 별은 받고 운석은 피한다">
+      </div>
+      <div class="field">
+        <label for="f-goal">③ 목표와 실패 조건</label>
+        <span class="hint">어떻게 점수를 얻고, 언제 게임이 끝나는가</span>
+        <textarea id="f-goal" placeholder="예) 별 1개에 10점. 목숨 3개, 운석에 맞으면 1개 감소, 0이 되면 게임오버"></textarea>
+      </div>
+      <div class="field">
+        <label for="f-curve">④ 점점 어려워지는 방식</label>
+        <span class="hint">시간이 지나면 무엇이 달라지는가</span>
+        <input id="f-curve" type="text" placeholder="예) 떨어지는 속도가 빨라지고 운석 비율이 늘어난다">
+      </div>
+      <div class="field">
+        <label for="f-fun">⑤ 재미 포인트 하나</label>
+        <span class="hint">이 게임만의 "한 번 더!"를 만드는 장치</span>
+        <input id="f-fun" type="text" placeholder="예) 연속으로 받으면 콤보가 쌓여 점수 배율이 오른다">
+      </div>
+      <div class="field">
+        <label for="f-look">분위기와 그림</label>
+        <span class="hint">배경, 색감, 등장하는 것들. 이모지로 정하면 AI가 잘 그립니다</span>
+        <input id="f-look" type="text" placeholder="예) 밤하늘과 달, 조명 켜진 다리. 배 ⛵ 별 ⭐ 운석 ☄️">
+      </div>
+    </div>
+  </section>
+
+  <section id="s3">
+    <div class="step-head"><h2>3. 첫 프로토타입 만들기</h2><span class="time">11:03 · 20분</span></div>
+    <p class="goal">끝나면: 내 게임이 화면에서 실제로 움직이고, 한 판을 끝까지 할 수 있다.</p>
+    <p>위 기획서를 채우면 아래 글이 자동으로 완성됩니다. 통째로 복사해서 AI에게 보내세요. Gemini는 Canvas를 먼저 켭니다.</p>
+    <div class="prompt">
+      <div class="prompt-bar"><span>내 기획서로 만든 요청문</span><button class="copy" type="button" data-copy="p3">복사</button></div>
+      <pre id="p3"></pre>
+    </div>
+    <h3>게임이 뜨면 확인할 것</h3>
+    <ul class="plain">
+      <li>시작 버튼을 누르면 시작되는가</li>
+      <li>조작이 되는가 (폰이라면 터치로)</li>
+      <li>점수가 오르고, 실패하면 게임오버가 되고, 다시 하기가 되는가</li>
+    </ul>
+    <p>하나라도 안 되면 재미를 따지기 전에 그것부터 고칩니다. 아래 버그 신고 틀을 쓰세요.</p>
+    <div class="prompt">
+      <div class="prompt-bar"><span>버그 신고 틀</span><button class="copy" type="button" data-copy="p3b">복사</button></div>
+      <pre id="p3b">버그가 있어. <mark>[무엇을 했더니]</mark> <mark>[어떻게 됐는데]</mark> <mark>[원래는 이렇게 돼야 해]</mark>. 원인을 찾아서 고쳐 줘.</pre>
+    </div>
+  </section>
+
+  <section id="s4">
+    <div class="step-head"><h2>4. 바꿔서 플레이하고 개선하기</h2><span class="time">11:23 · 20분</span></div>
+    <p class="goal">끝나면: 남의 피드백으로 게임을 두 번 이상 고쳤다.</p>
+    <ol class="plain">
+      <li><strong>4분</strong> 옆 조와 자리를 바꿔 서로의 게임을 합니다. 설명하지 말고 지켜보세요. 어디서 헤매는지가 가장 값진 정보입니다.</li>
+      <li><strong>2분</strong> 세 가지를 물어봅니다. 뭐가 헷갈렸나요? 언제 지루했나요? 뭐가 있으면 한 판 더 하고 싶을까요?</li>
+      <li><strong>14분</strong> 가장 중요한 것부터 고칩니다. <strong>한 번에 한 가지만</strong> 요청하세요. 여러 개를 한꺼번에 시키면 어디서 망가졌는지 알 수 없습니다.</li>
+    </ol>
+    <h3>개선 요청 메뉴</h3>
+    <div class="menu">
+      <div class="menu-item">
+        <p>너무 쉽거나 너무 어려울 때</p>
+        <div class="prompt"><div class="prompt-bar"><span>난이도</span><button class="copy" type="button" data-copy="p4a">복사</button></div>
+        <pre id="p4a">처음 20초는 지금보다 쉽게, 그 뒤로는 시간이 지날수록 점점 어려워지게 난이도 곡선을 조정해 줘. 1분쯤 버티면 꽤 어렵다고 느껴지는 정도로.</pre></div>
+      </div>
+      <div class="menu-item">
+        <p>밋밋하고 손맛이 없을 때</p>
+        <div class="prompt"><div class="prompt-bar"><span>손맛</span><button class="copy" type="button" data-copy="p4b">복사</button></div>
+        <pre id="p4b">손맛을 살려 줘. 점수를 얻으면 반짝이는 파티클과 "+10" 숫자가 뜨고, 피해를 입으면 화면이 짧게 흔들리게 해 줘. 효과음도 소리 파일 없이 코드로 만들어서 넣어 줘.</pre></div>
+      </div>
+      <div class="menu-item">
+        <p>한 판 더 하고 싶은 이유가 없을 때</p>
+        <div class="prompt"><div class="prompt-bar"><span>새 요소</span><button class="copy" type="button" data-copy="p4c">복사</button></div>
+        <pre id="p4c">가끔 등장하는 특별한 요소를 하나 추가해 줘: <mark>[예) 5초간 무적이 되는 아이템 / 점수 5배짜리 희귀한 것 / 10초마다 나오는 보스]</mark>. 등장할 때 눈에 띄게 표시해 줘.</pre></div>
+      </div>
+      <div class="menu-item">
+        <p>처음 하는 사람이 규칙을 몰라 헤맬 때</p>
+        <div class="prompt"><div class="prompt-bar"><span>안내</span><button class="copy" type="button" data-copy="p4d">복사</button></div>
+        <pre id="p4d">처음 하는 사람이 설명 없이도 알 수 있게, 시작 화면에 조작법과 규칙을 그림 위주로 세 줄 이내로 보여 줘.</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s5">
+    <div class="step-head"><h2>5. 공유하고 발표하기</h2><span class="time">11:43</span></div>
+    <p>준비 단계 표의 방법으로 링크를 만들어 단체 채팅방에 올리세요. 발표하는 3개 조는 3분 동안 세 가지를 말합니다.</p>
+    <ol class="plain">
+      <li>우리 게임을 한 줄로 소개하면</li>
+      <li>30초 시연</li>
+      <li>AI에게 시킨 말 중 가장 효과가 컸던 한마디</li>
+    </ol>
+    <h3>파일로 저장하기 (어느 AI에서나 되는 방법)</h3>
+    <ol class="plain">
+      <li>AI에게 "전체 코드를 HTML 파일 하나로 다시 보여 줘"라고 요청하고 코드를 복사합니다.</li>
+      <li>메모장에 붙여 넣고, 파일 이름을 <strong>game.html</strong>로, 파일 형식을 "모든 파일"로 저장합니다.</li>
+      <li>저장한 파일을 더블클릭하면 브라우저에서 게임이 열립니다. 이 파일을 메신저로 보내도 됩니다.</li>
+      <li>강의실 PC는 꺼지면 파일이 지워질 수 있습니다. 나가기 전에 <strong>내 메일로 보내 두고</strong>, AI 사이트에서 <strong>로그아웃</strong>하세요.</li>
+    </ol>
+  </section>
+
+  <section id="s7">
+    <div class="step-head"><h2>집에서: GitHub에 올려 내 주소 만들기</h2><span class="time">10분</span></div>
+    <p class="goal">끝나면: https://아이디.github.io/my-game/ 에서 내 게임이 열린다.</p>
+    <p>GitHub는 전 세계 개발자가 코드를 올려 두는 곳입니다. 여기서 <strong>GitHub Pages</strong>를 켜면 올린 HTML 파일이 그대로 웹사이트가 됩니다. 공개 저장소라면 무료이고, AI 대화가 사라져도 주소는 남습니다. 만든 게임이 쌓이면 그대로 포트폴리오가 됩니다.</p>
+    <ol class="plain">
+      <li>위에서 저장한 게임 파일의 이름을 <strong>index.html</strong>로 바꿉니다.</li>
+      <li><a href="https://github.com" target="_blank" rel="noopener">github.com</a>에 가입하고, 오른쪽 위 <strong>+</strong> → <strong>New repository</strong>를 누릅니다. 이름은 <strong>my-game</strong>, 공개 범위는 <strong>Public</strong>으로 하고 만듭니다.</li>
+      <li>저장소 화면에서 <strong>Add file</strong> → <strong>Upload files</strong>를 누르고 index.html을 끌어다 놓은 뒤 <strong>Commit changes</strong>를 누릅니다.</li>
+      <li><strong>Settings</strong> → 왼쪽 메뉴 <strong>Pages</strong> → Source를 <strong>Deploy from a branch</strong>로, Branch를 <strong>main</strong>으로 고르고 <strong>Save</strong>를 누릅니다.</li>
+      <li>몇 분(최대 10분) 기다리면 Pages 화면 위쪽에 주소가 뜹니다. 그 주소를 친구에게 보내세요.</li>
+    </ol>
+    <p>게임을 고친 뒤에는 새 index.html을 같은 방법으로 다시 올리면 덮어써집니다. 화면이 설명과 다르면 AI에게 물어보세요.</p>
+    <div class="prompt">
+      <div class="prompt-bar"><span>막혔을 때 AI에게</span><button class="copy" type="button" data-copy="p7">복사</button></div>
+      <pre id="p7">GitHub Pages에 index.html 파일 하나로 된 게임을 올리고 싶어. 코딩을 모르는 사람 기준으로, 지금 GitHub 화면에서 어디를 눌러야 하는지 순서대로 알려 줘. 나는 지금 <mark>[막힌 단계와 보이는 화면]</mark>에 있어.</pre>
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="step-head"><h2>막혔을 때</h2></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>상황</th><th>해 볼 것</th></tr></thead>
+        <tbody>
+          <tr><td>게임이 안 뜬다</td><td>버그 신고 틀로 한 번 요청. 두 번 실패하면 새 대화를 열고 3단계 요청문을 다시 보냅니다.</td></tr>
+          <tr><td>고쳤더니 더 망가졌다</td><td>"방금 수정을 취소하고 그 전 버전으로 돌려 줘"라고 말합니다.</td></tr>
+          <tr><td>사용 한도 메시지</td><td>조원의 계정이나 다른 AI로 옮기고 3단계 요청문부터 이어 갑니다.</td></tr>
+          <tr><td>AI가 코드만 보여 준다</td><td>"바로 실행해서 볼 수 있게 미리보기로 보여 줘"라고 요청하거나 파일로 저장합니다.</td></tr>
+          <tr><td>일찍 끝났다</td><td>두 번째 적, 스테이지, 엔딩 화면, 배경 음악 중 하나에 도전하세요.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    집에서 이어 가려면: 같은 대화에서 계속 고치면 됩니다. 완성도가 올라가면 GitHub Pages 주소로 친구에게 보내거나, itch.io에 무료로 올려 전 세계 사람에게 보여 줄 수 있습니다.
+  </footer>
+</div>
+
+<script>
+(() => {
+  const ids = ['title', 'pitch', 'action', 'goal', 'curve', 'fun', 'look'];
+  const el = id => document.getElementById('f-' + id);
+  const KEY = 'ai-game-lab-sheet';
+
+  function val(id, fallback) {
+    const v = el(id).value.trim();
+    return v || fallback;
+  }
+  function build() {
+    const text =
+`아래 1장 기획서대로 실제로 플레이할 수 있는 게임을 만들어 줘.
+
+[기획서]
+제목: ${val('title', '[게임 제목]')}
+한 줄 소개: ${val('pitch', '[① 한 줄 소개]')}
+플레이어의 행동: ${val('action', '[② 플레이어가 하는 행동]')}
+목표와 실패 조건: ${val('goal', '[③ 목표와 실패 조건]')}
+난이도 변화: ${val('curve', '[④ 점점 어려워지는 방식]')}
+재미 포인트: ${val('fun', '[⑤ 재미 포인트]')}
+분위기와 그림: ${val('look', '[분위기와 그림]')}
+
+[만드는 방식]
+- HTML 파일 하나로 만들고, 바로 실행해서 볼 수 있게 미리보기로 보여 줘.
+- 이미지 파일은 쓰지 말고 이모지와 도형으로 그려 줘.
+- 폰에서는 터치, PC에서는 키보드나 마우스로 조작할 수 있게 해 줘.
+- 시작 화면, 점수 표시, 게임오버 화면과 다시 하기 버튼을 넣어 줘.
+- 모든 화면 글자는 한국어로 써 줘.
+- 기획서에 없는 기능은 추가하지 마.`;
+    document.getElementById('p3').textContent = text;
+  }
+  function save() {
+    try {
+      const data = {};
+      ids.forEach(id => data[id] = el(id).value);
+      localStorage.setItem(KEY, JSON.stringify(data));
+    } catch (e) { /* 저장이 안 돼도 실습에는 지장 없음 */ }
+  }
+  try {
+    const data = JSON.parse(localStorage.getItem(KEY) || '{}');
+    ids.forEach(id => { if (typeof data[id] === 'string') el(id).value = data[id]; });
+  } catch (e) { /* 빈 기획서로 시작 */ }
+
+  ids.forEach(id => el(id).addEventListener('input', () => { build(); save(); }));
+  build();
+
+  document.querySelectorAll('button.copy').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pre = document.getElementById(btn.dataset.copy);
+      const text = pre.textContent;
+      let ok = false;
+      try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+        try {
+          const range = document.createRange(); range.selectNodeContents(pre);
+          const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+          ok = document.execCommand('copy');
+        } catch (e2) { ok = false; }
+      }
+      btn.textContent = ok ? '복사됨' : '선택됨 · 길게 눌러 복사';
+      setTimeout(() => { btn.textContent = '복사'; }, 2200);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
