@@ -1654,7 +1654,7 @@ function dailyKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 function dailyStore(){let s={};try{s=JSON.parse(localStorage.getItem('gusul-daily')||'{}');}catch(e){}if(s.key!==dailyKey()){s={key:dailyKey(),best:0,plays:0,hist:(s.hist||[]).concat(s.key?[{key:s.key,best:s.best||0}]:[]).slice(-7)};}return s;}
 function dailySave(s){try{localStorage.setItem('gusul-daily',JSON.stringify(s));}catch(e){}}
 function dailyScore(rank,landPct){return Math.round(landPct*100)+({1:100,2:50,3:25}[rank]||0);}
-const platform={submitScore(score){if(window.gusulToss){try{window.gusulToss.submitScore(score);}catch(e){}}}}; // 토스 게임센터(오늘의 도전 최고 점수)
+const platform={submitScore(score){if(!(score>0))return; /* 0점은 순위표에 안 올린다 */if(window.gusulToss){try{window.gusulToss.submitScore(score);}catch(e){}}}}; // 토스 게임센터(오늘의 도전 최고 점수)
 function newDailyGame(name){
   wantOnline=false;online=false;mode='daily';roundOver=false;elimOrder=[];roundT=SURV.time;reviveUsed=true; // 도전에는 부활 없음
   let seed=0;for(const ch of dailyKey())seed=(seed*31+ch.charCodeAt(0))|0;
@@ -2012,8 +2012,9 @@ let histGuard=false,selfBack=false,panelPushed=false;
 function pushPanel(){if(panelPushed||histGuard||startEl.hidden)return;try{history.pushState({p:1},'');panelPushed=true;}catch(e){}}
 function popPanel(){if(!panelPushed)return;panelPushed=false;try{selfBack=true;history.back();}catch(e){selfBack=false;}} // selfBack: goHome 이 부른 history.back 의 popstate 가 아직 안 왔다
 function pushGameState(){if(histGuard)return;try{history.pushState({g:1},'');histGuard=true;}catch(e){}}
+const TOP_PANELS=['delAsk','quit','rankPanel','missions','achPanel','skinsPanel','rules','settings']; // 뒤로 가기로 닫는 창(위에 뜨는 것부터)
 function closeTopOverlay(){
-  for(const id of ['delAsk','quit','rankPanel','missions','achPanel','skinsPanel','rules','settings']){const el=$(id);if(el&&!el.hidden){el.hidden=true;if(id==='quit'&&$('boost').hidden)paused=false;if(id==='settings'){saveName();refreshStartCard();}return true;}}
+  for(const id of TOP_PANELS){const el=$(id);if(el&&!el.hidden){el.hidden=true;if(id==='quit'&&$('boost').hidden)paused=false;if(id==='settings'){saveName();refreshStartCard();}return true;}}
   return false;
 }
 window.addEventListener('popstate',()=>{
@@ -2042,7 +2043,7 @@ function onBack(){
 if(CapApp&&CapApp.addListener){try{CapApp.addListener('backButton',()=>onBack());}catch(e){}}
 /* 토스: 뒤로 가기를 받는 동안 토스 종료 팝업이 막힌다. 판 중이거나 창이 열려 있을 때만 받고, 메인에 아무 창도 없으면 토스에 맡긴다. */
 if(window.gusulToss&&window.gusulToss.back){const B=window.gusulToss.back;B.handler=onBack;let on=null;
-  setInterval(()=>{const need=startEl.hidden||['settings','missions','skinsPanel','rules','rankPanel','delAsk','exitAsk'].some(id=>!$(id).hidden);if(need!==on){on=need;try{B.setActive(need);}catch(e){}}},250);}
+  setInterval(()=>{const need=startEl.hidden||!$('exitAsk').hidden||TOP_PANELS.some(id=>!$(id).hidden);if(need!==on){on=need;try{B.setActive(need);}catch(e){}}},250);}
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
@@ -2384,27 +2385,35 @@ const cloud=(()=>{
   let user=null,busy=false,pushT=0,board='daily';
   const J=(v,d)=>{try{return v==null?d:JSON.parse(v);}catch(e){return d;}};
   const N=v=>parseFloat(v)||0;
-  const dayNum=k=>{const m=/(\d+)-(\d+)-(\d+)/.exec(k||'');return m?(+m[1])*10000+(+m[2])*100+(+m[3]):0;};
+  const dayNum=k=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof k==='string'?k:'');if(!m)return 0;const v=(+m[1])*10000+(+m[2])*100+(+m[3]);return v<=dayNum0(dailyKey())+1?v:0;}; // 내일보다 늦은 날짜(시계가 미래인 폰)는 못 믿는다
+  const dayNum0=k=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(k);return m?(+m[1])*10000+(+m[2])*100+(+m[3]):0;};
+  const O=v=>{const o=J(v,null);return o&&typeof o==='object'&&!Array.isArray(o)?o:{};}; // 객체가 아니면(null·배열·숫자) 빈 것으로
+  const I=v=>{const n=Math.floor(+v);return isFinite(n)?Math.min(Math.max(n,0),1e9):0;};   // 0~10억 정수
+  const D=x=>x&&typeof x==='object'&&!Array.isArray(x)?x:{};
   function snap(){const o={};for(const k of KEYS){try{const v=localStorage.getItem(k);if(v!=null&&v!=='')o[k]=v;}catch(e){}}return o;}
   function mergeStats(a,b){
     const o=Object.assign({},b,a);
-    for(const k of ['games','wins','kills','maxCap','top3','survGames','tutorialDone','dailyClears','coinsIn'])o[k]=Math.max(+a[k]||0,+b[k]||0);
-    o.owned=[...new Set([...(Array.isArray(a.owned)?a.owned:[]),...(Array.isArray(b.owned)?b.owned:[])])];
-    if(dayNum(a.dayKey)===dayNum(b.dayKey)){o.dayKey=a.dayKey||b.dayKey;o.d={};for(const k of new Set([...Object.keys(a.d||{}),...Object.keys(b.d||{})]))o.d[k]=Math.max(+(a.d||{})[k]||0,+(b.d||{})[k]||0);}
-    else{const n=dayNum(a.dayKey)>dayNum(b.dayKey)?a:b;o.dayKey=n.dayKey;o.d=Object.assign({},n.d||{});}
+    for(const k of ['games','wins','kills','top3','survGames','tutorialDone','dailyClears','coinsIn'])o[k]=Math.max(I(a[k]),I(b[k]));
+    o.maxCap=Math.max(Math.min(+a.maxCap||0,100),Math.min(+b.maxCap||0,100),0);
+    const own=x=>Array.isArray(x)?x.filter(v=>typeof v==='string'&&v):[];
+    o.owned=[...new Set([...own(a.owned),...own(b.owned)])];
+    const ad=D(a.d),bd=D(b.d);
+    if(dayNum(a.dayKey)===dayNum(b.dayKey)){o.dayKey=dayNum(a.dayKey)?a.dayKey:'';o.d={};for(const k of new Set([...Object.keys(ad),...Object.keys(bd)]))o.d[k]=Math.max(I(ad[k]),I(bd[k]));}
+    else{const an=dayNum(a.dayKey)>dayNum(b.dayKey),n=an?a:b;o.dayKey=n.dayKey;o.d=Object.assign({},an?ad:bd);}
     return o;}
   function mergeDaily(a,b){
-    const h={};for(const x of [...(a.hist||[]),...(b.hist||[])])if(x&&x.key)h[x.key]=Math.max(h[x.key]||0,x.best||0);
+    const h={},H=x=>Array.isArray(x)?x:[];for(const x of [...H(a.hist),...H(b.hist)])if(x&&dayNum(x.key))h[x.key]=Math.max(h[x.key]||0,I(x.best));
     let o;
-    if(a.key===b.key)o={key:a.key,best:Math.max(a.best||0,b.best||0),plays:Math.max(a.plays||0,b.plays||0)};
-    else{const n=dayNum(a.key)>dayNum(b.key)?a:b,old=n===a?b:a;o={key:n.key,best:n.best||0,plays:n.plays||0};if(old.key)h[old.key]=Math.max(h[old.key]||0,old.best||0);}
+    if(!dayNum(a.key))a={};if(!dayNum(b.key))b={};
+    if(a.key===b.key)o={key:a.key||dailyKey(),best:Math.max(I(a.best),I(b.best)),plays:Math.max(I(a.plays),I(b.plays))};
+    else{const n=dayNum(a.key)>dayNum(b.key)?a:b,old=n===a?b:a;o={key:n.key,best:I(n.best),plays:I(n.plays)};if(old.key)h[old.key]=Math.max(h[old.key]||0,I(old.best));}
     delete h[o.key];
     o.hist=Object.keys(h).sort((x,y)=>dayNum(x)-dayNum(y)).slice(-7).map(k=>({key:k,best:h[k]}));
     return o;}
   function merge(L,R){
     const o={};
-    o['gusul-stats']=JSON.stringify(mergeStats(J(L['gusul-stats'],{}),J(R['gusul-stats'],{})));
-    o['gusul-ach']=JSON.stringify(Object.assign({},J(R['gusul-ach'],{}),J(L['gusul-ach'],{})));
+    o['gusul-stats']=JSON.stringify(mergeStats(O(L['gusul-stats']),O(R['gusul-stats'])));
+    o['gusul-ach']=JSON.stringify(Object.assign({},O(R['gusul-ach']),O(L['gusul-ach'])));
     o['gusul-best']=String(Math.max(N(L['gusul-best']),N(R['gusul-best'])));
     o['gusul-wins']=String(Math.max(N(L['gusul-wins']),N(R['gusul-wins'])));
     const dl=J(L['gusul-daily'],null),dr=J(R['gusul-daily'],null);
