@@ -823,7 +823,8 @@ const ranksEl=$('ranks'),pctEl=$('pct'),dotEls=[...document.querySelectorAll('#d
 const startEl=$('start'),deadEl=$('dead'),lobbyEl=$('lobby'),netEl=$('net'),netText=$('netText'),nameIn=$('nameIn'),startBtn=$('startBtn'),altBtn=$('altBtn'),againBtn=$('againBtn');
 const MODE_PARAM=new URLSearchParams(location.search).get('mode');
 const STATIC_HOST=/\.github\.io$/i.test(location.hostname); // 게임 포털(modamobs.github.io/gusul/play/): 서버 없는 정적 호스팅
-const NO_SERVER=!!window.Capacitor||STATIC_HOST;
+const IN_TOSS=!!window.gusulToss||('__appsInTossConstants' in window); // 토스 미니앱: 외부 서버 없이 혼자 모드만
+const NO_SERVER=!!window.Capacitor||STATIC_HOST||IN_TOSS;
 const PREFER_BOTS=MODE_PARAM==='bots'||(NO_SERVER&&MODE_PARAM!=='online'); // 앱·포털은 봇 모드 기본 (Paper.io 방식), 서버와 같이 뜬 웹은 온라인 기본
 const ONLINE_OK=MODE_PARAM==='online'||!NO_SERVER; // 앱 출시 버전과 포털은 온라인을 빼 둔다 (서버 상시 가동 전까지)
 
@@ -1914,7 +1915,7 @@ function newOfflineGame(name){
   track('round_start',{mode:'io',obstacles:obstLevel(),bots:NBOTS_OFFLINE});
   toast(T('넓은 맵 · 봇 40마리 · 끝없이'),'#FFE08A'); // 다른 모드처럼 시작 안내 — 토스트 셰이더도 이때 컴파일된다
   cam.x=me.x;cam.y=me.y;
-  netText.textContent=T('오프라인');netEl.classList.remove('on');
+  netText.textContent=ONLINE_OK?T('오프라인'):T('무한 io');netEl.classList.remove('on'); // 온라인이 없는 판(앱·포털·토스)에는 '오프라인' 대신 모드 이름
   updateHud();running=true;startEl.hidden=true;pushGameState();
 }
 async function startOnlineGame(name){
@@ -2045,7 +2046,7 @@ if(window.gusulToss&&window.gusulToss.back){const B=window.gusulToss.back;B.hand
 $('exitYes').addEventListener('click',()=>{sfx('flick');track('app_exit',{});try{CapApp&&CapApp.exitApp&&CapApp.exitApp();}catch(e){}$('exitAsk').hidden=true;});
 $('exitNo').addEventListener('click',()=>{$('exitAsk').hidden=true;sfx('hit');});
 /* 설정 맨 아래 버전: 앱은 실제 설치된 버전(App.getInfo), 웹·토스는 APP_VER. 버전을 올릴 때 APP_VER 도 같이 올린다. */
-const APP_VER='0.4.29';
+const APP_VER='0.4.30';
 $('appVer').textContent='v'+APP_VER;
 if(CapApp&&CapApp.getInfo){CapApp.getInfo().then(i=>{if(i&&i.version)$('appVer').textContent='v'+i.version+(i.build?' ('+i.build+')':'');}).catch(()=>{});}
 /* 앱: Play 인앱 업데이트(유연). 켤 때 Play 에 묻고, 새 버전이 있으면 메인 제목 아래에 띠를 띄운다.
