@@ -116,6 +116,18 @@ const GAMES = [
     accent: "#38b6f5",
     portrait: true
   },
+  {
+    slug: "bookanswer",
+    title: "펼치면 답",
+    desc: "마음속으로 질문을 떠올리고 책을 꾹 누르세요. 펼쳐진 쪽에 답 한 줄이 적혀 있습니다.",
+    genres: ["캐주얼", "힐링"],
+    status: "web",
+    playable: true,
+    play: "/bookanswer/play/",
+    thumb: "/assets/images/bookanswer.png",
+    accent: "#f1c77a",
+    portrait: true
+  },
 
   /* ── 앱으로만 플레이 ───────────────────────────── */
   {

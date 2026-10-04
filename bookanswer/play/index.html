@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#161c30" />
+    <title>펼치면 답</title>
+    <link rel="icon" href="./icon-192.png" />
+    <script type="module" crossorigin src="./assets/index-BfZKkkhY.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CBVQ1JuK.css">
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1 data-i18n="title">펼치면 답</h1>
+        <p class="sub" data-i18n="sub">궁금한 걸 마음속으로 묻고, 책을 펼치세요.</p>
+      </header>
+
+      <div class="stage">
+        <div class="book" id="book" tabindex="0" role="button" aria-label="책을 꾹 눌러 펼치기">
+          <div class="page base answer-page" aria-live="polite">
+            <div class="run" data-i18n="run">펼 치 면 답</div>
+            <div><div class="answer" id="answer"></div></div>
+            <div class="foot">
+              <div class="ornament"></div>
+              <div class="folio" id="folio"></div>
+            </div>
+          </div>
+          <div id="leaves"></div>
+          <div class="cover" id="cover">
+            <div class="face cover-front">
+              <div class="cover-title" data-i18n="coverTitle">펼치면답</div>
+            </div>
+            <div class="face back cover-back">
+              <div class="q-label" data-i18n="qLabel">물음</div>
+              <div class="q-text" id="qtext"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hints">
+        <p class="hint" id="hint">질문을 떠올리며 책을 <b>꾹</b> 누르세요</p>
+        <p class="tip" id="tip" data-i18n="tip">오래 누를수록 더 깊은 쪽이 펼쳐져요</p>
+      </div>
+      <div class="actions">
+        <button class="primary" id="again" hidden data-i18n="again">다시 묻기</button>
+      </div>
+      <!-- 옵션: 소리·언어 -->
+      <button class="opt-btn" id="optBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="opts" data-i18n-label="options" aria-label="옵션">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg>
+      </button>
+      <div class="opts" id="opts" role="dialog" aria-labelledby="optsTitle" hidden>
+        <div class="opts-head">
+          <span id="optsTitle" data-i18n="options">옵션</span>
+          <button class="opts-close" id="optsClose" data-i18n="close">닫기</button>
+        </div>
+        <div class="opt-row">
+          <span data-i18n="sound">소리</span>
+          <div class="seg" role="group" id="soundSeg">
+            <button data-sound="on" data-i18n="on">켬</button>
+            <button data-sound="off" data-i18n="off">끔</button>
+          </div>
+        </div>
+        <div class="opt-row">
+          <span data-i18n="language">언어</span>
+          <div class="seg" role="group" id="langSeg"></div>
+        </div>
+        <!-- 안드로이드 앱: 광고 동의를 다시 고르는 자리(동의가 필요한 지역에서만 보인다) -->
+        <div class="opt-row" id="privacyRow" hidden>
+          <span data-i18n="privacy">광고 개인정보</span>
+          <div class="seg"><button id="privacyBtn" data-i18n="privacyEdit">설정 바꾸기</button></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
