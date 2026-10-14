@@ -128,18 +128,19 @@ const GAMES = [
     accent: "#f1c77a",
     portrait: true
   },
-
-  /* ── 앱으로만 플레이 ───────────────────────────── */
   {
     slug: "crosssum",
     title: "CrossSum",
-    desc: "누르면 사방에서 같은 숫자가 몰려와 두 배가 되는 4×4 머지 퍼즐. 실시간 1:1 대전과 일일 챌린지.",
-    genres: ["퍼즐", "머지", "대전"],
-    status: "app",
+    desc: "누르면 사방에서 같은 숫자가 몰려와 두 배가 되는 4×4 머지 퍼즐. 스테이지 400개와 데일리 챌린지.",
+    genres: ["퍼즐", "머지"],
+    status: "web",
+    playable: true,
+    play: "/crosssum/play/",
     about: "/crosssum/",
     store: "https://play.google.com/store/apps/details?id=com.mobs.crosssum",
     thumb: "/assets/images/crosssum.png",
-    accent: "#a78bfa"
+    accent: "#a78bfa",
+    portrait: true
   },
 
   /* ── 준비 중 ──────────────────────────────────── */
