@@ -194,6 +194,23 @@
     transform: translateY(-2px);
     box-shadow: 0 14px 32px rgba(242, 169, 60, 0.5);
   }
+  /* 웹판이 생겨서 노란 단추는 바로 플레이, 스토어는 그 옆의 테두리 단추 */
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .store-cta.ghost {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: none;
+  }
+  .store-cta.ghost:hover {
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: none;
+  }
 
   .status-dot {
     width: 7px; height: 7px; border-radius: 50%;
@@ -731,13 +748,21 @@
 
       <p class="board-caption">손가락이 가리키는 칸을 누르면 같은 숫자가 달려옵니다</p>
 
-      <a class="store-cta" href="https://play.google.com/store/apps/details?id=com.mobs.crosssum"
-         target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-          <path d="M3.6 1.8a1 1 0 00-.5.9v18.6a1 1 0 00.5.9l10-10.2-10-10.2zM15 8.6L5.5 1.3l11.9 6.8L15 8.6zm2.4 1.4l2.9 1.6a1 1 0 010 1.8l-2.9 1.7-2.4-2.6 2.4-2.5zM5.5 22.7L15 15.4l2.4 1.4-11.9 5.9z"/>
-        </svg>
-        Google Play에서 다운로드
-      </a>
+      <div class="cta-row">
+        <a class="store-cta" href="/play/?g=crosssum">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M8 5.1v13.8a1 1 0 001.5.9l10.8-6.9a1 1 0 000-1.7L9.5 4.2A1 1 0 008 5.1z"/>
+          </svg>
+          웹에서 바로 플레이
+        </a>
+        <a class="store-cta ghost" href="https://play.google.com/store/apps/details?id=com.mobs.crosssum"
+           target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M3.6 1.8a1 1 0 00-.5.9v18.6a1 1 0 00.5.9l10-10.2-10-10.2zM15 8.6L5.5 1.3l11.9 6.8L15 8.6zm2.4 1.4l2.9 1.6a1 1 0 010 1.8l-2.9 1.7-2.4-2.6 2.4-2.5zM5.5 22.7L15 15.4l2.4 1.4-11.9 5.9z"/>
+          </svg>
+          Google Play에서 다운로드
+        </a>
+      </div>
     </div>
 
     <div class="meadow" aria-hidden="true">
