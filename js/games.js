@@ -40,6 +40,19 @@ const GAMES = [
     portrait: true
   },
   {
+    slug: "erasersums",
+    title: "지우개 셈",
+    desc: "필요 없는 숫자를 지워 줄마다 합을 맞추는 숫자 퍼즐. 크레용 공책 그림체에 날마다 새 오늘의 퍼즐.",
+    genres: ["퍼즐", "숫자"],
+    status: "web",
+    playable: true,
+    play: "/erasersums/play/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.erasersums",
+    thumb: "/assets/images/erasersums.png",
+    accent: "#2b55e6",
+    portrait: true
+  },
+  {
     slug: "arrow-box",
     title: "Arrow Box",
     desc: "상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 막다른 길이 없으니 순서만 찾으면 됩니다.",

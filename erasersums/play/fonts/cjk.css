@@ -1,0 +1,19 @@
+/* 일본어·중국어의 가나·한자는 Noto Sans(굵게)로 그리고, 숫자와 라틴 글자는 주아가 그린다.
+   주아는 가나·한자를 일부만 갖고 있어 그대로 두면 글자마다 글꼴이 섞인다.
+   파일은 tools/cjk-fonts.py 가 앱에서 쓰는 글자만 남겨 굽는다. */
+@font-face {
+  font-family: 'Eraser JA';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(noto-ja.woff2) format('woff2');
+  unicode-range: U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: 'Eraser ZH';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(noto-zh.woff2) format('woff2');
+  unicode-range: U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
