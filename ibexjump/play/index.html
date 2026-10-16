@@ -40,10 +40,11 @@ body{background:var(--ground);color:var(--sand);font-family:var(--body);overflow
 .salt b{color:#fff}
 .combo{background:var(--ember);color:var(--ink);font-weight:600;padding:3px 10px;border-radius:999px;text-shadow:none}
 
-.controls{position:absolute;right:0;bottom:0;z-index:3;padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.controls{position:absolute;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .guide{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;cursor:pointer;background:var(--panel);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:12px}
 .guide input{accent-color:var(--ember);margin:0}
+button.guide{font:inherit;color:inherit}
 button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offset:2px}
 
 .overlay{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding-block:24px 70px;
@@ -80,9 +81,9 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
     <div class="card">
       <p class="eyebrow" id="ovEyebrow">프로토타입 2 · 절벽 타기</p>
       <h1 id="ovTitle">아이벡스 점프</h1>
-      <p class="result" id="ovResult" hidden></p>
       <ul class="howto">
         <li><span>화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.</span></li>
+        <li><span>떨어져도 끝나지 않아요. <b>아래 발판까지 추락</b>할 뿐이니 다시 올라가세요.</span></li>
         <li><span>발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.</span></li>
         <li><span>뾰족 바위의 <b>비탈</b>에 서면 오르막 쪽으로만 뛸 수 있어요. 방향을 바꾸려면 <b>꼭대기</b>에 서세요.</span></li>
         <li><span>반짝이는 <b>소금</b>은 아이벡스가 절벽을 오르는 진짜 이유예요.</span></li>
@@ -93,6 +94,7 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
   </div>
 
   <footer class="controls">
+    <button class="guide" id="restartBtn" type="button">처음부터</button>
     <label class="guide"><input type="checkbox" id="guide"> 궤적</label>
   </footer>
 </div>
@@ -162,7 +164,7 @@ const edgeAt = y => W * (0.8 + 0.08 * Math.sin(y * 0.0042) + 0.04 * Math.sin(y *
 
 // ---- state ----
 let state = 'ready', ledges = [], tip = null, nextId = 0, ib, cam = 0, parts = [], pops = [];
-let maxAlt = 0, combo = 0, perfects = 0, salt = 0, saves = 0, jumps = 0, time = 0, spikeTips = 0;
+let maxAlt = 0, combo = 0, perfects = 0, salt = 0, saves = 0, jumps = 0, falls = 0, time = 0, spikeTips = 0;
 let cw = 0, ch = 0, s = 1, viewH = 600, dpr = 1;
 let skyT = SKY[0][1], skyB = SKY[0][2];
 
@@ -180,7 +182,7 @@ function resize() {
 }
 
 function makeLedge(x, top, w, o = {}) {
-  return Object.assign({ id: nextId++, x, top, w, crumble: false, salt: false, ground: false, crT: -1, falling: false, vy: 0, dir: 0, spike: false, h: 0, slope: 0, flat: 0, geo: null }, o);
+  return Object.assign({ id: nextId++, x, top, w, crumble: false, salt: false, ground: false, crT: -1, falling: false, vy: 0, home: 0, back: 0, fade: 1, dir: 0, spike: false, h: 0, slope: 0, flat: 0, geo: null }, o);
 }
 
 // Main path zigzags up the face; sometimes a tiny side ledge holds salt off the path.
@@ -222,7 +224,6 @@ function genNext(prev) {
 
 function fill() {
   while (tip.top < cam + viewH + 300) tip = genNext(tip);
-  ledges = ledges.filter(l => l === ib.on || l.top > cam - 160);
 }
 
 function reset() {
@@ -230,8 +231,8 @@ function reset() {
   const ground = makeLedge(W / 2, 0, W * 2, { ground: true });
   ledges = [ground]; tip = ground;
   ib = { x: 70, y: 0, vx: 0, vy: 0, on: ground, from: null, off: 70 - W / 2, facing: 1,
-         charging: false, charge: 0, chT: 0, side: 1, squash: 0, wob: null, zone: 0 };
-  cam = -viewH * 0.28; maxAlt = 0; combo = 0; perfects = 0; salt = 0; saves = 0; jumps = 0; parts = []; pops = [];
+         charging: false, charge: 0, chT: 0, side: 1, squash: 0, wob: null, zone: 0, peak: null };
+  cam = -viewH * 0.28; maxAlt = 0; combo = 0; perfects = 0; salt = 0; saves = 0; jumps = 0; falls = 0; parts = []; pops = [];
   fill(); syncHud();
 }
 
@@ -316,10 +317,21 @@ window.addEventListener('keyup', e => {
 });
 
 // ---- simulation ----
+// a long drop since the highest point of this flight breaks the combo and says how far you fell
+function fallCheck(y) {
+  const drop = (ib.peak ?? y) - y;
+  ib.peak = null;
+  if (drop < 90) return false;
+  falls++; combo = 0;
+  pops.push({ x: ib.x, y: y + 50, text: `추락 -${Math.round(drop / U)}m`, t: 0 });
+  return true;
+}
+
 function land(l) {
   const same = l === ib.from;
   const o = ib.x - l.x, ao = Math.abs(o), hw = l.w / 2;
   ib.on = l; ib.y = l.top; ib.vx = ib.vy = 0; ib.squash = 1; ib.charging = false; ib.zone = 0;
+  const fell = fallCheck(l.top);
   dust(ib.x, ib.y, 10);
   if (!l.ground && ao > hw + 2) {
     ib.off = o;
@@ -334,7 +346,7 @@ function land(l) {
   if (same) { syncHud(); return; }
   jumps++;
   maxAlt = Math.max(maxAlt, l.top / U);
-  if (!ib.wob && !l.ground && ao <= hw * 0.4) {
+  if (!fell && !ib.wob && !l.ground && ao <= hw * 0.4) {
     combo++; perfects++;
     pops.push({ x: l.x, y: l.top + 50, text: combo > 1 ? `완벽! ×${combo}` : '완벽!', t: 0 });
   } else combo = 0;
@@ -348,12 +360,13 @@ function landSpike(l) {
   if (Math.abs(o) <= l.flat + 1) { ib.off = clamp(o, -l.flat + 2, l.flat - 2); ib.zone = 0; }
   else { ib.off = o; ib.zone = Math.sign(o); ib.facing = -ib.zone; }
   ib.x = l.x + ib.off; ib.y = surf(l, ib.x);
+  const fell = fallCheck(ib.y);
   dust(ib.x, ib.y, 10);
   spikeTips++;
   if (!same) {
     jumps++;
     maxAlt = Math.max(maxAlt, ib.y / U);
-    if (!ib.zone) { combo++; perfects++; } else combo = 0;
+    if (!ib.zone && !fell) { combo++; perfects++; } else combo = 0;
   }
   if (!ib.zone) pops.push({ x: l.x, y: l.top + 50, text: !same && combo > 1 ? `꼭대기! ×${combo}` : '꼭대기!', t: 0 });
   syncHud();
@@ -380,12 +393,16 @@ function update(dt) {
       l.crT -= dt;
       if (Math.random() < dt * 12) pebbles(l, Math.random() < 0.5 ? -1 : 1, 1);
       if (l.crT <= 0) {
-        l.falling = true; l.crT = -1;
+        l.falling = true; l.crT = -1; l.home = l.top; l.back = 4;
         for (let i = 0; i < 14; i++) parts.push({ x: l.x + rand(-l.w / 2, l.w / 2), y: l.top - rand(0, 10), vx: rand(-50, 50), vy: rand(-20, 100), life: 1.2, t: 0, r: rand(1.2, 3.2), col: 'rock' });
         if (ib.on === l) { ib.on = null; ib.from = l; ib.vx = 0; ib.vy = 0; ib.charging = false; ib.wob = null; combo = 0; }
       }
     }
-    if (l.falling) { l.vy -= G * 0.45 * dt; l.top += l.vy * dt; }
+    if (l.falling) {
+      l.vy -= G * 0.45 * dt; l.top += l.vy * dt; l.back -= dt;
+      if (l.back <= 0) { l.falling = false; l.top = l.home; l.vy = 0; l.fade = 0; }
+    }
+    if (l.fade < 1) l.fade = Math.min(1, l.fade + dt * 2);
   }
 
   if (state !== 'ready') {
@@ -407,9 +424,11 @@ function update(dt) {
           syncHud();
         }
       }
-    } else if (ib.y > cam - 400) {
+    } else {
       const px = ib.x, py = ib.y;
-      ib.vy -= G * dt; ib.x += ib.vx * dt; ib.y += ib.vy * dt;
+      if (ib.peak == null) ib.peak = py;
+      ib.vy = Math.max(-1400, ib.vy - G * dt); ib.x += ib.vx * dt; ib.y += ib.vy * dt;
+      ib.peak = Math.max(ib.peak, ib.y);
       if (ib.x < 8) { ib.x = 8; ib.vx = Math.abs(ib.vx) * 0.3; }
       if (ib.x > W - 8) { ib.x = W - 8; ib.vx = -Math.abs(ib.vx) * 0.3; }
       for (const l of ledges) {
@@ -422,10 +441,13 @@ function update(dt) {
   }
   ib.squash = Math.max(0, ib.squash - dt * 5);
 
-  // camera only climbs
-  let target = ib.on ? ib.y - viewH * 0.3 : cam;
-  if (!ib.on && ib.y > cam + viewH * 0.6) target = ib.y - viewH * 0.6;
-  if (target > cam) cam += (target - cam) * Math.min(1, dt * 3.2);
+  // camera follows the climb, and drops with you when you fall
+  let target = cam;
+  if (ib.on) target = ib.y - viewH * 0.3;
+  else if (ib.y > cam + viewH * 0.6) target = ib.y - viewH * 0.6;
+  cam += (target - cam) * Math.min(1, dt * 3.2);
+  if (!ib.on && ib.y < cam + viewH * 0.22) cam = ib.y - viewH * 0.22;
+  cam = Math.max(cam, -viewH * 0.28);
 
   fill();
 
@@ -434,7 +456,7 @@ function update(dt) {
   for (const q of pops) q.t += dt;
   pops = pops.filter(q => q.t < 1);
 
-  if (state === 'play' && !ib.on && ib.y < cam - 40) gameOver();
+  if (state === 'play') syncHud();
 }
 
 // ---- rendering ----
@@ -808,7 +830,8 @@ function render() {
 
   drawFace(p);
   drawGround(p);
-  for (const l of ledges) drawLedge(l, p);
+  for (const l of ledges) { ctx.globalAlpha = l.fade; drawLedge(l, p); }
+  ctx.globalAlpha = 1;
 
   // the drop below pulls the eye down
   const dg = ctx.createLinearGradient(0, ch * 0.72, 0, ch);
@@ -832,7 +855,7 @@ function render() {
     ctx.font = `800 ${Math.round(17 * s)}px Hahmlet, Georgia, serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineWidth = 4 * s; ctx.strokeStyle = 'rgba(60,22,8,.55)'; ctx.fillStyle = '#fff3d6';
-    const x = clamp(q.x * s, 50, cw - 50), y = sy(q.y + k * 30);
+    const x = clamp(q.x * s, 80, cw - 80), y = sy(q.y + k * 30);
     ctx.strokeText(q.text, x, y); ctx.fillText(q.text, x, y);
     ctx.restore();
   }
@@ -842,27 +865,15 @@ function render() {
 const hud = {};
 function put(id, v) { if (hud[id] !== v) { $(id).textContent = v; hud[id] = v; } }
 function syncHud() {
-  put('alt', Math.floor(maxAlt));
-  put('best', Math.floor(Math.max(best, state === 'play' ? maxAlt : 0)));
+  if (maxAlt > best) { best = maxAlt; store.set('ibex.cliff.best', best); }
+  put('alt', Math.max(0, Math.floor(ib.y / U)));
+  put('best', Math.floor(best));
   put('salt', salt);
   put('comboN', combo);
   $('combo').hidden = combo < 2;
 }
 
-function showOverlay(kind) {
-  if (kind === 'ready') {
-    $('ovEyebrow').textContent = '프로토타입 2 · 절벽 타기';
-    $('ovTitle').textContent = '아이벡스 점프';
-    $('ovResult').hidden = true;
-    $('startBtn').textContent = '시작';
-  } else {
-    const a = Math.floor(maxAlt);
-    $('ovEyebrow').textContent = a > 0 && a >= Math.floor(best) ? '새 최고 기록' : '추락';
-    $('ovTitle').textContent = `${a}m`;
-    $('ovResult').textContent = `소금 ${salt}개 · 버틴 횟수 ${saves}번 · 완벽 착지 ${perfects}번`;
-    $('ovResult').hidden = false;
-    $('startBtn').textContent = '다시 하기';
-  }
+function showOverlay() {
   $('overlay').hidden = false;
   $('startBtn').focus({ preventScroll: true });
 }
@@ -874,14 +885,8 @@ function startGame() {
   syncHud();
 }
 
-function gameOver() {
-  state = 'over';
-  if (maxAlt > best) { best = maxAlt; store.set('ibex.cliff.best', best); }
-  combo = 0; syncHud();
-  setTimeout(() => { if (state === 'over') showOverlay('over'); }, 650);
-}
-
 $('startBtn').addEventListener('click', startGame);
+$('restartBtn').addEventListener('click', e => { e.currentTarget.blur(); startGame(); });
 $('guide').checked = guide;
 $('guide').addEventListener('change', e => { guide = e.target.checked; store.set('ibex.guide', guide); });
 
@@ -896,7 +901,7 @@ function frame(now) {
 resize();
 window.addEventListener('resize', resize);
 reset();
-showOverlay('ready');
+showOverlay();
 requestAnimationFrame(frame);
 })();
 </script>
