@@ -38,6 +38,12 @@ body{background:var(--ground);color:var(--sand);font-family:var(--body);overflow
 .side{display:grid;gap:7px;justify-items:end;font-size:13px;font-weight:500;padding-top:6px}
 .side b{font-variant-numeric:tabular-nums}
 .salt b{color:#fff}
+.banner{position:absolute;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom,0px)) + 54px);transform:translateX(-50%);z-index:1;
+  display:grid;gap:2px;justify-items:center;text-align:center;width:max-content;max-width:calc(100% - 32px);padding:8px 14px;
+  background:var(--panel);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:12px;
+  pointer-events:none;font-size:12.5px;line-height:1.45;color:#e8d3b8}
+.banner small{font-size:10.5px;font-weight:600;letter-spacing:.12em;color:#f3b27a}
+.banner b{font-size:14px;font-weight:600;color:#fff4e2}
 .combo{background:var(--ember);color:var(--ink);font-weight:600;padding:3px 10px;border-radius:999px;text-shadow:none}
 
 .controls{position:absolute;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -77,6 +83,8 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
     </div>
   </header>
 
+  <div class="banner" id="banner" hidden><small>새 장애물</small><b id="bannerT"></b><span id="bannerD"></span></div>
+
   <div class="overlay" id="overlay">
     <div class="card">
       <p class="eyebrow" id="ovEyebrow">프로토타입 2 · 절벽 타기</p>
@@ -86,6 +94,7 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
         <li><span>떨어져도 끝나지 않아요. <b>아래 발판까지 추락</b>할 뿐이니 다시 올라가세요.</span></li>
         <li><span>발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.</span></li>
         <li><span>뾰족 바위의 <b>비탈</b>에 서면 오르막 쪽으로만 뛸 수 있어요. 방향을 바꾸려면 <b>꼭대기</b>에 서세요.</span></li>
+        <li><span>올라갈수록 <b>이끼 발판·움직이는 발판·낙석·바람·독수리</b>가 나타나요.</span></li>
         <li><span>반짝이는 <b>소금</b>은 아이벡스가 절벽을 오르는 진짜 이유예요.</span></li>
       </ul>
       <p class="keys">키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요</p>
@@ -145,6 +154,7 @@ const SKY = [
 const PAL = {
   faceLit: pair('#cf6f35', '#5c4270'), faceMid: pair('#9c4a24', '#3a2a4c'), faceDark: pair('#5a2412', '#1c1428'),
   cap: pair('#f6b06a', '#a382a8'), under: pair('#8a4020', '#3a2848'), ibex: pair('#22130b', '#0d0811'),
+  moss: pair('#7f9a3e', '#3f5d55'),
 };
 const FAR_ROCK = hex('#8a4632'), NEAR_ROCK = hex('#5e2a1a'), GREY = hex('#9a8c86');
 
@@ -165,6 +175,7 @@ const edgeAt = y => W * (0.8 + 0.08 * Math.sin(y * 0.0042) + 0.04 * Math.sin(y *
 // ---- state ----
 let state = 'ready', ledges = [], tip = null, nextId = 0, ib, cam = 0, parts = [], pops = [];
 let maxAlt = 0, combo = 0, perfects = 0, salt = 0, saves = 0, jumps = 0, falls = 0, time = 0, spikeTips = 0;
+let rocks = [], warns = [], eagle = null, rockT = 3, eagleT = 6, bands = [], bandTip = 70 * U;
 let cw = 0, ch = 0, s = 1, viewH = 600, dpr = 1;
 let skyT = SKY[0][1], skyB = SKY[0][2];
 
@@ -182,7 +193,7 @@ function resize() {
 }
 
 function makeLedge(x, top, w, o = {}) {
-  return Object.assign({ id: nextId++, x, top, w, crumble: false, salt: false, ground: false, crT: -1, falling: false, vy: 0, home: 0, back: 0, fade: 1, dir: 0, spike: false, h: 0, slope: 0, flat: 0, geo: null }, o);
+  return Object.assign({ id: nextId++, x, top, w, crumble: false, salt: false, ground: false, crT: -1, falling: false, vy: 0, home: 0, back: 0, fade: 1, dir: 0, moss: false, mover: null, spike: false, h: 0, slope: 0, flat: 0, geo: null }, o);
 }
 
 // Main path zigzags up the face; sometimes a tiny side ledge holds salt off the path.
@@ -210,7 +221,14 @@ function genNext(prev) {
     ledges.push(sp);
     return sp;
   }
-  opts.crumble = alt > 30 && Math.random() < 0.1 + 0.25 * d;
+  const roll = Math.random();
+  if (alt > 35 && roll < 0.13 && hi - lo > 50) {
+    // slides back and forth along a groove in the wall
+    const amp = Math.min(rand(18, 36), (hi - lo) / 2 - 2), cx = clamp(x, lo + amp, hi - amp);
+    opts.mover = { cx, amp, sp: rand(0.8, 1.4), ph: rand(0, 6) };
+    x = cx;
+  } else if (alt > 20 && roll < 0.3) opts.moss = true;
+  else opts.crumble = alt > 30 && Math.random() < 0.1 + 0.25 * d;
   const l = makeLedge(x, top, w, opts);
   ledges.push(l);
 
@@ -231,8 +249,9 @@ function reset() {
   const ground = makeLedge(W / 2, 0, W * 2, { ground: true });
   ledges = [ground]; tip = ground;
   ib = { x: 70, y: 0, vx: 0, vy: 0, on: ground, from: null, off: 70 - W / 2, facing: 1,
-         charging: false, charge: 0, chT: 0, side: 1, squash: 0, wob: null, zone: 0, peak: null };
+         charging: false, charge: 0, chT: 0, side: 1, squash: 0, wob: null, zone: 0, peak: null, hurt: 0, slide: 0 };
   cam = -viewH * 0.28; maxAlt = 0; combo = 0; perfects = 0; salt = 0; saves = 0; jumps = 0; falls = 0; parts = []; pops = [];
+  rocks = []; warns = []; eagle = null; rockT = 3; eagleT = 6; bands = []; bandTip = 70 * U;
   fill(); syncHud();
 }
 
@@ -330,6 +349,7 @@ function fallCheck(y) {
 function land(l) {
   const same = l === ib.from;
   const o = ib.x - l.x, ao = Math.abs(o), hw = l.w / 2;
+  const vxIn = ib.vx;
   ib.on = l; ib.y = l.top; ib.vx = ib.vy = 0; ib.squash = 1; ib.charging = false; ib.zone = 0;
   const fell = fallCheck(l.top);
   dust(ib.x, ib.y, 10);
@@ -338,6 +358,7 @@ function land(l) {
     ib.wob = { dir: Math.sign(o) || 1, phi: 0.22 + 0.4 * clamp((ao - hw - 2) / (REACH - 2), 0, 1), vel: 0.2, flash: 0 };
     pebbles(l, ib.wob.dir, 5);
   } else ib.off = clamp(o, -hw + 3, hw - 3);
+  ib.slide = l.moss && !ib.wob ? vxIn * 0.55 : 0;
   if (l.salt) {
     l.salt = false; salt++;
     pops.push({ x: l.x, y: l.top + 50, text: '+소금', t: 0 });
@@ -356,7 +377,7 @@ function land(l) {
 
 function landSpike(l) {
   const same = l === ib.from, o = ib.x - l.x;
-  ib.on = l; ib.vx = ib.vy = 0; ib.squash = 1; ib.charging = false; ib.wob = null;
+  ib.on = l; ib.vx = ib.vy = 0; ib.squash = 1; ib.charging = false; ib.wob = null; ib.slide = 0;
   if (Math.abs(o) <= l.flat + 1) { ib.off = clamp(o, -l.flat + 2, l.flat - 2); ib.zone = 0; }
   else { ib.off = o; ib.zone = Math.sign(o); ib.facing = -ib.zone; }
   ib.x = l.x + ib.off; ib.y = surf(l, ib.x);
@@ -389,6 +410,7 @@ function update(dt) {
   time += dt;
 
   for (const l of ledges) {
+    if (l.mover && !l.falling) l.x = l.mover.cx + l.mover.amp * Math.sin(time * l.mover.sp + l.mover.ph);
     if (l.crT > 0) {
       l.crT -= dt;
       if (Math.random() < dt * 12) pebbles(l, Math.random() < 0.5 ? -1 : 1, 1);
@@ -409,6 +431,18 @@ function update(dt) {
     if (ib.on) {
       const l = ib.on;
       ib.x = l.x + ib.off; ib.y = l.spike ? surf(l, ib.x) : l.top;
+      if (ib.slide && !ib.wob) {   // moss: keep sliding with the landing's momentum
+        ib.off += ib.slide * dt; ib.slide *= Math.exp(-2.2 * dt);
+        if (Math.abs(ib.slide) < 4) ib.slide = 0;
+        if (Math.random() < dt * 20) parts.push({ x: ib.x, y: ib.y + 1, vx: -ib.slide * 0.3, vy: rand(10, 40), life: 0.4, t: 0, r: rand(0.8, 1.6), col: 'moss' });
+        if (Math.abs(ib.off) > l.w / 2 + 2) {
+          const d = Math.sign(ib.off);
+          ib.slide = 0; ib.off = d * (l.w / 2 + 4);
+          ib.wob = { dir: d, phi: 0.32, vel: 0.3, flash: 0 };
+          pebbles(l, d, 4);
+        }
+        ib.x = l.x + ib.off;
+      }
       if (ib.charging) { ib.chT += dt; ib.charge = 0.05 + 0.95 * tri(ib.chT / CHARGE_T); }
       const w = ib.wob;
       if (w) {
@@ -427,7 +461,7 @@ function update(dt) {
     } else {
       const px = ib.x, py = ib.y;
       if (ib.peak == null) ib.peak = py;
-      ib.vy = Math.max(-1400, ib.vy - G * dt); ib.x += ib.vx * dt; ib.y += ib.vy * dt;
+      ib.vy = Math.max(-1400, ib.vy - G * dt); ib.vx += windAt(ib.y) * dt; ib.x += ib.vx * dt; ib.y += ib.vy * dt;
       ib.peak = Math.max(ib.peak, ib.y);
       if (ib.x < 8) { ib.x = 8; ib.vx = Math.abs(ib.vx) * 0.3; }
       if (ib.x > W - 8) { ib.x = W - 8; ib.vx = -Math.abs(ib.vx) * 0.3; }
@@ -450,6 +484,7 @@ function update(dt) {
   cam = Math.max(cam, -viewH * 0.28);
 
   fill();
+  updateHazards(dt);
 
   for (const q of parts) { q.t += dt; q.vy -= G * 0.28 * dt; q.x += q.vx * dt; q.y += q.vy * dt; }
   parts = parts.filter(q => q.t < q.life);
@@ -457,6 +492,104 @@ function update(dt) {
   pops = pops.filter(q => q.t < 1);
 
   if (state === 'play') syncHud();
+}
+
+// ---- hazards: falling rocks, eagles, wind ----
+const INTRO = {
+  moss: ['이끼 발판', '미끄러워요. 착지한 기세대로 밀려나요'],
+  mover: ['움직이는 발판', '좌우로 움직여요. 타이밍을 맞춰 뛰세요'],
+  rock: ['낙석', '위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요'],
+  wind: ['바람', '바람 구간에선 공중에서 옆으로 밀려요'],
+  eagle: ['독수리', '부딪히면 떨어져요. 날아오는 쪽을 보세요'],
+};
+const seen = new Set();
+let bannerTimer = 0;
+function intro(kind) {
+  if (seen.has(kind)) return;
+  seen.add(kind);
+  $('bannerT').textContent = INTRO[kind][0];
+  $('bannerD').textContent = INTRO[kind][1];
+  $('banner').hidden = false;
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => { $('banner').hidden = true; }, 3200);
+}
+
+// sideways push inside a wind band, easing in at the band's edges and gusting over time
+function windAt(y) {
+  for (const b of bands) {
+    if (y < b.y0 || y > b.y1) continue;
+    const edge = clamp(Math.min(y - b.y0, b.y1 - y) / 40, 0, 1);
+    return b.dir * b.str * edge * (0.6 + 0.4 * Math.sin(time * 0.9 + b.ph));
+  }
+  return 0;
+}
+
+// a hit throws you off whatever you stand on; a short grace period stops double hits
+function knock(dir, label) {
+  if (ib.hurt > 0) return false;
+  ib.hurt = 1.1;
+  if (ib.on) { ib.from = ib.on; ib.on = null; }
+  ib.wob = null; ib.slide = 0; ib.charging = false; chargeKey = null;
+  ib.vx = dir * 140; ib.vy = 120; combo = 0;
+  pops.push({ x: ib.x, y: ib.y + 50, text: label, t: 0 });
+  return true;
+}
+
+function updateHazards(dt) {
+  ib.hurt = Math.max(0, ib.hurt - dt);
+  while (bandTip < cam + viewH + 600) {
+    if (Math.random() < 0.65) bands.push({ y0: bandTip, y1: bandTip + rand(240, 340), dir: Math.random() < 0.5 ? -1 : 1, str: rand(130, 230), ph: rand(0, 6) });
+    bandTip += rand(600, 900);
+  }
+  if (state !== 'play') return;
+  const alt = ib.y / U;
+  if (bands.some(b => b.y1 > cam && b.y0 < cam + viewH)) intro('wind');
+  for (const l of ledges) {
+    if (l.top < cam || l.top > cam + viewH) continue;
+    if (l.moss) intro('moss');
+    if (l.mover) intro('mover');
+  }
+
+  // falling rocks: a warning at the top of the screen, then the rock
+  if (alt > 50 && (rockT -= dt) <= 0) {
+    rockT = rand(2.6, 5.2);
+    warns.push({ kind: 'rock', x: clamp(ib.x + rand(-55, 55), 14, edgeAt(ib.y) - 10), t: 1.1 });
+    intro('rock');
+  }
+  // eagles cross the screen a little above you
+  if (alt > 90 && !eagle && !warns.some(w => w.kind === 'eagle') && (eagleT -= dt) <= 0) {
+    eagleT = rand(7, 12);
+    warns.push({ kind: 'eagle', side: Math.random() < 0.5 ? -1 : 1, y: ib.y + rand(30, 150), t: 1.3 });
+    intro('eagle');
+  }
+  for (const w of warns) {
+    w.t -= dt;
+    if (w.kind === 'rock' && Math.random() < dt * 10) parts.push({ x: w.x + rand(-4, 4), y: cam + viewH, vx: 0, vy: -80, life: 1, t: 0, r: rand(0.8, 1.6), col: 'rock' });
+    if (w.t > 0) continue;
+    if (w.kind === 'rock') rocks.push({ x: w.x, y: cam + viewH + 30, vy: -150, r: rand(6, 10), spin: rand(-6, 6), a: 0 });
+    else eagle = { x: w.side < 0 ? -30 : W + 30, y0: w.y, y: w.y, vx: -w.side * rand(150, 200), t: 0 };
+  }
+  warns = warns.filter(w => w.t > 0);
+
+  for (const r of rocks) {
+    const py = r.y;
+    r.vy = Math.max(-900, r.vy - G * 0.6 * dt); r.y += r.vy * dt; r.a += r.spin * dt;
+    if (Math.hypot(r.x - ib.x, r.y - (ib.y + 16)) < r.r + 11 && knock(Math.sign(ib.x - r.x) || 1, '낙석!')) r.dead = true;
+    for (const l of ledges) {
+      if (r.dead || l.falling) continue;
+      const top = l.spike ? (Math.abs(r.x - l.x) <= l.w / 2 ? surf(l, r.x) : null)
+                          : (Math.abs(r.x - l.x) <= l.w / 2 + 2 ? l.top : null);
+      if (top !== null && py >= top && r.y - r.r < top) r.dead = true;   // a ledge above you is a roof
+    }
+    if (r.dead) for (let i = 0; i < 10; i++) parts.push({ x: r.x, y: r.y, vx: rand(-90, 90), vy: rand(20, 160), life: 0.8, t: 0, r: rand(1, 2.6), col: 'rock' });
+  }
+  rocks = rocks.filter(r => !r.dead && r.y > cam - 120);
+
+  if (eagle) {
+    eagle.t += dt; eagle.x += eagle.vx * dt; eagle.y = eagle.y0 + Math.sin(eagle.t * 3) * 10;
+    if (Math.hypot(eagle.x - ib.x, eagle.y - (ib.y + 16)) < 20) knock(Math.sign(eagle.vx), '독수리!');
+    if (eagle.x < -60 || eagle.x > W + 60) eagle = null;
+  }
 }
 
 // ---- rendering ----
@@ -626,6 +759,13 @@ function drawLedge(l, p) {
   const cap = l.crumble ? mix(p.cap, GREY, 0.4) : p.cap, under = l.crumble ? mix(p.under, GREY, 0.3) : p.under;
   const outline = [...g.top, ...g.under];
 
+  if (l.mover) {                 // the groove it slides along
+    const m = l.mover, ty = y0 + 5 * s;
+    ctx.strokeStyle = 'rgba(25,8,4,.45)'; ctx.lineWidth = 3 * s; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo((m.cx - m.amp) * s, ty); ctx.lineTo((m.cx + m.amp) * s, ty); ctx.stroke();
+    ctx.fillStyle = 'rgba(25,8,4,.6)';
+    for (const ex of [m.cx - m.amp, m.cx + m.amp]) { ctx.beginPath(); ctx.arc(ex * s, ty, 2.2 * s, 0, Math.PI * 2); ctx.fill(); }
+  }
   ctx.fillStyle = 'rgba(25,8,4,.3)';
   rockPath([[-hw + 2, 4], [hw - 1, 4], [hw - 7, 20], [-hw + 9, 17]], P); ctx.fill();
 
@@ -645,6 +785,19 @@ function drawLedge(l, p) {
   ctx.strokeStyle = 'rgba(30,10,5,.45)'; ctx.lineWidth = Math.max(1, s); ctx.stroke();
   ctx.strokeStyle = css(mix(cap, [255, 236, 205], 0.35), 0.9); ctx.lineWidth = 1.2 * s; ctx.lineCap = 'round';
   rockPath(g.top.slice(1, -1), P); ctx.stroke();
+
+  if (l.moss) {
+    ctx.fillStyle = css(p.moss);
+    for (let i = 0; i < 5; i++) {
+      const mx = (l.x + ox - hw + (i + 0.5) / 5 * l.w) * s, r = (2 + hash(l.id * 3 + i) * 2.4) * s;
+      ctx.beginPath(); ctx.ellipse(mx, y0 - 0.5 * s, r * 1.6, r * 0.75, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = css(p.moss, 0.8); ctx.lineWidth = 1.4 * s; ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const mx = (l.x + ox + (hash(l.id + i * 5) - 0.5) * l.w * 0.8) * s;
+      ctx.beginPath(); ctx.moveTo(mx, y0 + 2 * s); ctx.lineTo(mx, y0 + (4 + hash(l.id * 7 + i) * 5) * s); ctx.stroke();
+    }
+  }
 
   if (l.crumble) {
     ctx.strokeStyle = 'rgba(28,12,8,.85)'; ctx.lineWidth = 1.2 * s; ctx.lineJoin = 'miter';
@@ -693,6 +846,7 @@ function drawIbex(col) {
   const shake = ib.on && ib.on.crT > 0 ? (Math.random() - 0.5) * (1 - ib.on.crT / CR_T) * 2.4 * s : 0;
 
   ctx.save();
+  if (ib.hurt > 0 && Math.floor(time * 16) % 2) ctx.globalAlpha = 0.35;   // blink while recovering from a hit
   if (ib.on && ib.wob) {            // tip over the ledge end
     const w = ib.wob, px = (ib.on.x + w.dir * ib.on.w / 2) * s, py = sy(ib.on.top);
     ctx.translate(px, py); ctx.rotate(w.dir * w.phi * 0.75); ctx.translate(-px, -py);
@@ -746,13 +900,78 @@ function drawAim() {
   if (guide) {
     let x = ib.x, y = ib.y + 2, vx = l.vx, vy = l.vy;
     for (let i = 0; i < 60; i++) {
-      const dt = 0.025; vy -= G * dt; x += vx * dt; y += vy * dt;
+      const dt = 0.025; vy -= G * dt; vx += windAt(y) * dt; x += vx * dt; y += vy * dt;
       if (y < cam || x < 0 || x > W + 20) break;
       if (i % 2) continue;
       ctx.fillStyle = `rgba(255,245,225,${0.85 - i / 80})`;
       ctx.beginPath(); ctx.arc(x * s, sy(y), 1.8 * s, 0, Math.PI * 2); ctx.fill();
     }
   }
+}
+
+function drawEagle(e, p) {
+  const dir = Math.sign(e.vx) || 1, wy = -Math.sin(e.t * 11) * 16;
+  const body = css(mix(p.ibex, [120, 80, 50], 0.25));
+  ctx.save(); ctx.translate(e.x * s, sy(e.y)); ctx.scale(dir * s, s);
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.moveTo(-12, -1); ctx.lineTo(-21, -4); ctx.lineTo(-21, 3); ctx.lineTo(-12, 2); ctx.closePath(); ctx.fill();   // tail
+  ctx.beginPath(); ctx.ellipse(0, 0, 13, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(13, -1.5, 4, 3.2, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(4, -2); ctx.lineTo(8, wy * 0.6); ctx.lineTo(-3, wy); ctx.lineTo(-11, wy * 0.8 + 2); ctx.lineTo(-6, -1); ctx.closePath(); ctx.fill();   // wing
+  ctx.fillStyle = '#e8b04a';
+  ctx.beginPath(); ctx.moveTo(16, -2.6); ctx.lineTo(20.5, -0.4); ctx.lineTo(16.4, 0.9); ctx.closePath(); ctx.fill();   // beak
+  ctx.restore();
+}
+
+function warnMark(x, y, glyph) {
+  ctx.fillStyle = '#e8572e'; ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff3dc'; ctx.font = '800 15px "IBM Plex Sans KR", system-ui, sans-serif';
+  ctx.fillText(glyph, x, y + 1);
+}
+
+function drawHazards(p) {
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (const b of bands) {          // wind streaks
+    if (b.y1 < cam || b.y0 > cam + viewH) continue;
+    const k = 0.6 + 0.4 * Math.sin(time * 0.9 + b.ph), span = W + 80;
+    ctx.strokeStyle = `rgba(255,248,235,${0.14 + 0.14 * k})`; ctx.lineWidth = Math.max(1, s);
+    for (let i = 0; i < 16; i++) {
+      const y = b.y0 + 20 + hash(b.y0 + i * 7.1) * (b.y1 - b.y0 - 40), len = 18 + hash(i * 3.3 + b.y0) * 26;
+      let x = (hash(i * 9.7 + b.ph) * span + b.dir * time * b.str * 0.6 * (0.7 + hash(i) * 0.6)) % span;
+      if (x < 0) x += span;
+      x -= 40;
+      ctx.beginPath(); ctx.moveTo(x * s, sy(y)); ctx.lineTo((x - b.dir * len) * s, sy(y)); ctx.stroke();
+    }
+  }
+  for (const r of rocks) {
+    ctx.save(); ctx.translate(r.x * s, sy(r.y)); ctx.rotate(r.a);
+    ctx.fillStyle = css(mix(p.faceMid, p.faceDark, 0.3)); ctx.strokeStyle = 'rgba(30,10,5,.6)'; ctx.lineWidth = Math.max(1, s);
+    ctx.beginPath();
+    for (let i = 0; i < 7; i++) {
+      const a = i / 7 * Math.PI * 2, rr = r.r * (0.8 + hash(r.r * 10 + i) * 0.35) * s;
+      i ? ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  if (eagle) drawEagle(eagle, p);
+
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = state === 'play' ? windAt(ib.y) : 0;
+  if (Math.abs(w) > 20) {
+    ctx.globalAlpha = clamp(Math.abs(w) / 230, 0.35, 1);
+    ctx.font = '600 14px "IBM Plex Sans KR", system-ui, sans-serif'; ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(50,18,6,.5)'; ctx.fillStyle = '#fff3dc';
+    const label = w > 0 ? '바람 ▶▶' : '◀◀ 바람';
+    ctx.strokeText(label, cw / 2, 96); ctx.fillText(label, cw / 2, 96);
+  }
+  for (const wn of warns) {
+    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(time * 20);
+    if (wn.kind === 'rock') warnMark(wn.x * s, 84, '!');
+    else warnMark(wn.side < 0 ? 22 : cw - 22, clamp(sy(wn.y), 90, ch - 90), wn.side < 0 ? '▶' : '◀');
+  }
+  ctx.restore();
 }
 
 function drawHints() {
@@ -840,13 +1059,14 @@ function render() {
 
   for (const q of parts) {
     const k = 1 - q.t / q.life;
-    ctx.fillStyle = q.col === 'rock' ? css(p.faceDark, k) : q.col === 'salt' ? `rgba(255,255,250,${k})` : css(mix(p.cap, [255, 240, 220], 0.3), k * 0.8);
+    ctx.fillStyle = q.col === 'moss' ? css(p.moss, k) : q.col === 'rock' ? css(p.faceDark, k) : q.col === 'salt' ? `rgba(255,255,250,${k})` : css(mix(p.cap, [255, 240, 220], 0.3), k * 0.8);
     ctx.beginPath(); ctx.arc(q.x * s, sy(q.y), q.r * s, 0, Math.PI * 2); ctx.fill();
   }
 
   drawIbex(css(p.ibex));
   drawAim();
   drawHints();
+  drawHazards(p);
 
   for (const q of pops) {
     const k = q.t;
