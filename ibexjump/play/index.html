@@ -120,6 +120,7 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
       </ul>
       <p class="keys" id="ovKeys">키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요</p>
       <ol class="rank" id="rankList" hidden></ol>
+      <p class="keys" id="nameLbl" hidden>오늘의 절벽 랭킹에 쓸 이름</p>
       <input class="name" id="nameIn" maxlength="12" placeholder="랭킹에 쓸 이름" hidden>
       <p class="keys" id="dailyInfo"></p>
       <div class="btns">
@@ -1624,7 +1625,7 @@ function showOverlay(kind, isBest) {
   $('ovResult').hidden = !done; $('ovHow').hidden = done; $('ovKeys').hidden = done;
   if (done) $('ovResult').textContent = `시간 ${fmtTime(runTime)} · 최고 ${fmtTime(daily ? dayBest : bestTime)} · 추락 ${falls}번 · 소금 ${salt}개`;
   $('dailyInfo').textContent = dayBest ? `오늘의 절벽 최고 ${fmtTime(dayBest)} · 그 기록의 고스트와 함께 올라요` : '오늘의 절벽: 오늘은 모두 같은 절벽을 올라요';
-  $('nameIn').hidden = !fireReady; $('nameIn').value = playerName();
+  $('nameIn').hidden = $('nameLbl').hidden = !fireReady; $('nameIn').value = playerName();
   $('rankList').hidden = true;
   if (fireReady) showRanking();
   $('wallet').textContent = wallet;
@@ -1694,11 +1695,17 @@ function openShop() {
 }
 
 // ---- daily ranking: Firestore REST + anonymous sign-in, the same pattern as Eraser Sums fire.js ----
-// FIRE stays empty until a Firebase project with this repo's firestore.rules is set up; until then the ranking is hidden.
-const FIRE = { project: '', apiKey: '' };
+// Firebase project ibex-jump · web app "Ibex Jump Web" (2026-10-16); rules are this repo's firestore.rules.
+// The apiKey is the public web key, fine to ship in the page. Emptying FIRE hides the ranking again.
+const FIRE = { project: 'ibex-jump', apiKey: 'AIzaSyBW_I2fYPPByWhSRweI3YJ4witqYnrk51U' };
 const fireReady = !!(FIRE.project && FIRE.apiKey);
 const FDB = `https://firestore.googleapis.com/v1/projects/${FIRE.project}/databases/(default)/documents`;
-const playerName = () => store.get('ibex.name', '') || '산양' + String(Math.floor(Math.random() * 9000) + 1000);
+// a default name is made once and kept, so the same player keeps the same name on the board
+function playerName() {
+  let n = store.get('ibex.name', '');
+  if (!n) { n = '산양' + String(Math.floor(Math.random() * 9000) + 1000); store.set('ibex.name', n); }
+  return n;
+}
 async function fjson(url, opt) {
   try { const r = await fetch(url, opt); return r.ok ? await r.json() : null; } catch (e) { return null; }
 }
