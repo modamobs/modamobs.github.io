@@ -53,6 +53,17 @@ const GAMES = [
     portrait: true
   },
   {
+    slug: "ibexjump",
+    title: "아이벡스 점프",
+    desc: "꾹 눌러 힘을 모아 노을 절벽의 좁은 바위를 뛰어오릅니다. 끝에 걸쳐 휘청이면 연타로 버티세요.",
+    genres: ["캐주얼", "아케이드"],
+    status: "web",
+    playable: true,
+    play: "/ibexjump/play/",
+    accent: "#ec8a3c",
+    portrait: true
+  },
+  {
     slug: "arrow-box",
     title: "Arrow Box",
     desc: "상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 막다른 길이 없으니 순서만 찾으면 됩니다.",
