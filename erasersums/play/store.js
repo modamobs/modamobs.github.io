@@ -69,8 +69,8 @@
     date.setDate(date.getDate() + n);
     return dateKey(date);
   }
-  // 요일마다 크기: 월요일이 제일 작고 주말이 제일 크다
-  const DAILY_SIZE = [8, 5, 6, 6, 7, 7, 8]; // 일 월 화 수 목 금 토
+  // 요일마다 크기: 월요일이 제일 작고 주말이 제일 크다. 2026-10-17 가장 큰 판을 8×8 → 7×7 로(너무 어려우면 안 온다)
+  const DAILY_SIZE = [7, 5, 6, 6, 7, 7, 7]; // 일 월 화 수 목 금 토
   function dailySize(k) { return DAILY_SIZE[parseKey(k).date.getDay()]; }
   function dailySeed(k) { const { y, m, d } = parseKey(k); return y * 10000 + m * 100 + d; }
   function dailyDone(k) { return data.daily.includes(k); }
