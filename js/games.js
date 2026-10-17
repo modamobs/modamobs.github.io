@@ -40,6 +40,19 @@ const GAMES = [
     portrait: true
   },
   {
+    slug: "mathcross",
+    title: "수식 크로스",
+    desc: "숫자 타일을 빈칸에 채워 가로·세로 수식을 모두 맞추는 숫자 십자말풀이. 네 난이도에 날마다 새 데일리 판.",
+    genres: ["퍼즐", "숫자"],
+    status: "web",
+    playable: true,
+    play: "/mathcross/play/",
+    about: "/mathcross/",
+    thumb: "/assets/images/mathcross.png",
+    accent: "#4f83ff",
+    portrait: true
+  },
+  {
     slug: "erasersums",
     title: "지우개 셈",
     desc: "필요 없는 숫자를 지워 줄마다 합을 맞추는 숫자 퍼즐. 크레용 공책 그림체에 날마다 새 오늘의 퍼즐.",

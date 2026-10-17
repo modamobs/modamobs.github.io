@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>수식 크로스 — 숫자로 푸는 십자말풀이</title>
+<meta name="description" content="숫자 타일을 빈칸에 채워 가로·세로 수식을 모두 맞추는 퍼즐. 네 난이도와 날마다 새 데일리 챌린지, 레벨, 끝없는 모드. 브라우저에서 설치 없이 바로 풀 수 있습니다.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="수식 크로스 — 숫자로 푸는 십자말풀이">
+<meta property="og:description" content="가로·세로 수식을 모두 맞추는 숫자 퍼즐. 지금 바로 한 판 풀어 보세요.">
+<meta property="og:url" content="https://modamobs.github.io/mathcross/">
+<meta property="og:image" content="https://modamobs.github.io/assets/images/mathcross.png">
+
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../games/game.css">
+
+<style>
+  /* 난이도 사다리 — 쉬움에서 전문가까지 */
+  .ladder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin-top: 6px;
+    font-size: .92rem;
+  }
+  .ladder span {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: hsl(var(--game-hue) 60% 50% / .12);
+    color: var(--heading);
+  }
+  .ladder em { font-style: normal; color: var(--muted); }
+
+  /* 수식 한 줄 — 판 위의 칸처럼 */
+  .eq {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 24px;
+  }
+  .eq b, .eq i {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 1.15rem;
+    font-style: normal;
+    font-weight: 700;
+    color: var(--heading);
+  }
+  .eq i { font-weight: 500; color: var(--muted); }
+  .eq .blank {
+    border: 2px solid var(--game-accent);
+    background: hsl(var(--game-hue) 80% 60% / .14);
+  }
+
+  /* 스크린샷 */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .shots figure { margin: 0; }
+  .shots img {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+  .shots figcaption {
+    margin-top: 10px;
+    font-size: .86rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* 이 게임의 핵심 한 줄 */
+  .pull {
+    margin: 28px 0 0;
+    padding: 20px 24px;
+    border-left: 3px solid var(--game-accent);
+    background: hsl(var(--game-hue) 60% 50% / .08);
+    border-radius: 0 12px 12px 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--heading);
+    max-width: 52ch;
+  }
+
+  /*
+   * 어디서 할 수 있는지 — games/game.css 는 버튼 모양을 `.cta .btn` 에만 달아 두어서,
+   * 맨 위 영웅 자리에도 쓰려면 여기서 같은 모양을 한 번 더 준다(스도쿠 소개와 같다).
+   */
+  .where {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .where .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 13px 28px;
+    border-radius: 999px;
+    background: var(--game-accent);
+    color: #0d0f16;
+    font-size: .96rem;
+    font-weight: 700;
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .where .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px hsl(var(--game-hue) 70% 50% / .35);
+  }
+</style>
+</head>
+
+<!-- 모눈 위의 수식 — 맑은 파랑 -->
+<body style="--game-accent:#4f83ff; --game-accent2:#a9c2ff; --game-hue:222">
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="back-link" href="../">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6"/>
+      </svg>
+      포트폴리오
+    </a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">수식 크로스</p>
+
+    <div class="icon-slot">
+      <img src="assets/icon.png" alt="수식 크로스 앱 아이콘">
+    </div>
+
+    <h1 class="title">수식 크로스</h1>
+
+    <p class="subhead">
+      숫자로 푸는 십자말풀이.<br>
+      설치 없이 브라우저에서 바로 풀 수 있습니다.
+    </p>
+
+    <div class="where">
+      <a class="btn" href="play/">
+        브라우저에서 바로 하기
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+             stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7M7 7h10v10"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>빈칸에 맞는 수를</h2>
+    <p class="section-lead">
+      판 위에 가로·세로 수식이 엇갈려 놓여 있습니다. 아래 숫자 타일을 빈칸에 채워
+      모든 수식을 맞추면 끝. 덧셈·뺄셈·곱셈·나눗셈만 알면 바로 시작할 수 있습니다.
+    </p>
+
+    <div class="eq" aria-label="55 더하기 빈칸 은 74">
+      <b>55</b><i>+</i><b class="blank"></b><i>=</i><b>74</b>
+    </div>
+
+    <p class="pull">모든 판은 답이 하나뿐이고, 찍지 않고 추리만으로 끝까지 풀립니다.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>가볍게 한 판부터<br>머리 쓰는 한 판까지</h2>
+    <p class="section-lead">
+      난이도가 올라갈수록 판이 커지고, 수가 커지고, 빈칸이 많아집니다.
+      쉬움은 몇 분이면 끝나고, 전문가는 수식 여러 줄을 오가며 오래 들여다보게 됩니다.
+    </p>
+
+    <div class="ladder">
+      <span>쉬움</span><em>→</em>
+      <span>보통</span><em>→</em>
+      <span>어려움</span><em>→</em>
+      <span>전문가</span>
+    </div>
+
+    <div class="stat-row" style="margin-top:32px">
+      <div class="stat">
+        <span class="num">매일</span>
+        <span class="desc">날마다 새 데일리 판. 같은 날엔 누구에게나 같은 판이 나옵니다</span>
+      </div>
+      <div class="stat">
+        <span class="num">5</span>
+        <span class="desc">처음에 주는 힌트. 막힌 빈칸 하나를 정답으로 채웁니다</span>
+      </div>
+      <div class="stat">
+        <span class="num">3</span>
+        <span class="desc">틀려도 세 번까지는 봐줍니다</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>화면</h2>
+    <p class="section-lead">밝게와 어둡게를 모두 지원하고, 기기 설정을 따라갑니다.</p>
+
+    <div class="shots">
+      <figure>
+        <img src="assets/board.jpg" alt="가로·세로 수식이 엇갈린 판과 아래 숫자 타일" loading="lazy">
+        <figcaption>판</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/home.jpg" alt="이어하기와 모드가 있는 홈 화면" loading="lazy">
+        <figcaption>홈</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/daily.jpg" alt="달력에서 날짜를 고르는 데일리 챌린지 화면" loading="lazy">
+        <figcaption>데일리 챌린지</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/clear.jpg" alt="판을 깬 뒤 기록이 나오는 결과 화면" loading="lazy">
+        <figcaption>클리어</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/dark.jpg" alt="어둡게 모드로 본 판 화면" loading="lazy">
+        <figcaption>어둡게</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>풀기 편하게</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">👆</div>
+        <h3>누르거나 끌거나</h3>
+        <p>칸을 고르고 타일을 누르면 쏙 들어갑니다. 타일을 끌어다 빈칸에 바로 놓아도 됩니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🟩</div>
+        <h3>한눈에 보이는 진행</h3>
+        <p>맞은 수는 초록으로 박히고, 다 맞춘 수식은 색이 바뀝니다. 고른 칸이 지나는 수식은 옅게 칠해집니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🗓️</div>
+        <h3>데일리 챌린지</h3>
+        <p>요일마다 난이도가 달라지고, 달력에서 지난 날짜도 골라 풀 수 있습니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🪜</div>
+        <h3>레벨</h3>
+        <p>1단계부터 한 판씩, 조금씩 어려워지는 길을 따라갑니다.</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">♾️</div>
+        <h3>끝없는 모드</h3>
+        <p>판을 깰 때마다 다음 판이 더 어려워집니다. 몇 판까지 이어 갈 수 있을까요?</p>
+      </article>
+      <article class="feature-card">
+        <div class="fi" aria-hidden="true">🏆</div>
+        <h3>기록과 수상</h3>
+        <p>난이도별 승률·최고 기록·평균 시간을 모으고, 첫 승리·완벽한 판·데일리 연속 같은 수상으로 진열장을 채웁니다.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt cta">
+  <div class="wrap">
+    <h2>지금 한 판 풀어 보세요.</h2>
+    <p class="section-lead" style="margin-inline:auto">
+      설치도 로그인도 없이 바로 시작합니다. 하다 만 판은 저절로 저장되어
+      다음에 열면 이어서 풀 수 있습니다.
+    </p>
+
+    <div class="where">
+      <a class="btn" href="play/">
+        브라우저에서 바로 하기
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+             stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7M7 7h10v10"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><a href="privacy-policy.html">개인정보처리방침</a></p>
+    <p>&copy; <span id="year"></span> Smart it · <a href="../">포트폴리오</a></p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
