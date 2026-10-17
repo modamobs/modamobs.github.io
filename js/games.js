@@ -64,6 +64,17 @@ const GAMES = [
     portrait: true
   },
   {
+    slug: "minesweeper",
+    title: "무한 지뢰찾기",
+    desc: "끝없이 이어지는 8×8 섹터를 하나씩 풀어 갑니다. 지뢰로 그려진 그림을 완성하는 그림 퍼즐도 있습니다.",
+    genres: ["퍼즐", "논리"],
+    status: "web",
+    playable: true,
+    play: "/minesweeper/play/",
+    accent: "#3fa9e1",
+    portrait: true
+  },
+  {
     slug: "arrow-box",
     title: "Arrow Box",
     desc: "상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 막다른 길이 없으니 순서만 찾으면 됩니다.",
