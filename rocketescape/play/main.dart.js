@@ -110370,7 +110370,7 @@ s=a+r.gmS()*s
 r.bu=s
 r.a1=s-32}},
 a4A(a,b,c){var s=this,r=s.c2,q=r.a7()<0.5?-1:1
-s.h9.push(A.boR(s.P+(r.a7()-0.5)*30,s.bu-4-r.a7()*10,q*(a*(0.35+r.a7()*0.65)),-r.a7()*26,b*(0.7+r.a7()*0.6),c*(0.8+r.a7()*0.4),!1))},
+s.h9.push(A.boR(s.P+q*(34+r.a7()*34),s.bu+6+r.a7()*8,q*(a*(0.45+r.a7()*0.55)),-r.a7()*18,b*(0.7+r.a7()*0.6),c*(0.8+r.a7()*0.4),!1))},
 aC4(a){var s,r,q,p,o,n,m=this,l=m.A,k=l.k1
 if(k!==B.S)s=k===B.V&&!m.eb
 else s=!0
