@@ -48,6 +48,7 @@ const GAMES = [
     playable: true,
     play: "/mathcross/play/",
     about: "/mathcross/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.mathcross",
     thumb: "/assets/images/mathcross.png",
     accent: "#4f83ff",
     portrait: true
