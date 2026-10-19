@@ -9,6 +9,12 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#f2f4f8" />
+    <!--
+      밝게·어둡게를 앱이 직접 칠한다고 알린다(settings/appearance.ts). 안 알리면 휴대폰 브라우저의 "웹페이지
+      어둡게" 가 밝은 판을 제멋대로 뒤집어, 진한 굵은 선이 어두워진 칸과 같은 색이 되어 3×3 구역이 안 보였다
+      (2026-10-07 CrazyGames 를 폰으로 열었을 때). 실제 값은 index.css 의 color-scheme 이 정한다.
+    -->
+    <meta name="color-scheme" content="light dark" />
     <title>클래식 스도쿠</title>
     <!--
       링크를 공유하면 카카오톡·문자에 뜨는 정보. 사이트에 올린 판(/sudoku/play/)에서만 쓰이고
@@ -21,8 +27,8 @@
     <meta property="og:url" content="https://modamobs.github.io/sudoku/play/" />
     <meta property="og:image" content="https://modamobs.github.io/sudoku/play/share.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <script type="module" crossorigin src="/sudoku/play/assets/index-h5dkyBPP.js"></script>
-    <link rel="stylesheet" crossorigin href="/sudoku/play/assets/index-BhMpIiHZ.css">
+    <script type="module" crossorigin src="/sudoku/play/assets/index-BohCbXpG.js"></script>
+    <link rel="stylesheet" crossorigin href="/sudoku/play/assets/index-BeM8EDw4.css">
   </head>
   <body>
     <div id="root"></div>
