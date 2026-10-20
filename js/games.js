@@ -74,6 +74,7 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/ibexjump/play/",
+    thumb: "/assets/images/ibexjump.png",
     accent: "#ec8a3c",
     portrait: true
   },
