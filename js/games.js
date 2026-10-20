@@ -85,7 +85,8 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/minesweeper/play/",
-    accent: "#3fa9e1",
+    thumb: "/assets/images/minesweeper.png",
+    accent: "#2f6fd8",
     portrait: true
   },
   {
