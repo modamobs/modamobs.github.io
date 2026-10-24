@@ -223,6 +223,19 @@ const MID = [
   [[230,0],[262,34],[272,38],[274,96],[279,104],[284,103],[285,82],[289,82],[290,108],[296,110],[299,40],[310,34],[352,0]],
   [[356,0],[368,24],[371,92],[376,101],[381,98],[384,70],[388,26],[410,0]],
 ];
+// rock towers standing in the haze far behind the face; nearer layers scroll faster and keep more of the rock colour
+const SPIRE_LAYERS = [
+  { f: 0.10, k: 0.24, sc: 0.5, cell: 230, seed: 1 },
+  { f: 0.19, k: 0.40, sc: 0.68, cell: 270, seed: 2 },
+  { f: 0.31, k: 0.58, sc: 0.9, cell: 320, seed: 3 },
+];
+// half-widths down a tower (fractions of its width), from the top: hoodoo with a cap, plain tower, mesa
+const SPIRE_PROFILES = [
+  [0.55, 0.66, 0.6, 0.36, 0.44, 0.52, 0.58],
+  [0.16, 0.32, 0.4, 0.44, 0.49, 0.55, 0.6],
+  [0.8, 0.86, 0.84, 0.88, 0.94, 1, 1.05],
+];
+const SPIRE_T = [0, 0.04, 0.12, 0.3, 0.55, 0.8, 1];
 const STARS = Array.from({ length: 90 }, (_, i) => ({
   x: 0.55 + hash(i * 3.1) * 0.45, y: hash(i * 7.7) * 0.85, r: hash(i * 1.3) < 0.85 ? 1 : 2,
   a: 0.4 + hash(i * 5.9) * 0.6, f: 1 + hash(i * 2.2) * 3, p: hash(i * 9.4) * 6,
@@ -230,6 +243,11 @@ const STARS = Array.from({ length: 90 }, (_, i) => ({
 
 // the cliff's open edge wanders as you climb
 const edgeAt = y => W * (0.8 + 0.08 * Math.sin(y * 0.0042) + 0.04 * Math.sin(y * 0.013 + 1.7));
+// Where the drawn wall ends. Only the picture: ledges are still placed against edgeAt, so maps don't change.
+// It swings wide and narrow, so stretches of wall alternate with open fields of pillars in the haze.
+const faceEdge = y => W * Math.min(0.8 + 0.08 * Math.sin(y * 0.0042), 0.5 + 0.27 * Math.sin(y * 0.0038 - 0.3) + 0.06 * Math.sin(y * 0.0093 + 2.1));
+// ledges out past the wall stand on a rock pillar rising out of the mist
+const onPillar = l => !l.ground && !l.camp && !l.mover && !l.crumble && l.x > faceEdge(l.top) - 6;
 
 // ---- state ----
 let state = 'ready', ledges = [], tip = null, nextId = 0, ib, cam = 0, parts = [], pops = [];
@@ -888,11 +906,50 @@ function drawLayer(polys, base, col) {
   if (base < ch) ctx.fillRect(0, base, cw, ch - base + 1);
 }
 
+function drawSpires(p) {
+  const haze = mix(skyT, skyB, 0.65), lit = [255, 214, 160];
+  for (const L of SPIRE_LAYERS) {
+    const col = mix(haze, mix(p.faceDark, p.faceMid, 0.5), L.k), litCol = mix(col, lit, 0.22);
+    const ly0 = cam * L.f, Y = ly => ch - (ly - ly0) * s;
+    for (let c = Math.floor((ly0 - 420) / L.cell); c <= Math.ceil((ly0 + viewH) / L.cell); c++) {
+      for (let j = 0; j < 3; j++) {
+        const r = k => hash(L.seed * 71.3 + c * 9.17 + j * 3.71 + k * 1.37);
+        if (r(0) < 0.3) continue;
+        const prof = SPIRE_PROFILES[r(1) < 0.4 ? 0 : r(1) < 0.8 ? 1 : 2];
+        const w = (20 + r(2) * 30) * L.sc * (prof === SPIRE_PROFILES[2] ? 1.35 : 1), hgt = (170 + r(3) * 230) * L.sc;
+        const cx = (-0.1 + 1.2 * r(4)) * W * s, topY = Y(c * L.cell + r(5) * L.cell), botY = topY + hgt * s;
+        if (topY > ch || botY < 0) continue;
+        const left = [], right = [];
+        SPIRE_T.forEach((tt, i) => {
+          const y = topY + tt * hgt * s, jl = (hash(c * 3.3 + j + i * 7.1 + L.seed) - 0.5) * 0.16, jr = (hash(c * 4.9 + j + i * 5.3 + L.seed) - 0.5) * 0.16;
+          left.push([cx - (prof[i] + jl) * w * s, y]); right.push([cx + (prof[i] + jr) * w * s, y]);
+        });
+        // the foot dissolves into the mist
+        const g = ctx.createLinearGradient(0, topY, 0, botY);
+        g.addColorStop(0, css(col)); g.addColorStop(0.45, css(col, 0.92)); g.addColorStop(1, css(col, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath(); left.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+        for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i][0], right[i][1]);
+        ctx.closePath(); ctx.fill();
+        // sun from the right
+        const gl = ctx.createLinearGradient(0, topY, 0, botY);
+        gl.addColorStop(0, css(litCol, 0.8)); gl.addColorStop(0.5, css(litCol, 0.4)); gl.addColorStop(1, css(litCol, 0));
+        ctx.fillStyle = gl;
+        ctx.beginPath(); right.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+        for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(cx + (right[i][0] - cx) * 0.35, right[i][1]);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+    // a veil of haze between layers
+    ctx.fillStyle = css(haze, 0.14); ctx.fillRect(0, 0, cw, ch);
+  }
+}
+
 function facePath(yTop, yBot, step) {
   const pts = [];
   for (let wy = Math.ceil(yTop / step) * step; wy >= yBot; wy -= step) {
     const jag = (hash(Math.floor(wy / step) * 3.7) - 0.5) * 7;
-    pts.push([(edgeAt(wy) + jag) * s, sy(wy)]);
+    pts.push([(faceEdge(wy) + jag) * s, sy(wy)]);
   }
   return pts;
 }
@@ -939,6 +996,39 @@ function drawFace(p) {
   // sunlit rim along the open edge
   ctx.strokeStyle = css(mix(p.faceLit, [255, 214, 160], 0.35), 0.9); ctx.lineWidth = 2 * s;
   ctx.beginPath(); edge.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+}
+
+function drawPillar(l, p) {
+  const top = l.spike ? l.top - l.h - 6 : l.top - 8, len = 150 + hash(l.id * 1.31 + 0.2) * 130;
+  const y0 = sy(top), y1 = sy(top - len);
+  if (y1 < -10 || y0 > ch + 10) return;
+  const hw = l.spike ? l.w * 0.31 : clamp(l.w * 0.26, 7, 22), haze = mix(skyT, skyB, 0.65);
+  const T = [0, 0.18, 0.42, 0.7, 1], left = [], right = [];
+  T.forEach((tt, i) => {
+    const y = y0 + (y1 - y0) * tt, k = 1 + tt * 0.25;
+    left.push([(l.x - hw * k * (1 + (hash(l.id * 2.7 + i) - 0.5) * 0.25)) * s, y]);
+    right.push([(l.x + hw * k * (1 + (hash(l.id * 3.9 + i) - 0.5) * 0.25)) * s, y]);
+  });
+  const outline = () => { ctx.beginPath(); left.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(...right[i]); ctx.closePath(); };
+  const c0 = mix(p.faceMid, p.faceDark, 0.35);
+  const g = ctx.createLinearGradient(0, y0, 0, y1);
+  g.addColorStop(0, css(c0)); g.addColorStop(0.5, css(mix(c0, haze, 0.35), 0.95)); g.addColorStop(1, css(haze, 0));
+  ctx.fillStyle = g; outline(); ctx.fill();
+  // the sunny side and a few bedding lines, fading with the rock
+  const gl = ctx.createLinearGradient(0, y0, 0, y1);
+  gl.addColorStop(0, css(p.faceLit, 0.75)); gl.addColorStop(0.6, css(p.faceLit, 0.2)); gl.addColorStop(1, css(p.faceLit, 0));
+  ctx.fillStyle = gl;
+  ctx.beginPath(); right.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i][0] - (right[i][0] - left[i][0]) * 0.3, right[i][1]);
+  ctx.closePath(); ctx.fill();
+  ctx.save(); outline(); ctx.clip();
+  ctx.lineWidth = Math.max(1, 0.8 * s);
+  for (let k = 1; k <= 4; k++) {
+    const y = y0 + (y1 - y0) * (k / 5 + (hash(l.id + k * 4.1) - 0.5) * 0.08);
+    ctx.strokeStyle = css(p.faceDark, 0.35 * (1 - k / 5));
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y + (hash(l.id * k) - 0.5) * 4 * s); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawGround(p) {
@@ -1088,7 +1178,7 @@ function drawCamp(l, p) {
   const y0 = sy(l.top);
   if (y0 < -90 || y0 > ch + 60) return;
   const g = campGeo(l), P = ([x, dy]) => [x * s, y0 + dy * s], outline = [...g.top, ...g.under];
-  ctx.fillStyle = 'rgba(25,8,4,.3)'; ctx.fillRect(0, y0 + 10 * s, cw, 22 * s);
+  ctx.fillStyle = 'rgba(25,8,4,.3)'; ctx.fillRect(0, y0 + 10 * s, faceEdge(l.top) * s, 22 * s);   // its shadow falls on the wall only
   rockPath(outline, P); ctx.closePath();
   const gr = ctx.createLinearGradient(0, y0, 0, y0 + 24 * s);
   gr.addColorStop(0, css(mix(p.under, p.faceMid, 0.3))); gr.addColorStop(1, css(p.faceDark));
@@ -1515,11 +1605,14 @@ function render() {
     ctx.fillStyle = `rgba(255,236,214,${0.07 * (1 - n * 0.7)})`;
     ctx.fillRect(0, y, cw, (5 + i * 3) * s);
   }
+  drawSpires(p);
   drawLayer(FAR, ch * 0.74 + cam * s * 0.05, mix(skyB, FAR_ROCK, 0.38 + n * 0.25));
   drawLayer(MID, ch * 0.88 + cam * s * 0.11, mix(skyB, NEAR_ROCK, 0.6 + n * 0.2));
 
   drawFace(p);
   drawGround(p);
+  for (const l of ledges) if (onPillar(l)) { ctx.globalAlpha = l.fade; drawPillar(l, p); }
+  ctx.globalAlpha = 1;
   for (const l of ledges) { ctx.globalAlpha = l.fade; drawLedge(l, p); }
   ctx.globalAlpha = 1;
 
