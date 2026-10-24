@@ -112,7 +112,7 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
       <h1 id="ovTitle">아이벡스 점프</h1>
       <p class="result" id="ovResult" hidden></p>
       <ul class="howto" id="ovHow">
-        <li><span><b>1000m 정상</b>이 목표예요. 떨어져도 끝나지 않고, 100m마다 있는 <b>캠프</b> 아래로는 안 떨어져요.</span></li>
+        <li><span><b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.</span></li>
         <li><span>화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.</span></li>
         <li><span>발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.</span></li>
         <li><span>뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.</span></li>
@@ -151,7 +151,7 @@ const stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
 
 // ---- tuning ----
 const W = 300;                 // world width in units
-const U = 20;                  // units per metre (the ibex is ~1.5 m long)
+const U = 5;                   // units per metre: the summit sign says 1000 m, the climb is ~70 ledges (about 5 minutes)
 const G = 1900;                // gravity
 const ANG = 76 * Math.PI / 180;// steep, upward hops
 const VMIN = 240, VMAX = 900;  // launch speed range
@@ -180,7 +180,7 @@ const css = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 const pair = (a, b) => [hex(a), hex(b)];
 
 // The climb: sunset at the foot, night on the way up, sunrise at the 1000 m summit.
-const SUMMIT = 1000 * U, CAMP_EVERY = 100 * U;
+const SUMMIT = 1000 * U;
 const SKY = [
   [0,    hex('#d6a57c'), hex('#f5c682')],
   [150,  hex('#b97f86'), hex('#f3a86e')],
@@ -253,7 +253,7 @@ const onPillar = l => !l.ground && !l.camp && !l.mover && !l.crumble && l.x > fa
 let state = 'ready', ledges = [], tip = null, nextId = 0, ib, cam = 0, parts = [], pops = [];
 let maxAlt = 0, combo = 0, perfects = 0, salt = 0, saves = 0, jumps = 0, falls = 0, time = 0, spikeTips = 0;
 let rocks = [], warns = [], eagle = null, rockT = 3, eagleT = 6, bands = [], bandTip = 70 * U;
-let campsPlaced = 0, runTime = 0, zoneIdx = 0, bestTime = +store.get('ibex.best.time', 0) || 0;
+let runTime = 0, zoneIdx = 0, bestTime = +store.get('ibex.best.time', 0) || 0;
 let slowT = 0, shakeT = 0, shakeAmp = 0, pulseT = 0;
 // tier 3: baby ibex, night lightning, salt shop / tier 4: daily cliff, ghost, ranking
 let mode = 'free', mapRng = Math.random, windRng = Math.random, nextBabyY = 0, babies = 0, trail = [];
@@ -296,12 +296,9 @@ function makeLedge(x, top, w, o = {}) {
 // Main path zigzags up the face; sometimes a tiny side ledge holds salt off the path.
 function genNext(prev) {
   const mr = (lo, hi) => lo + mapRng() * (hi - lo);
-  // every 100 m a camp terrace spans the whole face (you can't fall past it); the 10th one is the summit
-  const nextCamp = (campsPlaced + 1) * CAMP_EVERY;
-  if (prev.top + 95 >= nextCamp) {
-    campsPlaced++;
-    const c = makeLedge(W / 2, Math.max(nextCamp, prev.top + 40), W * 2,
-      { camp: campsPlaced, summit: nextCamp >= SUMMIT, flagX: (nextCamp >= SUMMIT ? 0.5 : mr(0.12, 0.28)) * W });
+  // nothing on the way catches a fall; the only terrace is the summit
+  if (prev.top + 95 >= SUMMIT) {
+    const c = makeLedge(W / 2, Math.max(SUMMIT, prev.top + 40), W * 2, { camp: 1, summit: true, flagX: 0.5 * W });
     ledges.push(c);
     return c;
   }
@@ -359,10 +356,10 @@ function reset() {
   const ground = makeLedge(W / 2, 0, W * 2, { ground: true });
   ledges = [ground]; tip = ground;
   ib = { x: 70, y: 0, vx: 0, vy: 0, on: ground, from: null, off: 70 - W / 2, facing: 1,
-         charging: false, charge: 0, chT: 0, side: 1, squash: 0, wob: null, zone: 0, peak: null, hurt: 0, slide: 0 };
+         charging: false, charge: 0, chT: 0, side: 1, squash: 0, wob: null, zone: 0, peak: null, hurt: 0, slide: 0, spin: 0 };
   cam = -viewH * 0.28; maxAlt = 0; combo = 0; perfects = 0; salt = 0; saves = 0; jumps = 0; falls = 0; parts = []; pops = [];
   rocks = []; warns = []; eagle = null; rockT = 3; eagleT = 6; bands = []; bandTip = 70 * U;
-  campsPlaced = 0; runTime = 0; zoneIdx = 0; slowT = 0; shakeT = 0; pulseT = 0;
+  runTime = 0; zoneIdx = 0; slowT = 0; shakeT = 0; pulseT = 0;
   const seed = +kstDay();
   mapRng = mode === 'daily' ? makeRng(seed) : Math.random;
   windRng = mode === 'daily' ? makeRng(seed ^ 0x2545F491) : Math.random;
@@ -460,7 +457,7 @@ window.addEventListener('keyup', e => {
 // a long drop since the highest point of this flight breaks the combo and says how far you fell
 function fallCheck(y) {
   const drop = (ib.peak ?? y) - y;
-  ib.peak = null;
+  ib.peak = null; ib.spin = 0;
   if (drop < 90) return false;
   falls++; combo = 0;
   shake(Math.min(9, drop / 45));
@@ -477,7 +474,7 @@ function land(l) {
   const fell = fallCheck(l.top);
   dust(ib.x, ib.y, 10);
   sfx(fell ? 'thud' : 'land');
-  if (l.camp && !l.reached) reachCamp(l);
+  if (l.summit && !l.reached) { l.reached = true; finish(); }
   if (!l.ground && ao > hw + 2) {
     ib.off = o;
     ib.wob = { dir: Math.sign(o) || 1, phi: 0.22 + 0.4 * clamp((ao - hw - 2) / (REACH - 2), 0, 1), vel: 0.2, flash: 0 };
@@ -614,6 +611,7 @@ function update(dt) {
         for (let i = 0; i < 14; i++) parts.push({ x: ib.x + rand(-10, 10), y: ib.y + rand(0, 20), vx: rand(-90, 90), vy: rand(40, 180), life: 0.7, t: 0, r: rand(1, 2.2), col: 'salt' });
       }
       ib.peak = Math.max(ib.peak, ib.y);
+      if (!ib.spin && ib.peak - ib.y > 160) ib.spin = Math.sign(ib.vx) || 1;
       if (ib.x < 8) { ib.x = 8; ib.vx = Math.abs(ib.vx) * 0.3; }
       if (ib.x > W - 8) { ib.x = W - 8; ib.vx = -Math.abs(ib.vx) * 0.3; }
       for (const l of ledges) {
@@ -667,7 +665,7 @@ const INTRO = {
   night: ['번개 치는 밤', '어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요'],
 };
 const seen = new Set();
-// banners queue up so a new zone, a camp and a new obstacle never overwrite each other
+// banners queue up so a new zone and a new obstacle never overwrite each other
 const bannerQ = [];
 let bannerBusy = false;
 function showBanner(label, title, desc) { bannerQ.push([label, title, desc]); if (!bannerBusy) nextBanner(); }
@@ -687,16 +685,6 @@ function intro(kind) {
 }
 
 const fmtTime = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
-
-function reachCamp(l) {
-  l.reached = true;
-  if (l.summit) { finish(); return; }
-  const key = 'ibex.split.' + l.camp, prev = +store.get(key, 0) || 0;
-  if (!prev || runTime < prev) store.set(key, runTime);
-  showBanner(`캠프 ${l.camp}`, `${l.camp * 100}m 도착`,
-    prev ? `${fmtTime(runTime)} · 최고 ${fmtTime(Math.min(prev, runTime))}` : `${fmtTime(runTime)} · 첫 기록`);
-  sfx('camp');
-}
 
 function finish() {
   state = 'done'; ib.charging = false;
@@ -1199,7 +1187,7 @@ function drawCamp(l, p) {
   const fy = y0 - (10 + (poleH - 20) * l.flagT) * s, wave = Math.sin(time * 6) * 2;
   ctx.fillStyle = l.reached ? '#ec8a3c' : css(p.faceMid);
   ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + (16 + wave) * s * big, fy + (4 + wave * 0.3) * s * big); ctx.lineTo(fx, fy + 9 * s * big); ctx.closePath(); ctx.fill();
-  if (l.reached && !l.summit) {           // campfire
+  if (l.reached && !l.summit) {           // campfire (only the summit is a terrace now, so this never shows)
     const fl = 0.75 + 0.25 * Math.sin(time * 13) * Math.sin(time * 7), cx = fx + 26 * s, r = 26 * s;
     const rg = ctx.createRadialGradient(cx, y0 - 3 * s, 0, cx, y0 - 3 * s, r);
     rg.addColorStop(0, `rgba(255,170,80,${0.55 * fl})`); rg.addColorStop(1, 'rgba(255,150,60,0)');
@@ -1393,6 +1381,7 @@ function drawIbex(col) {
     ctx.translate(px, py); ctx.rotate(w.dir * w.phi * 0.75); ctx.translate(-px, -py);
   }
   ctx.translate(ib.x * s + shake, sy(ib.y));
+  if (ib.spin && !ib.on) { ctx.translate(0, -14 * s); ctx.rotate(time * 13 * ib.spin); ctx.translate(0, 14 * s); }
   // stand with the slope: tilt nearly as steep as the rock (a gentler tilt left the downhill hooves in the air)
   if (ib.on && ib.on.spike && ib.zone) { ctx.translate(0, 1.2 * s); ctx.rotate(-ib.facing * ib.on.slope * 0.92); }
   if (SPR.ready) { drawIbexSprite(col); ctx.restore(); return; }
