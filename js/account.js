@@ -18,7 +18,7 @@
   const slot = document.querySelector("[data-account]");
   if (!slot) return;
 
-  const PLATFORM_URL = "/js/platform.js?v=4";
+  const PLATFORM_URL = "/js/platform.js?v=5";
   const round = slot.dataset.account === "round";
 
   /* ---------- 스타일 (두 페이지 공용, 각 페이지 색을 따라감) ---------- */

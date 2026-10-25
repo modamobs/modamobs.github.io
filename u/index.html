@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>프로필 — 모브스 게임</title>
+  <meta name="description" content="이 사람이 만든 게임.">
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/css/portal.css?v=4">
+
+  <script>
+    document.documentElement.setAttribute(
+      'data-theme', localStorage.getItem('theme') || 'dark');
+  </script>
+
+  <style>
+    .u-wrap { width: min(980px, 100% - 32px); margin: 0 auto; padding: 18px 0 80px; }
+    .u-top { display: flex; align-items: center; gap: 6px; margin-bottom: 22px; }
+    .profile { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
+    .face {
+      width: 96px; height: 96px; border-radius: 50%; flex: none; overflow: hidden;
+      display: grid; place-items: center; font-size: 2.6rem; font-weight: 800;
+      background: var(--accent); color: var(--bg);
+    }
+    .face img { width: 100%; height: 100%; object-fit: cover; }
+    .profile h1 { margin: 0; font-size: 1.8rem; color: var(--heading); letter-spacing: -.02em; line-height: 1.25; word-break: break-all; }
+    .profile .official {
+      display: inline-block; vertical-align: middle; margin-left: 6px; padding: 2px 8px; border-radius: 6px;
+      background: var(--accent-dim); color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: 0;
+    }
+    .stats { margin: 4px 0 0; color: var(--muted); font-size: .92rem; }
+    .stats b { color: var(--heading); }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px 16px; border-radius: 999px; border: 0; cursor: pointer;
+      background: var(--accent); color: var(--bg); font: inherit; font-weight: 700; font-size: .9rem;
+    }
+    .btn.ghost { background: transparent; color: var(--heading); box-shadow: inset 0 0 0 1px var(--line); }
+
+    h2 { margin: 0 0 12px; font-size: 1.2rem; color: var(--heading); }
+    .grid-u { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+    .card-u { min-width: 0; }
+    .card-u .pic {
+      position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
+      background: var(--tone, var(--bg-soft)); display: grid; place-items: center; border: 1px solid var(--thumb-border);
+    }
+    .card-u .pic img { width: 100%; height: 100%; object-fit: cover; }
+    .card-u .pic .ini { font-size: 2.4rem; font-weight: 800; color: rgba(15, 23, 42, .7); }
+    .card-u b {
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      margin: 8px 0 2px; color: var(--heading); font-size: .95rem; line-height: 1.35;
+    }
+    .card-u span { font-size: .8rem; color: var(--muted); }
+    .card-u:hover b { color: var(--accent); }
+    .empty, .notice {
+      padding: 26px; border-radius: 12px; border: 1px dashed var(--line-soft);
+      color: var(--muted); font-size: .92rem; text-align: center;
+    }
+    .notice a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="u-wrap">
+    <div class="u-top">
+      <a class="ghost-link" href="/">← 홈</a>
+      <a class="ghost-link" href="/feed/">피드</a>
+    </div>
+
+    <div id="main"><p class="stats">불러오는 중…</p></div>
+  </div>
+
+  <script src="/js/games.js?v=4"></script>
+  <script type="module" src="/js/platform.js?v=5"></script>
+  <script type="module">
+    const P = window.MobsPlatform || await new Promise(r =>
+      window.addEventListener("mobs-platform-ready", () => r(window.MobsPlatform), { once: true }));
+
+    const $main = document.getElementById("main");
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const id = new URLSearchParams(location.search).get("id") || "";
+
+    function toneOf(key) {
+      let h = 0;
+      for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      return "hsl(" + (h % 360) + " 70% 72%)";
+    }
+    function n(x) { return Number(x || 0).toLocaleString("ko-KR"); }
+
+    function card(g) {
+      const pic = g.thumb
+        ? '<img src="' + esc(g.thumb) + '" alt="" loading="lazy">'
+        : '<span class="ini">' + esc(g.title.charAt(0)) + "</span>";
+      return '<a class="card-u" href="' + esc(g.href) + '">' +
+        '<div class="pic" style="--tone:' + esc(g.tone || toneOf(g.id)) + '">' + pic + "</div>" +
+        "<b>" + esc(g.title) + "</b><span>" + esc(g.sub) + "</span></a>";
+    }
+
+    function page(p) {
+      document.title = p.name + " — 모브스 게임";
+      const face = p.photo
+        ? '<img src="' + esc(p.photo) + '" alt="" referrerpolicy="no-referrer">'
+        : esc((p.name || "?").charAt(0));
+      $main.innerHTML =
+        '<div class="profile"><div class="face">' + face + "</div><div>" +
+          "<h1>" + esc(p.name || "이름 없음") + (p.official ? '<span class="official">공식</span>' : "") + "</h1>" +
+          '<p class="stats">게임 <b>' + n(p.games.length) + "</b>개" +
+            (p.official ? "" : " · 받은 ♥ <b>" + n(p.likes) + "</b> · 플레이 <b>" + n(p.plays) + "</b>") + "</p>" +
+        "</div></div>" +
+        '<div class="actions">' +
+          '<button class="btn ghost" id="share">프로필 공유</button>' +
+          (p.mine ? '<a class="btn" href="/me/">내 페이지</a><a class="btn ghost" href="/upload/">＋ 게임 올리기</a>' : "") +
+        "</div>" +
+        "<h2>" + (p.official ? "모브스가 만든 게임" : "올린 게임") + "</h2>" +
+        (p.games.length
+          ? '<div class="grid-u">' + p.games.map(card).join("") + "</div>"
+          : '<div class="empty">아직 올린 게임이 없어요.</div>');
+
+      document.getElementById("share").addEventListener("click", async () => {
+        const url = location.origin + "/u/?id=" + encodeURIComponent(id);
+        if (navigator.share) { navigator.share({ title: p.name, url }).catch(() => {}); return; }
+        try { await navigator.clipboard.writeText(url); alert("프로필 링크를 복사했어요."); }
+        catch (e) { prompt("이 링크를 복사하세요", url); }
+      });
+    }
+
+    async function load() {
+      /* 공식: 모브스 */
+      if (id === "mobs") {
+        const list = (typeof GAMES !== "undefined" ? GAMES : []).filter(g => g.status !== "soon");
+        page({
+          name: "모브스", official: true, photo: "",
+          games: list.map(g => {
+            const playable = g.status === "web" && g.playable;
+            return {
+              id: g.slug, title: g.title, thumb: g.thumb, tone: g.accent,
+              href: playable ? (g.portrait ? "/feed/#" + g.slug : "/play/?g=" + g.slug) : (g.about || g.store || "/"),
+              sub: playable ? "바로 플레이" : "앱"
+            };
+          })
+        });
+        return;
+      }
+
+      if (!/^[A-Za-z0-9]{10,64}$/.test(id)) {
+        $main.innerHTML = '<div class="notice">프로필을 찾을 수 없어요. <a href="/feed/">피드로 가기</a></div>';
+        return;
+      }
+
+      const [prof, games, viewer] = await Promise.all([
+        P.getProfile(id).catch(() => null),
+        P.gamesByOwner(id).catch(() => []),
+        P.currentViewer().catch(() => null)
+      ]);
+      if (!prof && !games.length) {
+        $main.innerHTML = '<div class="notice">프로필을 찾을 수 없어요. <a href="/feed/">피드로 가기</a></div>';
+        return;
+      }
+      page({
+        // 프로필 문서가 아직 없으면(예전에 올린 사람) 게임에 적힌 이름을 씁니다.
+        name: (prof && prof.name) || (games[0] && games[0].ownerName) || "",
+        photo: prof ? prof.photo : "",
+        mine: !!viewer && viewer.uid === id,
+        likes: games.reduce((a, g) => a + g.likeCount, 0),
+        plays: games.reduce((a, g) => a + g.playCount, 0),
+        games: games.map(g => ({
+          id: g.id, title: g.title, thumb: g.thumb, href: "/feed/#" + g.id,
+          sub: "♥ " + n(g.likeCount) + " · ▶ " + n(g.playCount)
+        }))
+      });
+    }
+
+    load();
+  </script>
+</body>
+</html>

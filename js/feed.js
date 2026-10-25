@@ -104,11 +104,13 @@
     return b != null ? "🏆 내 최고 " + Number(b).toLocaleString("ko-KR") : "✨ 첫 기록에 도전!";
   }
 
+  /* 만든 사람 — 누르면 그 사람 프로필(/u/) */
   function byline(g) {
-    if (g.official) return "";
+    if (g.official) return '<p class="by"><a href="/u/?id=mobs">@모브스</a> · 공식</p>';
     const d = new Date(g.createdAt);
     const date = (d.getMonth() + 1) + "월 " + d.getDate() + "일";
-    return '<p class="by">' + (g.ownerName ? "@" + esc(g.ownerName) + " · " : "") + date + " 공개</p>";
+    const who = '<a href="/u/?id=' + encodeURIComponent(g.ownerUid) + '">@' + esc(g.ownerName || "이름 없음") + "</a>";
+    return '<p class="by">' + who + " · " + date + " 공개</p>";
   }
 
   const ICON = {
@@ -465,6 +467,7 @@
         thumb: u.thumb,
         accent: "",
         ownerName: u.ownerName,
+        ownerUid: u.ownerUid,
         createdAt: u.createdAt,
         likeCount: u.likeCount,
         playCount: u.playCount

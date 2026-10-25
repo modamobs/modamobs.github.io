@@ -386,6 +386,34 @@ button { font: inherit; }
 }
 .card-links a:hover { color: var(--accent); }
 
+/* 만든 사람 (카드 전체 링크 위로 올려 따로 누를 수 있게) */
+.card-by {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin: -2px 0 2px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text);
+  transition: color .16s ease;
+}
+.card-by:hover { color: var(--accent); }
+.card-by .by-face {
+  width: 18px; height: 18px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--bg);
+  font-size: .62rem; font-weight: 800;
+}
+.section-head .section-more {
+  margin-left: auto;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .empty-msg {
   padding: 30px 0;
   color: var(--muted);

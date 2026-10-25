@@ -103,11 +103,65 @@
       </div>
       <div class="card-body">
         <h3 class="card-title"><a href="${href}">${game.title}</a></h3>
+        <a class="card-by" href="/u/?id=mobs"><span class="by-face">M</span>모브스</a>
         <p class="card-desc">${game.desc || ""}</p>
         <ul class="card-genres">${genres}</ul>
         ${links.length ? `<div class="card-links">${links.join("")}</div>` : ""}
       </div>`;
     return li;
+  }
+
+  /* ── 유저가 올린 게임 (js/platform.js가 뜨면 채웁니다) ── */
+  let userGames = [];
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
+  function matchesUser(g) {
+    if (activeGenre !== "전체" && !(g.tags || []).includes(activeGenre)) return false;
+    if (!query) return true;
+    return [g.title, g.desc, (g.tags || []).join(" "), g.ownerName].join(" ").toLowerCase().includes(query);
+  }
+
+  function userCardOf(g) {
+    const li = document.createElement("li");
+    li.className = "card";
+    const thumb = g.thumb
+      ? `<img src="${esc(g.thumb)}" alt="" loading="lazy" decoding="async">`
+      : `<div class="thumb-initial" aria-hidden="true">${esc((g.title || "?").trim().charAt(0))}</div>`;
+    const tags = (g.tags || []).map(t => `<li>${esc(t)}</li>`).join("");
+    li.innerHTML = `
+      <div class="card-thumb">
+        ${thumb}
+        <span class="badge badge-web">바로 플레이</span>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title"><a href="/feed/#${encodeURIComponent(g.id)}">${esc(g.title)}</a></h3>
+        <a class="card-by" href="/u/?id=${encodeURIComponent(g.ownerUid)}"><span class="by-face">${esc((g.ownerName || "?").charAt(0))}</span>@${esc(g.ownerName || "이름 없음")}</a>
+        <p class="card-desc">${esc(g.desc)}</p>
+        <ul class="card-genres">${tags}</ul>
+        <div class="card-links"><span>♥ ${g.likeCount} · ▶ ${g.playCount}</span></div>
+      </div>`;
+    return li;
+  }
+
+  function userSection() {
+    const list = userGames.filter(matchesUser);
+    if (!list.length) return null;
+    const head = document.createElement("div");
+    head.className = "section-head";
+    head.innerHTML = `<h2>새로 올라온 게임</h2><span class="count">누구나 만든 게임 · ${list.length}</span>` +
+      `<a class="section-more" href="/upload/">＋ 내 게임 올리기</a>`;
+    const ul = document.createElement("ul");
+    ul.className = "grid";
+    list.slice(0, 12).forEach(g => ul.appendChild(userCardOf(g)));
+    const wrap = document.createElement("section");
+    wrap.className = "section";
+    wrap.appendChild(head);
+    wrap.appendChild(ul);
+    return { wrap, count: list.length };
   }
 
   /* ── 전체 렌더 ── */
@@ -134,6 +188,13 @@
       wrap.appendChild(ul);
       grid.appendChild(wrap);
     });
+
+    /* 새로 올라온 게임은 "바로 플레이" 바로 다음에 */
+    const us = userSection();
+    if (us) {
+      shown += us.count;
+      grid.insertBefore(us.wrap, grid.children[1] || null);
+    }
 
     emptyMsg.hidden = shown > 0;
   }
@@ -165,4 +226,14 @@
 
   buildFilters();
   render();
+
+  /* 플랫폼(Firebase)은 account.js가 첫 화면 뒤에 불러옵니다. 뜨면 유저 게임을 붙입니다. */
+  function withPlatform(P) {
+    P.loadFeed().then(data => {
+      userGames = data.userGames;
+      render();
+    }).catch(e => console.warn("새로 올라온 게임을 불러오지 못했어요.", e));
+  }
+  if (window.MobsPlatform) withPlatform(window.MobsPlatform);
+  else window.addEventListener("mobs-platform-ready", () => withPlatform(window.MobsPlatform), { once: true });
 })();

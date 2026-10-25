@@ -339,6 +339,7 @@ async function uploadGame(zipFile, thumbFile, meta, onProgress) {
   await Promise.all([worker(), worker(), worker(), worker()]);
 
   say(0.97, "피드에 등록하는 중");
+  await saveProfile().catch(e => console.warn("프로필을 저장하지 못했어요.", e));
   await setDoc(doc(db, "games", id), {
     title: meta.title,
     desc: meta.desc,
@@ -359,6 +360,31 @@ async function uploadGame(zipFile, thumbFile, meta, onProgress) {
   return id;
 }
 
+/* ---------- 공개 프로필 ---------- */
+
+/* 게임을 올리는 회원의 이름·구글 프로필 사진을 공개 프로필(profiles/{uid})에 맞춰 둡니다. */
+async function saveProfile() {
+  if (!isMember()) return;
+  const photo = /^https:\/\/lh[0-9]\.googleusercontent\.com\/.+/.test(user.photoURL || "") && user.photoURL.length <= 500
+    ? user.photoURL : "";
+  await setDoc(doc(db, "profiles", user.uid), {
+    name: (user.displayName || "").slice(0, 40),
+    photo,
+    updatedAt: serverTimestamp()
+  });
+}
+
+async function getProfile(uid) {
+  const snap = await getDoc(doc(db, "profiles", uid));
+  return snap.exists() ? { uid, name: snap.data().name || "", photo: snap.data().photo || "" } : null;
+}
+
+/* 그 사람이 올린 게임 중 피드에 보이는 것만, 최신순 */
+async function gamesByOwner(uid) {
+  const snap = await getDocs(query(collection(db, "games"), where("ownerUid", "==", uid)));
+  return snap.docs.map(gameFromDoc).filter(visible).sort((a, b) => b.createdAt - a.createdAt);
+}
+
 async function deleteGame(id) {
   await api("DELETE", "/api/games/" + id);
   await deleteDoc(doc(db, "games", id));
@@ -377,6 +403,7 @@ window.MobsPlatform = {
   get user() { return user; },
   loadFeed, myLikes, myGames, reportedGames,
   currentViewer, myHistory, myLikedList, getGames, clearHistory, visible,
+  saveProfile, getProfile, gamesByOwner,
   setLike, addPlay, report,
   uploadGame, deleteGame, setHidden
 };

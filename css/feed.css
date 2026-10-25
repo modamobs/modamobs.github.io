@@ -241,6 +241,8 @@ body.is-playing .feed-top > * { pointer-events: none; }
 }
 .info .tags { margin: 0; color: var(--ink-soft); font-size: .92rem; font-weight: 600; }
 .info .by { margin: 0 0 6px; color: var(--ink-soft); font-size: .85rem; }
+.info .by a { pointer-events: auto; color: var(--ink); font-weight: 700; }
+.info .by a:hover { text-decoration: underline; }
 .info .new {
   display: inline-block;
   vertical-align: .3em;
