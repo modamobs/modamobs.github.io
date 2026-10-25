@@ -52,7 +52,7 @@ const db   = getFirestore(app);
 let user = null;
 const userWaiters = [];
 const listeners = [];
-let firstAuth = new Promise(resolve => {
+const firstAuth = new Promise(resolve => {
   const stop = onAuthStateChanged(auth, u => { stop(); resolve(u); });
 });
 onAuthStateChanged(auth, u => {
@@ -333,6 +333,7 @@ async function setHidden(id, hidden) {
 window.MobsPlatform = {
   PLAY_ORIGIN, REPORT_HIDE,
   playUrl, isMember, isAdmin, onUser, ensureViewer, signInGoogle, signOut,
+  authReady: () => firstAuth,             // 저장된 로그인 상태를 다 읽으면 끝나는 Promise
   get user() { return user; },
   loadFeed, myLikes, myGames, reportedGames,
   setLike, addPlay, report,
