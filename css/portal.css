@@ -193,6 +193,20 @@ button { font: inherit; }
   max-width: 52ch;
   font-size: clamp(.95rem, 2.3vw, 1.05rem);
 }
+.hero .feed-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+  font-size: .95rem;
+  transition: transform .15s ease;
+}
+.hero .feed-cta:hover { transform: translateY(-2px); }
 
 /* ===== 장르 필터 ===== */
 

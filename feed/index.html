@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>피드 — 모브스 게임</title>
+  <meta name="description" content="위로 밀어 넘기며 바로 플레이하는 게임 피드.">
+  <meta name="theme-color" content="#0b1120">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="모브스 게임 피드">
+  <meta property="og:description" content="밀어서 넘기고, 탭해서 바로 플레이.">
+  <meta property="og:url" content="https://modamobs.github.io/feed/">
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/css/feed.css?v=1">
+</head>
+<body>
+
+  <!-- ===== 상단: 탭 + 목록 보기 ===== -->
+  <header class="feed-top">
+    <nav class="tabs" role="tablist" aria-label="피드 정렬">
+      <button class="tab on" role="tab" aria-selected="true"  data-tab="all">추천</button>
+      <button class="tab"    role="tab" aria-selected="false" data-tab="random">랜덤</button>
+      <button class="tab"    role="tab" aria-selected="false" data-tab="liked">좋아요</button>
+    </nav>
+    <a class="round-btn" href="/" aria-label="목록으로 보기">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+    </a>
+  </header>
+
+  <!-- ===== 세로 스와이프 피드 (feed.js가 채웁니다) ===== -->
+  <main class="feed" id="feed" aria-label="게임 피드"></main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/js/games.js?v=4"></script>
+  <script src="/js/feed.js?v=1"></script>
+</body>
+</html>
