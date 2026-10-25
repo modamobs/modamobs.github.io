@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>게임 올리기 — 모브스 게임</title>
+  <meta name="description" content="직접 만든 웹 게임을 올리면 피드에 바로 뜹니다.">
+  <meta name="robots" content="noindex">
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/css/portal.css?v=2">
+
+  <script>
+    document.documentElement.setAttribute(
+      'data-theme', localStorage.getItem('theme') || 'dark');
+  </script>
+
+  <style>
+    .up-wrap { width: min(640px, 100% - 32px); margin: 0 auto; padding: 28px 0 80px; }
+    .up-top { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .up-top .who { margin-left: auto; font-size: .88rem; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+    .up-top .who[hidden] { display: none; }
+    .up-top .who button { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; }
+    h1 { font-size: 1.6rem; color: var(--heading); margin: 0 0 6px; letter-spacing: -.02em; }
+    h2 { font-size: 1.1rem; color: var(--heading); margin: 40px 0 12px; }
+    .lead { margin: 0 0 22px; }
+
+    .panel {
+      border: 1px solid var(--line-soft);
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .login { text-align: center; padding: 34px 20px; }
+    .login p { margin: 0 0 16px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 20px; border-radius: 999px; border: 0; cursor: pointer;
+      background: var(--accent); color: var(--bg); font-weight: 700; font-size: .95rem;
+    }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .btn.ghost { background: var(--bg-soft); color: var(--heading); border: 1px solid var(--line-soft); }
+    .btn.small { padding: 6px 12px; font-size: .84rem; }
+    .btn.danger { background: #ef4444; color: #fff; }
+
+    label.field { display: block; margin-bottom: 16px; }
+    label.field > span { display: block; font-size: .88rem; font-weight: 600; color: var(--heading); margin-bottom: 6px; }
+    label.field small { color: var(--muted); font-weight: 400; }
+    input[type=text], textarea {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--line-soft); background: var(--bg-soft); color: var(--heading);
+      font: inherit; font-size: .95rem;
+    }
+    textarea { resize: vertical; min-height: 64px; }
+    input[type=text]:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    input[type=file] { font: inherit; font-size: .88rem; color: var(--text); max-width: 100%; }
+    .check { display: flex; gap: 8px; align-items: flex-start; font-size: .9rem; margin: 6px 0 18px; }
+    .check input { margin-top: 5px; }
+
+    .progress { height: 8px; border-radius: 999px; background: var(--bg-soft); overflow: hidden; margin: 14px 0 6px; }
+    .progress > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s ease; }
+    .status { font-size: .9rem; min-height: 1.5em; }
+    .status.err { color: #f87171; }
+    .status.ok a { color: var(--accent); font-weight: 700; }
+
+    .guide { font-size: .9rem; }
+    .guide ul { list-style: disc; padding-left: 20px; margin: 8px 0 0; }
+    .guide li { margin: 4px 0; }
+    .guide code, .guide pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .84rem;
+      background: var(--bg-soft); border-radius: 6px;
+    }
+    .guide code { padding: 1px 5px; }
+    .guide pre { padding: 10px 12px; overflow-x: auto; margin: 8px 0 0; }
+
+    .list { display: grid; gap: 10px; }
+    .row {
+      display: flex; gap: 12px; align-items: center;
+      border: 1px solid var(--line-soft); background: var(--card); border-radius: 12px; padding: 10px;
+    }
+    .row img, .row .ph {
+      width: 74px; height: 38px; border-radius: 6px; object-fit: cover; flex: none;
+      background: var(--bg-soft); display: grid; place-items: center; font-weight: 800; color: var(--muted);
+    }
+    .row .meta { flex: 1; min-width: 0; }
+    .row .meta b { color: var(--heading); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .meta span { font-size: .8rem; color: var(--muted); }
+    .row .acts { display: flex; gap: 6px; flex: none; }
+    .empty { color: var(--muted); font-size: .9rem; }
+    .fine { font-size: .8rem; color: var(--muted); margin: 14px 0 0; }
+    .fine a, .guide a, .check a { color: var(--accent); }
+    .foot { margin-top: 48px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="up-wrap">
+    <div class="up-top">
+      <a class="ghost-link" href="/feed/">← 피드</a>
+      <div class="who" id="who" hidden>
+        <span id="whoName"></span>
+        <button id="logout">로그아웃</button>
+      </div>
+    </div>
+
+    <h1>게임 올리기</h1>
+    <p class="lead">직접 만든 웹 게임을 zip으로 올리면 피드의 <b>신규</b> 탭에 바로 뜹니다.</p>
+
+    <!-- 로그인 전 -->
+    <div class="panel login" id="loginBox">
+      <p>게임을 올리려면 구글 계정으로 로그인해 주세요.</p>
+      <button class="btn" id="loginBtn">구글로 로그인</button>
+      <p class="fine">로그인하면 <a href="/feed/terms.html">이용약관</a>과
+        <a href="/feed/privacy-policy.html">개인정보 처리방침</a>에 동의하는 것으로 봅니다.
+        만 14세 미만은 게임을 올릴 수 없어요. 올린 게임에는 구글 계정 이름이 함께 공개됩니다.</p>
+      <p class="status err" id="loginErr"></p>
+    </div>
+
+    <!-- 로그인 후 -->
+    <form class="panel" id="form" hidden>
+      <label class="field">
+        <span>게임 파일 (zip) <small>— 맨 위에 index.html, 압축 푼 크기 40MB 이하</small></span>
+        <input type="file" id="zip" accept=".zip,application/zip" required>
+      </label>
+      <label class="field">
+        <span>썸네일 <small>— 선택, 가로 2:1 권장, png·jpg·webp 1MB 이하</small></span>
+        <input type="file" id="thumb" accept="image/png,image/jpeg,image/webp">
+      </label>
+      <label class="field">
+        <span>제목 <small>— 40자</small></span>
+        <input type="text" id="title" maxlength="40" required>
+      </label>
+      <label class="field">
+        <span>한 줄 설명 <small>— 140자</small></span>
+        <textarea id="desc" maxlength="140"></textarea>
+      </label>
+      <label class="field">
+        <span>태그 <small>— 쉼표로 구분, 5개까지 (예: 퍼즐, 반응)</small></span>
+        <input type="text" id="tags" maxlength="80">
+      </label>
+      <label class="check">
+        <input type="checkbox" id="agree" required>
+        <span>내가 만들었거나 올릴 권리가 있는 게임이고, 남을 해치거나 속이는 내용이 없습니다.
+          <a href="/feed/terms.html" target="_blank">이용약관</a>을 어기는 게임은 예고 없이 내려갈 수 있습니다.</span>
+      </label>
+      <button class="btn" id="submit" type="submit">올리기</button>
+      <div class="progress" id="progress" hidden><i></i></div>
+      <p class="status" id="status"></p>
+    </form>
+
+    <h2>이렇게 만들어 주세요</h2>
+    <div class="panel guide">
+      <p style="margin:0 0 8px">처음이라면 <a href="/upload/sample-game.zip" download>샘플 게임(별 잡기) zip</a>을 받아
+        고쳐 보세요. 점수 보내기까지 들어 있습니다.</p>
+      <ul>
+        <li><b>세로 화면</b>(폰 비율)으로 만들면 피드에서 꽉 차게 보입니다.</li>
+        <li>필요한 파일은 모두 zip 안에 넣어 주세요. 라이브러리는 jsDelivr·cdnjs·unpkg에서 불러올 수 있습니다.</li>
+        <li>보안 때문에 <b>바깥 서버로의 통신(fetch, 외부 이미지 등)은 막혀 있습니다.</b> 저장은 <code>localStorage</code>를 쓰세요.</li>
+        <li>한 판이 끝날 때 점수를 보내면 피드에 내 최고 기록이 남습니다.
+          <pre>parent.postMessage({ type: "mobs:score", score: 1234 }, "*");
+parent.postMessage({ type: "mobs:end" }, "*");  // 한 판 끝</pre>
+        </li>
+        <li>Unity WebGL은 <b>압축 없음(Disabled)</b>으로 빌드해 주세요.</li>
+      </ul>
+    </div>
+
+    <section id="mineBox" hidden>
+      <h2>내가 올린 게임</h2>
+      <div class="list" id="mine"></div>
+    </section>
+
+    <section id="adminBox" hidden>
+      <h2>신고된 게임 (관리자)</h2>
+      <div class="list" id="reported"></div>
+    </section>
+
+    <p class="fine foot">
+      <a href="/feed/terms.html">이용약관</a> · <a href="/feed/privacy-policy.html">개인정보 처리방침</a> ·
+      <a href="mailto:yamoda24@gmail.com">문의·권리 침해 신고</a>
+    </p>
+  </div>
+
+  <script type="module" src="/js/platform.js?v=2"></script>
+  <script type="module">
+    const P = window.MobsPlatform || await new Promise(r =>
+      window.addEventListener("mobs-platform-ready", () => r(window.MobsPlatform), { once: true }));
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+    P.onUser(u => {
+      const member = P.isMember(u);
+      $("loginBox").hidden = member;
+      $("form").hidden = !member;
+      $("who").hidden = !member;
+      $("mineBox").hidden = !member;
+      $("adminBox").hidden = !P.isAdmin(u);
+      if (member) {
+        $("whoName").textContent = u.displayName || u.email || "";
+        loadMine();
+        if (P.isAdmin(u)) loadReported();
+      }
+    });
+
+    $("loginBtn").addEventListener("click", async () => {
+      $("loginErr").textContent = "";
+      try { await P.signInGoogle(); }
+      catch (e) {
+        if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") {
+          $("loginErr").textContent = "로그인하지 못했어요. (" + (e.code || e.message) + ")";
+        }
+      }
+    });
+    $("logout").addEventListener("click", () => P.signOut());
+
+    /* ---------- 올리기 ---------- */
+
+    $("form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const zip = $("zip").files[0];
+      const title = $("title").value.trim();
+      if (!zip || !title) return;
+
+      const tags = $("tags").value.split(/[,，#\s]+/).map(t => t.trim()).filter(Boolean).slice(0, 5)
+        .map(t => t.slice(0, 12));
+      const status = $("status");
+      const bar = $("progress");
+      status.className = "status";
+      bar.hidden = false;
+      $("submit").disabled = true;
+
+      try {
+        const id = await P.uploadGame(zip, $("thumb").files[0] || null,
+          { title, desc: $("desc").value.trim(), tags },
+          (p, msg) => { bar.firstElementChild.style.width = (p * 100).toFixed(1) + "%"; status.textContent = msg; });
+        status.className = "status ok";
+        status.innerHTML = '올렸어요! <a href="/feed/#' + id + '">피드에서 보기 →</a>';
+        $("form").reset();
+        loadMine();
+      } catch (err) {
+        status.className = "status err";
+        status.textContent = err.message || String(err);
+      } finally {
+        $("submit").disabled = false;
+      }
+    });
+
+    /* ---------- 목록 ---------- */
+
+    function rowHTML(g, acts) {
+      const img = g.thumb ? '<img src="' + esc(g.thumb) + '" alt="">' : '<div class="ph">' + esc(g.title.charAt(0)) + "</div>";
+      const date = g.createdAt ? new Date(g.createdAt).toLocaleDateString("ko-KR") : "";
+      return '<div class="row" data-id="' + esc(g.id) + '">' + img +
+        '<div class="meta"><b>' + esc(g.title) + "</b><span>" +
+          [date, "♥ " + g.likeCount, "▶ " + g.playCount, g.reportCount ? "신고 " + g.reportCount : "", g.hidden ? "숨김" : ""]
+            .filter(Boolean).join(" · ") +
+        '</span></div><div class="acts">' + acts + "</div></div>";
+    }
+
+    async function loadMine() {
+      const list = await P.myGames().catch(() => []);
+      $("mine").innerHTML = list.length
+        ? list.map(g => rowHTML(g,
+            '<a class="btn ghost small" href="/feed/#' + esc(g.id) + '">보기</a>' +
+            '<button class="btn danger small" data-del>삭제</button>')).join("")
+        : '<p class="empty">아직 올린 게임이 없어요.</p>';
+    }
+
+    async function loadReported() {
+      const list = await P.reportedGames().catch(() => []);
+      $("reported").innerHTML = list.length
+        ? list.map(g => rowHTML(g,
+            '<a class="btn ghost small" href="' + esc(P.playUrl(g.id)) + '" target="_blank" rel="noopener">열기</a>' +
+            (g.hidden || (!g.reviewed && g.reportCount >= P.REPORT_HIDE)
+              ? '<button class="btn ghost small" data-show>보이기</button>'
+              : '<button class="btn ghost small" data-hide>숨기기</button>') +
+            (g.official ? "" : '<button class="btn danger small" data-del>삭제</button>'))).join("")
+        : '<p class="empty">신고된 게임이 없어요.</p>';
+    }
+
+    document.addEventListener("click", async e => {
+      const b = e.target.closest("[data-del],[data-hide],[data-show]");
+      if (!b) return;
+      const row = b.closest(".row");
+      const id = row.dataset.id;
+      const title = row.querySelector("b").textContent;
+      b.disabled = true;
+      try {
+        if (b.hasAttribute("data-del")) {
+          if (!confirm("“" + title + "”을(를) 지울까요? 되돌릴 수 없어요.")) { b.disabled = false; return; }
+          await P.deleteGame(id);
+        } else {
+          await P.setHidden(id, b.hasAttribute("data-hide"));
+        }
+        loadMine();
+        if (P.isAdmin()) loadReported();
+      } catch (err) {
+        alert("실패했어요: " + (err.message || err));
+        b.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
