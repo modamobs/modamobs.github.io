@@ -194,7 +194,7 @@
       const pic = g.thumb
         ? '<img src="' + esc(g.thumb) + '" alt="" loading="lazy">'
         : '<span class="ini">' + esc(g.title.charAt(0)) + "</span>";
-      return '<a class="card" href="/feed/#' + encodeURIComponent(g.id) + '">' +
+      return '<a class="card" href="/feed/?play=1#' + encodeURIComponent(g.id) + '">' +
         '<div class="pic"' + (g.tone ? ' style="--tone:' + esc(g.tone) + '"' : "") + ">" + pic +
           (badge ? '<span class="badge">' + esc(badge) + "</span>" : "") + "</div>" +
         "<b>" + esc(g.title) + "</b><span>" + esc(sub) + "</span></a>";

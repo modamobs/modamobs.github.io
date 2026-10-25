@@ -167,7 +167,7 @@
             const playable = g.status === "web" && g.playable;
             return {
               id: g.slug, title: g.title, thumb: g.thumb, tone: g.accent,
-              href: playable ? (g.portrait ? "/feed/#" + g.slug : "/play/?g=" + g.slug) : (g.about || g.store || "/"),
+              href: playable ? (g.portrait ? "/feed/?play=1#" + g.slug : "/play/?g=" + g.slug) : (g.about || g.store || "/"),
               sub: playable ? "바로 플레이" : "앱"
             };
           })
@@ -198,7 +198,7 @@
         likes: games.reduce((a, g) => a + g.likeCount, 0),
         plays: games.reduce((a, g) => a + g.playCount, 0),
         games: games.map(g => ({
-          id: g.id, title: g.title, thumb: g.thumb, href: "/feed/#" + g.id,
+          id: g.id, title: g.title, thumb: g.thumb, href: "/feed/?play=1#" + g.id,
           sub: "♥ " + n(g.likeCount) + " · ▶ " + n(g.playCount)
         }))
       });

@@ -242,6 +242,13 @@
       const el = slideOf(focusId);
       if (el) feed.scrollTop = el.offsetTop;
     }
+
+    // 메인·프로필 등에서 "바로 플레이"로 들어왔으면 그 게임을 곧장 시작합니다.
+    // 유저 게임은 플랫폼이 뜬 뒤에야 슬라이드가 생기므로, 생길 때까지 기다립니다.
+    if (autoPlay) {
+      const el = slideOf(autoPlay);
+      if (el) { autoPlay = null; start(el); launchedFrom = el; }
+    }
   }
 
   function slideOf(id) {
@@ -454,8 +461,11 @@
     const slide = el.closest(".slide");
     switch (el.dataset.act) {
       case "start":  start(slide); break;
-      case "stop":   stop(); break;
-      case "next":   stop(); go(1); break;
+      case "stop":
+        // 바로 플레이로 들어온 그 게임을 닫으면 왔던 곳(메인 등)으로 돌아갑니다.
+        if (launchedFrom && slide === launchedFrom && cameFromSite) { history.back(); break; }
+        stop(); break;
+      case "next":   launchedFrom = null; stop(); go(1); break;
       case "like":   toggleLike(el, slide.dataset.id); break;
       case "share":  share(slide.dataset.id); break;
       case "report": report(slide.dataset.id); break;
@@ -476,6 +486,15 @@
   /* ---------- 시작 ---------- */
 
   const hashId = () => decodeURIComponent(location.hash.slice(1)) || null;
+
+  // ?play=1#게임id → 바로 시작. 주소에서 ?play=1은 지워 새로고침 때 다시 시작하지 않게 합니다.
+  let autoPlay = null;
+  let launchedFrom = null;
+  const cameFromSite = document.referrer.startsWith(location.origin + "/");
+  if (new URLSearchParams(location.search).get("play") === "1" && hashId()) {
+    autoPlay = hashId();
+    history.replaceState(null, "", location.pathname + location.hash);
+  }
 
   // 공식 게임은 바로 보여 줍니다.
   render("all", hashId());

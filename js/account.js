@@ -195,7 +195,7 @@
     if (!list) return;
     list.innerHTML = notif.items.length
       ? notif.items.map(g =>
-          '<a class="n-item' + (g.unread ? " unread" : "") + '" href="/feed/#' + encodeURIComponent(g.id) + '">' +
+          '<a class="n-item' + (g.unread ? " unread" : "") + '" href="/feed/?play=1#' + encodeURIComponent(g.id) + '">' +
             '<div class="n-pic" style="--tone:' + toneOf(g.id) + '">' +
               (g.thumb ? '<img src="' + esc(g.thumb) + '" alt="" loading="lazy">' : esc(g.title.charAt(0))) + "</div>" +
             '<div class="n-text"><b>@' + esc(g.ownerName || "이름 없음") + "</b>님이 새 게임을 올렸어요: " + esc(g.title) +

@@ -72,11 +72,12 @@
     li.className = "card";
     if (game.accent) li.style.setProperty("--tint", game.accent);
 
-    /* 플레이 가능한 게임은 카드 전체가 플레이로, 아니면 소개 페이지로 */
+    /* 플레이 가능한 게임은 카드 전체가 플레이로, 아니면 소개 페이지로.
+       세로 게임은 피드 플레이어에서 바로 시작(✕ = 메인으로), 가로 게임은 예전 플레이어 */
     const canPlay = game.status === "web" && game.playable && game.play;
-    const href = canPlay
-      ? "/play/?g=" + encodeURIComponent(game.slug)
-      : (game.about || game.store || "#");
+    const href = !canPlay ? (game.about || game.store || "#")
+      : game.portrait ? "/feed/?play=1#" + encodeURIComponent(game.slug)
+      : "/play/?g=" + encodeURIComponent(game.slug);
 
     const badge =
       game.status === "web"  ? (game.playable ? ["badge-web", "바로 플레이"] : ["badge-soon", "준비 중"]) :
@@ -138,7 +139,7 @@
         <span class="badge badge-web">바로 플레이</span>
       </div>
       <div class="card-body">
-        <h3 class="card-title"><a href="/feed/#${encodeURIComponent(g.id)}">${esc(g.title)}</a></h3>
+        <h3 class="card-title"><a href="/feed/?play=1#${encodeURIComponent(g.id)}">${esc(g.title)}</a></h3>
         <a class="card-by" href="/u/?id=${encodeURIComponent(g.ownerUid)}"><span class="by-face">${esc((g.ownerName || "?").charAt(0))}</span>@${esc(g.ownerName || "이름 없음")}</a>
         <p class="card-desc">${esc(g.desc)}</p>
         <ul class="card-genres">${tags}</ul>
