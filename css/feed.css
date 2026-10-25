@@ -243,6 +243,19 @@ body.is-playing .feed-top > * { pointer-events: none; }
 .info .by { margin: 0 0 6px; color: var(--ink-soft); font-size: .85rem; }
 .info .by a { pointer-events: auto; color: var(--ink); font-weight: 700; }
 .info .by a:hover { text-decoration: underline; }
+.info .sub-btn {
+  pointer-events: auto;
+  margin-left: 6px;
+  padding: 3px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: .78rem;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+.info .sub-btn.on { background: rgba(248, 250, 252, .18); color: var(--ink); }
 .info .new {
   display: inline-block;
   vertical-align: .3em;

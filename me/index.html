@@ -80,6 +80,21 @@
     }
     .empty a { color: var(--accent); }
     .loading { color: var(--muted); font-size: .9rem; }
+
+    /* 구독한 사람 */
+    .people { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; }
+    .person { flex: none; width: 76px; text-align: center; }
+    .person .av {
+      width: 64px; height: 64px; margin: 0 auto 6px; border-radius: 50%; overflow: hidden;
+      display: grid; place-items: center; font-size: 1.5rem; font-weight: 800;
+      background: var(--tone, var(--accent)); color: rgba(15, 23, 42, .75);
+    }
+    .person .av img { width: 100%; height: 100%; object-fit: cover; }
+    .person span {
+      display: block; font-size: .8rem; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .person:hover span { color: var(--accent); }
   </style>
 </head>
 <body>
@@ -100,6 +115,11 @@
     </div>
     <div class="actions" id="actions"></div>
     <p class="note" id="note" hidden></p>
+
+    <section class="row-sec" id="subsSec" hidden>
+      <div class="sec-head"><h2>구독</h2><span class="count" id="subsCount"></span></div>
+      <div class="people" id="subs"></div>
+    </section>
 
     <section class="row-sec">
       <div class="sec-head">
@@ -124,7 +144,7 @@
   </div>
 
   <script src="/js/games.js?v=4"></script>
-  <script type="module" src="/js/platform.js?v=5"></script>
+  <script type="module" src="/js/platform.js?v=6"></script>
   <script type="module">
     const P = window.MobsPlatform || await new Promise(r =>
       window.addEventListener("mobs-platform-ready", () => r(window.MobsPlatform), { once: true }));
@@ -230,6 +250,8 @@
       // 공개 프로필의 이름·사진을 구글 계정에 맞춰 둡니다(바꿨을 수 있으니).
       if (P.isMember(u)) P.saveProfile().catch(() => {});
 
+      if (P.isMember(u)) loadSubs();
+
       const [hist, likes, mine] = await Promise.all([
         P.myHistory(60).then(resolve).catch(() => []),
         P.myLikedList(60).then(resolve).catch(() => []),
@@ -252,6 +274,25 @@
           g.hidden || !P.visible(g) ? "숨겨짐" : "")).join(""),
           '아직 올린 게임이 없어요. <a href="/upload/">첫 게임 올리기 →</a>');
       }
+    }
+
+    async function loadSubs() {
+      const ids = await P.mySubscriptions().catch(() => []);
+      const profs = await P.getProfiles(ids.filter(id => id !== "mobs"));
+      $("subsSec").hidden = false;
+      $("subsCount").textContent = ids.length ? ids.length + "명" : "";
+      $("subs").innerHTML = ids.length
+        ? ids.map(id => {
+            const p = id === "mobs" ? { name: "모브스", photo: "" } : (profs[id] || { name: "", photo: "" });
+            const name = p.name || "이름 없음";
+            const av = p.photo
+              ? '<img src="' + esc(p.photo) + '" alt="" referrerpolicy="no-referrer">'
+              : esc(name.charAt(0));
+            return '<a class="person" href="/u/?id=' + encodeURIComponent(id) + '">' +
+              '<div class="av" style="--tone:' + (id === "mobs" ? "var(--accent)" : toneOf(id)) + '">' + av + "</div>" +
+              "<span>" + esc(name) + "</span></a>";
+          }).join("")
+        : '<div class="empty" style="flex:1">아직 구독한 사람이 없어요. 피드에서 이름 옆 “구독”을 눌러 보세요.</div>';
     }
 
     load();

@@ -385,6 +385,48 @@ async function gamesByOwner(uid) {
   return snap.docs.map(gameFromDoc).filter(visible).sort((a, b) => b.createdAt - a.createdAt);
 }
 
+/* ---------- 구독 ---------- */
+// 구독자 수: subs/{creatorId}.count (공개) · 내 구독: users/{uid}/subscriptions/{creatorId} (나만)
+// creatorId = 올린 사람 uid, 공식 모브스는 "mobs"
+
+async function subscriberCount(cid) {
+  const snap = await getDoc(doc(db, "subs", cid));
+  return snap.exists() ? (snap.data().count || 0) : 0;
+}
+
+/* 내 구독 목록 (최신순). 회원이 아니면 빈 목록 */
+async function mySubscriptions() {
+  await firstAuth;
+  if (!isMember()) return [];
+  const snap = await getDocs(query(collection(db, "users", user.uid, "subscriptions"), orderBy("at", "desc")));
+  return snap.docs.map(d => d.id);
+}
+
+async function setSubscribe(cid, on) {
+  if (!isMember()) throw new Error("구독하려면 구글로 로그인해야 해요.");
+  const subsRef = doc(db, "subs", cid);
+  const mineRef = doc(db, "users", user.uid, "subscriptions", cid);
+  const counter = await getDoc(subsRef);
+  const b = writeBatch(db);
+  if (on) {
+    b.set(mineRef, { at: serverTimestamp() });
+    if (counter.exists()) b.update(subsRef, { count: increment(1) });
+    else b.set(subsRef, { count: 1 });
+  } else {
+    b.delete(mineRef);
+    b.update(subsRef, { count: increment(-1) });
+  }
+  await b.commit();
+}
+
+/* 여러 사람의 공개 프로필 */
+async function getProfiles(uids) {
+  const list = await Promise.all(uids.map(uid => getProfile(uid).catch(() => null)));
+  const out = {};
+  list.forEach((p, i) => { if (p) out[uids[i]] = p; });
+  return out;
+}
+
 async function deleteGame(id) {
   await api("DELETE", "/api/games/" + id);
   await deleteDoc(doc(db, "games", id));
@@ -403,7 +445,8 @@ window.MobsPlatform = {
   get user() { return user; },
   loadFeed, myLikes, myGames, reportedGames,
   currentViewer, myHistory, myLikedList, getGames, clearHistory, visible,
-  saveProfile, getProfile, gamesByOwner,
+  saveProfile, getProfile, gamesByOwner, getProfiles,
+  subscriberCount, mySubscriptions, setSubscribe,
   setLike, addPlay, report,
   uploadGame, deleteGame, setHidden
 };

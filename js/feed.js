@@ -51,6 +51,9 @@
 
   let P = null;                 // window.MobsPlatform (준비되면)
   let remoteLiked = null;       // Set — 플랫폼에서 받은 내 좋아요
+  let mySubs = new Set();       // 내가 구독한 사람 (uid, 공식은 "mobs")
+
+  const creatorOf = g => g.official ? "mobs" : g.ownerUid;
 
   /* ---------- 저장 ---------- */
 
@@ -105,12 +108,20 @@
   }
 
   /* 만든 사람 — 누르면 그 사람 프로필(/u/) */
+  function subBtn(g) {
+    const cid = creatorOf(g);
+    if (!cid || (P && P.user && P.user.uid === cid)) return "";   // 내 게임엔 구독 버튼 없음
+    const on = mySubs.has(cid);
+    return ' <button class="sub-btn' + (on ? " on" : "") + '" data-act="sub" data-cid="' + esc(cid) + '">' +
+      (on ? "구독중" : "구독") + "</button>";
+  }
+
   function byline(g) {
-    if (g.official) return '<p class="by"><a href="/u/?id=mobs">@모브스</a> · 공식</p>';
+    if (g.official) return '<p class="by"><a href="/u/?id=mobs">@모브스</a> · 공식' + subBtn(g) + "</p>";
     const d = new Date(g.createdAt);
     const date = (d.getMonth() + 1) + "월 " + d.getDate() + "일";
     const who = '<a href="/u/?id=' + encodeURIComponent(g.ownerUid) + '">@' + esc(g.ownerName || "이름 없음") + "</a>";
-    return '<p class="by">' + who + " · " + date + " 공개</p>";
+    return '<p class="by">' + who + " · " + date + " 공개" + subBtn(g) + "</p>";
   }
 
   const ICON = {
@@ -164,7 +175,12 @@
 
   function endHTML(kind) {
     const body =
-      kind === "liked"
+      kind === "subs"
+        ? (P && P.isMember()
+            ? "<h2>구독한 사람의 게임이 없어요</h2><p>게임 아래 이름 옆 “구독”을 누르면 그 사람의 새 게임이 여기 모여요.</p>"
+            : "<h2>좋아하는 제작자를 구독해 보세요</h2><p>구글로 로그인하고 “구독”을 누르면 그 사람의 새 게임이 여기 모여요.</p>") +
+          '<div class="acts"><button class="bar-btn next" data-act="tab" data-tab="all">추천 보기</button></div>'
+      : kind === "liked"
         ? "<h2>좋아요한 게임이 없어요</h2><p>마음에 드는 게임에 ♥를 눌러 보세요.</p>" +
           '<div class="acts"><button class="bar-btn next" data-act="tab" data-tab="all">추천 보기</button></div>'
       : kind === "new"
@@ -208,14 +224,16 @@
     });
 
     const everything = OFFICIAL.concat(USER);
-    list = tab === "random" ? shuffle(everything)
+    list = tab === "subs"   ? newest().filter(g => mySubs.has(g.ownerUid))
+                                .concat(mySubs.has("mobs") ? OFFICIAL : [])
+         : tab === "random" ? shuffle(everything)
          : tab === "new"    ? newest()
          : tab === "hot"    ? everything.slice().sort((a, b) => (b.likeCount - a.likeCount) || (b.playCount - a.playCount))
          : tab === "liked"  ? everything.filter(g => isLiked(g.id))
          : mixed();
 
     feed.innerHTML = list.map(slideHTML).join("") +
-      endHTML(list.length ? "end" : tab === "new" ? "new" : "liked");
+      endHTML(list.length ? "end" : tab === "new" ? "new" : tab === "subs" ? "subs" : "liked");
     current = null;
     feed.scrollTop = 0;
     observe();
@@ -390,6 +408,32 @@
     }
   }
 
+  async function toggleSub(btn) {
+    if (!P) { say("잠시 후 다시 눌러 주세요"); return; }
+    if (!P.isMember()) {
+      if (!confirm("구독하려면 구글 로그인이 필요해요. 로그인할까요?")) return;
+      try { await P.signInGoogle(); location.reload(); } catch (e) { /* 창을 닫음 */ }
+      return;
+    }
+    const cid = btn.dataset.cid;
+    const on = !mySubs.has(cid);
+    btn.disabled = true;
+    try {
+      await P.setSubscribe(cid, on);
+      if (on) mySubs.add(cid); else mySubs.delete(cid);
+      // 같은 사람의 다른 슬라이드 버튼도 함께 바꿉니다.
+      feed.querySelectorAll('.sub-btn[data-cid="' + CSS.escape(cid) + '"]').forEach(b => {
+        b.classList.toggle("on", on);
+        b.textContent = on ? "구독중" : "구독";
+      });
+      say(on ? "구독했어요 — 구독 탭에서 새 게임을 볼 수 있어요" : "구독을 취소했어요");
+    } catch (e) {
+      say("잠시 후 다시 눌러 주세요");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   async function report(id) {
     if (!P) { say("잠시 후 다시 눌러 주세요"); return; }
     const reason = prompt("이 게임을 신고할까요?\n이유를 적어 주시면 확인에 도움이 됩니다. (선택)", "");
@@ -415,6 +459,7 @@
       case "like":   toggleLike(el, slide.dataset.id); break;
       case "share":  share(slide.dataset.id); break;
       case "report": report(slide.dataset.id); break;
+      case "sub":    toggleSub(el); break;
       case "top":    feed.scrollTo({ top: 0, behavior: "smooth" }); break;
       case "tab":    render(el.dataset.tab); break;
     }
@@ -447,10 +492,11 @@
     P = window.MobsPlatform;
     try {
       // 내 좋아요를 못 읽어도(익명 로그인 실패 등) 게임 목록은 보여 줍니다.
-      const [data, liked] = await Promise.all([P.loadFeed(), P.myLikes().catch(e => {
+      const [data, liked, subs] = await Promise.all([P.loadFeed(), P.myLikes().catch(e => {
         console.warn("좋아요를 불러오지 못했어요. 이 기기에만 저장합니다.", e);
         return null;
-      })]);
+      }), P.mySubscriptions().catch(() => [])]);
+      mySubs = new Set(subs);
       OFFICIAL.forEach(g => {
         const s = data.official[g.id];
         if (s) { g.likeCount = s.likeCount; g.playCount = s.playCount; }

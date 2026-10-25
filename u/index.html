@@ -73,7 +73,7 @@
   </div>
 
   <script src="/js/games.js?v=4"></script>
-  <script type="module" src="/js/platform.js?v=5"></script>
+  <script type="module" src="/js/platform.js?v=6"></script>
   <script type="module">
     const P = window.MobsPlatform || await new Promise(r =>
       window.addEventListener("mobs-platform-ready", () => r(window.MobsPlatform), { once: true }));
@@ -107,10 +107,11 @@
       $main.innerHTML =
         '<div class="profile"><div class="face">' + face + "</div><div>" +
           "<h1>" + esc(p.name || "이름 없음") + (p.official ? '<span class="official">공식</span>' : "") + "</h1>" +
-          '<p class="stats">게임 <b>' + n(p.games.length) + "</b>개" +
+          '<p class="stats">구독자 <b id="subN">' + n(p.subs) + "</b>명 · 게임 <b>" + n(p.games.length) + "</b>개" +
             (p.official ? "" : " · 받은 ♥ <b>" + n(p.likes) + "</b> · 플레이 <b>" + n(p.plays) + "</b>") + "</p>" +
         "</div></div>" +
         '<div class="actions">' +
+          (p.mine ? "" : '<button class="btn' + (p.subscribed ? " ghost" : "") + '" id="sub">' + (p.subscribed ? "구독중" : "구독") + "</button>") +
           '<button class="btn ghost" id="share">프로필 공유</button>' +
           (p.mine ? '<a class="btn" href="/me/">내 페이지</a><a class="btn ghost" href="/upload/">＋ 게임 올리기</a>' : "") +
         "</div>" +
@@ -118,6 +119,29 @@
         (p.games.length
           ? '<div class="grid-u">' + p.games.map(card).join("") + "</div>"
           : '<div class="empty">아직 올린 게임이 없어요.</div>');
+
+      const subBtn = document.getElementById("sub");
+      if (subBtn) subBtn.addEventListener("click", async () => {
+        if (!P.isMember()) {
+          if (!confirm("구독하려면 구글 로그인이 필요해요. 로그인할까요?")) return;
+          try { await P.signInGoogle(); location.reload(); } catch (e) { /* 창을 닫음 */ }
+          return;
+        }
+        const on = !p.subscribed;
+        subBtn.disabled = true;
+        try {
+          await P.setSubscribe(id, on);
+          p.subscribed = on;
+          p.subs += on ? 1 : -1;
+          subBtn.textContent = on ? "구독중" : "구독";
+          subBtn.classList.toggle("ghost", on);
+          document.getElementById("subN").textContent = n(p.subs);
+        } catch (e) {
+          alert("잠시 후 다시 눌러 주세요.");
+        } finally {
+          subBtn.disabled = false;
+        }
+      });
 
       document.getElementById("share").addEventListener("click", async () => {
         const url = location.origin + "/u/?id=" + encodeURIComponent(id);
@@ -128,11 +152,17 @@
     }
 
     async function load() {
+      const [subs, mySubs] = await Promise.all([
+        P.subscriberCount(id).catch(() => 0),
+        P.mySubscriptions().catch(() => [])
+      ]);
+      const subscribed = mySubs.includes(id);
+
       /* 공식: 모브스 */
       if (id === "mobs") {
         const list = (typeof GAMES !== "undefined" ? GAMES : []).filter(g => g.status !== "soon");
         page({
-          name: "모브스", official: true, photo: "",
+          name: "모브스", official: true, photo: "", subs, subscribed,
           games: list.map(g => {
             const playable = g.status === "web" && g.playable;
             return {
@@ -164,6 +194,7 @@
         name: (prof && prof.name) || (games[0] && games[0].ownerName) || "",
         photo: prof ? prof.photo : "",
         mine: !!viewer && viewer.uid === id,
+        subs, subscribed,
         likes: games.reduce((a, g) => a + g.likeCount, 0),
         plays: games.reduce((a, g) => a + g.playCount, 0),
         games: games.map(g => ({
