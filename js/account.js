@@ -3,7 +3,7 @@
    ---------------------------------------------------
    <div data-account></div> 자리에 그립니다.
      - 로그인 전: "로그인" 버튼 → 구글 로그인 팝업
-     - 로그인 후: 프로필 사진 → 메뉴 (내가 올린 게임 / 게임 올리기 / 로그아웃)
+     - 로그인 후: 프로필 사진 → 메뉴 (내 페이지 / 내가 올린 게임 / 게임 올리기 / 로그아웃)
    data-account="round"  : 피드처럼 어두운 화면 위의 동그란 버튼
    data-reload           : 로그인·로그아웃 뒤 페이지를 다시 읽음 (피드의 좋아요를 새 계정으로 맞추려고)
 
@@ -18,7 +18,7 @@
   const slot = document.querySelector("[data-account]");
   if (!slot) return;
 
-  const PLATFORM_URL = "/js/platform.js?v=3";
+  const PLATFORM_URL = "/js/platform.js?v=4";
   const round = slot.dataset.account === "round";
 
   /* ---------- 스타일 (두 페이지 공용, 각 페이지 색을 따라감) ---------- */
@@ -108,6 +108,7 @@
       '<button class="acct-avatar" type="button" data-acct="menu" aria-haspopup="true" aria-expanded="false" aria-label="내 계정">' + face + "</button>" +
       '<div class="acct-menu" role="menu" hidden>' +
         '<div class="acct-who"><b>' + esc(name) + "</b><span>" + esc(u.email || "") + "</span></div>" +
+        '<a role="menuitem" href="/me/">내 페이지</a>' +
         '<a role="menuitem" href="/upload/#mineBox">내가 올린 게임</a>' +
         '<a role="menuitem" href="/upload/">게임 올리기</a>' +
         '<button role="menuitem" type="button" data-acct="logout">로그아웃</button>' +

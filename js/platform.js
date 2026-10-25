@@ -176,10 +176,50 @@ async function setLike(id, on) {
   await b.commit();
 }
 
+/* 플레이 수 +1, 그리고 내 기록(내 페이지)에 "마지막으로 한 시각"을 남깁니다. */
 async function addPlay(id) {
-  await ensureViewer();
+  const u = await ensureViewer();
   await ensureOfficial(id);
-  await updateDoc(doc(db, "games", id), { playCount: increment(1) });
+  const b = writeBatch(db);
+  b.update(doc(db, "games", id), { playCount: increment(1) });
+  b.set(doc(db, "users", u.uid, "history", id), { at: serverTimestamp() });
+  await b.commit();
+}
+
+/* ---------- 내 페이지 ---------- */
+
+/* 지금 로그인된 계정(익명 포함)이 없으면 null — 내 페이지를 열었다고 계정을 만들지 않습니다. */
+async function currentViewer() {
+  await firstAuth;
+  return auth.currentUser;
+}
+
+async function listByTime(sub, max) {
+  const u = await currentViewer();
+  if (!u) return [];
+  const snap = await getDocs(query(collection(db, "users", u.uid, sub), orderBy("at", "desc"), limit(max || 60)));
+  return snap.docs.map(d => ({ id: d.id, at: d.data().at ? d.data().at.toMillis() : 0 }));
+}
+const myHistory   = max => listByTime("history", max);
+const myLikedList = max => listByTime("likes", max);
+
+/* 게임 id 여러 개 → 게임 정보. 지워진 게임은 빠집니다. */
+async function getGames(ids) {
+  const snaps = await Promise.all(ids.map(id => getDoc(doc(db, "games", id)).catch(() => null)));
+  const out = {};
+  snaps.forEach(s => { if (s && s.exists()) out[s.id] = gameFromDoc(s); });
+  return out;
+}
+
+async function clearHistory() {
+  const u = await currentViewer();
+  if (!u) return;
+  const snap = await getDocs(collection(db, "users", u.uid, "history"));
+  for (let i = 0; i < snap.docs.length; i += 400) {
+    const b = writeBatch(db);
+    snap.docs.slice(i, i + 400).forEach(d => b.delete(d.ref));
+    await b.commit();
+  }
 }
 
 async function report(id, reason) {
@@ -336,6 +376,7 @@ window.MobsPlatform = {
   authReady: () => firstAuth,             // 저장된 로그인 상태를 다 읽으면 끝나는 Promise
   get user() { return user; },
   loadFeed, myLikes, myGames, reportedGames,
+  currentViewer, myHistory, myLikedList, getGames, clearHistory, visible,
   setLike, addPlay, report,
   uploadGame, deleteGame, setHidden
 };

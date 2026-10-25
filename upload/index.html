@@ -99,7 +99,7 @@
     <div class="up-top">
       <a class="ghost-link" href="/feed/">← 피드</a>
       <div class="who" id="who" hidden>
-        <span id="whoName"></span>
+        <a href="/me/" id="whoName"></a>
         <button id="logout">로그아웃</button>
       </div>
     </div>
@@ -181,7 +181,7 @@ parent.postMessage({ type: "mobs:end" }, "*");  // 한 판 끝</pre>
     </p>
   </div>
 
-  <script type="module" src="/js/platform.js?v=3"></script>
+  <script type="module" src="/js/platform.js?v=4"></script>
   <script type="module">
     const P = window.MobsPlatform || await new Promise(r =>
       window.addEventListener("mobs-platform-ready", () => r(window.MobsPlatform), { once: true }));

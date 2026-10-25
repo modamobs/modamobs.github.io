@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>내 페이지 — 모브스 게임</title>
+  <meta name="description" content="내가 플레이한 게임, 좋아요한 게임, 올린 게임.">
+  <meta name="robots" content="noindex">
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/css/portal.css?v=3">
+
+  <script>
+    document.documentElement.setAttribute(
+      'data-theme', localStorage.getItem('theme') || 'dark');
+  </script>
+
+  <style>
+    .me-wrap { width: min(980px, 100% - 32px); margin: 0 auto; padding: 18px 0 80px; }
+    .me-top { display: flex; align-items: center; gap: 6px; margin-bottom: 18px; }
+    .me-top .sp { flex: 1; }
+
+    /* 프로필 */
+    .profile { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; }
+    .face {
+      width: 84px; height: 84px; border-radius: 50%; flex: none; overflow: hidden;
+      display: grid; place-items: center; font-size: 2.4rem; font-weight: 800;
+      background: var(--accent); color: var(--bg);
+    }
+    .face img { width: 100%; height: 100%; object-fit: cover; }
+    .profile h1 { margin: 0; font-size: 1.7rem; color: var(--heading); letter-spacing: -.02em; line-height: 1.25; }
+    .profile .sub { margin: 2px 0 0; font-size: .9rem; color: var(--muted); word-break: break-all; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 18px; border-radius: 999px; border: 0; cursor: pointer;
+      background: var(--accent); color: var(--bg); font: inherit; font-weight: 700; font-size: .92rem;
+    }
+    .btn.ghost { background: transparent; color: var(--heading); box-shadow: inset 0 0 0 1px var(--line); }
+    .btn.small { padding: 6px 12px; font-size: .82rem; }
+    .note { font-size: .88rem; color: var(--muted); margin: 0 0 6px; }
+
+    /* 줄 */
+    section.row-sec { margin-top: 34px; }
+    .sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+    .sec-head h2 { margin: 0; font-size: 1.25rem; color: var(--heading); }
+    .sec-head .count { color: var(--muted); font-size: .88rem; }
+    .sec-head .sp { flex: 1; }
+    .sec-head a, .sec-head button.link {
+      background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+      font-size: .86rem; color: var(--accent);
+    }
+    .strip {
+      display: grid; grid-auto-flow: column; grid-auto-columns: minmax(180px, 220px);
+      gap: 12px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x proximity;
+    }
+    .strip.grid { grid-auto-flow: row; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); overflow: visible; }
+    .card { scroll-snap-align: start; min-width: 0; }
+    .card .pic {
+      position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
+      background: var(--tone, var(--bg-soft)); display: grid; place-items: center;
+      border: 1px solid var(--thumb-border);
+    }
+    .card .pic img { width: 100%; height: 100%; object-fit: cover; }
+    .card .pic .ini { font-size: 2.4rem; font-weight: 800; color: rgba(15, 23, 42, .7); }
+    .card .pic .badge {
+      position: absolute; right: 6px; bottom: 6px; padding: 2px 7px; border-radius: 6px;
+      background: rgba(15, 23, 42, .8); color: #f8fafc; font-size: .74rem; font-weight: 700;
+    }
+    .card b {
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      margin: 8px 0 2px; color: var(--heading); font-size: .95rem; line-height: 1.35;
+    }
+    .card span { font-size: .8rem; color: var(--muted); }
+    .card:hover b { color: var(--accent); }
+    .empty {
+      padding: 22px; border-radius: 12px; border: 1px dashed var(--line-soft);
+      color: var(--muted); font-size: .9rem; text-align: center;
+    }
+    .empty a { color: var(--accent); }
+    .loading { color: var(--muted); font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <div class="me-wrap">
+    <div class="me-top">
+      <a class="ghost-link" href="/">← 홈</a>
+      <a class="ghost-link" href="/feed/">피드</a>
+      <span class="sp"></span>
+    </div>
+
+    <!-- 프로필 -->
+    <div class="profile">
+      <div class="face" id="face">?</div>
+      <div>
+        <h1 id="name">내 페이지</h1>
+        <p class="sub" id="sub"></p>
+      </div>
+    </div>
+    <div class="actions" id="actions"></div>
+    <p class="note" id="note" hidden></p>
+
+    <section class="row-sec">
+      <div class="sec-head">
+        <h2>기록</h2><span class="count" id="histCount"></span><span class="sp"></span>
+        <button class="link" id="clearHist" hidden>기록 지우기</button>
+      </div>
+      <div class="strip" id="history"><p class="loading">불러오는 중…</p></div>
+    </section>
+
+    <section class="row-sec">
+      <div class="sec-head"><h2>좋아요한 게임</h2><span class="count" id="likeCount"></span></div>
+      <div class="strip" id="liked"><p class="loading">불러오는 중…</p></div>
+    </section>
+
+    <section class="row-sec" id="mineSec" hidden>
+      <div class="sec-head">
+        <h2>내가 올린 게임</h2><span class="count" id="mineCount"></span><span class="sp"></span>
+        <a href="/upload/#mineBox">관리</a>
+      </div>
+      <div class="strip grid" id="mine"></div>
+    </section>
+  </div>
+
+  <script src="/js/games.js?v=4"></script>
+  <script type="module" src="/js/platform.js?v=4"></script>
+  <script type="module">
+    const P = window.MobsPlatform || await new Promise(r =>
+      window.addEventListener("mobs-platform-ready", () => r(window.MobsPlatform), { once: true }));
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+    /* 공식 게임 정보는 js/games.js에서 */
+    const OFFICIAL = {};
+    // games.js의 GAMES는 const라 window에 붙지 않습니다 — 전역 이름으로 읽습니다.
+    (typeof GAMES !== "undefined" ? GAMES : []).forEach(g => { OFFICIAL[g.slug] = g; });
+
+    /* 썸네일 없는 게임은 id로 정한 색 바탕에 첫 글자 */
+    function toneOf(id) {
+      let h = 0;
+      for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      return "hsl(" + (h % 360) + " 70% 72%)";
+    }
+
+    function ago(ms) {
+      const s = (Date.now() - ms) / 1000;
+      if (s < 60) return "방금";
+      if (s < 3600) return Math.floor(s / 60) + "분 전";
+      if (s < 86400) return Math.floor(s / 3600) + "시간 전";
+      if (s < 86400 * 30) return Math.floor(s / 86400) + "일 전";
+      return new Date(ms).toLocaleDateString("ko-KR");
+    }
+
+    /* id 목록 → 카드에 쓸 정보 (지워졌거나 숨겨진 게임은 빠짐) */
+    async function resolve(items) {
+      const userIds = items.map(x => x.id).filter(id => id.startsWith("u_"));
+      const user = userIds.length ? await P.getGames(userIds) : {};
+      return items.map(x => {
+        if (x.id.startsWith("u_")) {
+          const g = user[x.id];
+          if (!g || !P.visible(g)) return null;
+          return { id: x.id, at: x.at, title: g.title, thumb: g.thumb, tone: toneOf(x.id), by: g.ownerName ? "@" + g.ownerName : "" };
+        }
+        const g = OFFICIAL[x.id];
+        if (!g) return null;
+        return { id: x.id, at: x.at, title: g.title, thumb: g.thumb, tone: g.accent, by: "모브스" };
+      }).filter(Boolean);
+    }
+
+    function card(g, sub, badge) {
+      const pic = g.thumb
+        ? '<img src="' + esc(g.thumb) + '" alt="" loading="lazy">'
+        : '<span class="ini">' + esc(g.title.charAt(0)) + "</span>";
+      return '<a class="card" href="/feed/#' + encodeURIComponent(g.id) + '">' +
+        '<div class="pic"' + (g.tone ? ' style="--tone:' + esc(g.tone) + '"' : "") + ">" + pic +
+          (badge ? '<span class="badge">' + esc(badge) + "</span>" : "") + "</div>" +
+        "<b>" + esc(g.title) + "</b><span>" + esc(sub) + "</span></a>";
+    }
+
+    function fill(el, html, emptyHtml) {
+      el.innerHTML = html || '<div class="empty">' + emptyHtml + "</div>";
+      el.classList.toggle("grid", el.id === "mine" || !html);
+    }
+
+    /* ---------- 프로필 ---------- */
+
+    function paintProfile(u) {
+      const member = P.isMember(u);
+      const name = member ? (u.displayName || u.email || "내 계정") : "게스트";
+      $("name").textContent = name;
+      $("sub").textContent = member ? (u.email || "") : "로그인하지 않았어요";
+      $("face").innerHTML = member && u.photoURL
+        ? '<img src="' + esc(u.photoURL) + '" alt="" referrerpolicy="no-referrer">'
+        : esc(name.charAt(0));
+
+      $("actions").innerHTML = member
+        ? '<a class="btn" href="/upload/">＋ 게임 올리기</a><button class="btn ghost" id="logout">로그아웃</button>'
+        : '<button class="btn" id="login">구글로 로그인</button><a class="btn ghost" href="/upload/">게임 올리기</a>';
+      $("note").hidden = member;
+      $("note").textContent = "로그인하면 이 기기에서 남긴 기록과 좋아요가 계정으로 이어지고, 다른 기기에서도 볼 수 있어요.";
+      $("mineSec").hidden = !member;
+    }
+
+    document.addEventListener("click", async e => {
+      if (e.target.id === "login") {
+        try { await P.signInGoogle(); location.reload(); }
+        catch (err) {
+          if (err.code === "auth/popup-blocked") alert("로그인 창이 막혔어요. 이 사이트의 팝업을 허용해 주세요.");
+          else if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") alert("로그인하지 못했어요.");
+        }
+      }
+      if (e.target.id === "logout") { await P.signOut(); location.reload(); }
+      if (e.target.id === "clearHist") {
+        if (!confirm("플레이 기록을 모두 지울까요?")) return;
+        await P.clearHistory();
+        load();
+      }
+    });
+
+    /* ---------- 목록 ---------- */
+
+    async function load() {
+      const u = await P.currentViewer();
+      paintProfile(u);
+
+      const [hist, likes, mine] = await Promise.all([
+        P.myHistory(60).then(resolve).catch(() => []),
+        P.myLikedList(60).then(resolve).catch(() => []),
+        P.isMember(u) ? P.myGames().catch(() => []) : []
+      ]);
+
+      $("histCount").textContent = hist.length ? hist.length + "개" : "";
+      $("clearHist").hidden = !hist.length;
+      fill($("history"), hist.map(g => card(g, ago(g.at) + " 플레이")).join(""),
+        '아직 플레이한 게임이 없어요. <a href="/feed/">피드에서 게임하러 가기 →</a>');
+
+      $("likeCount").textContent = likes.length ? likes.length + "개" : "";
+      fill($("liked"), likes.map(g => card(g, g.by)).join(""),
+        "피드에서 ♥를 누른 게임이 여기에 모여요.");
+
+      if (P.isMember(u)) {
+        $("mineCount").textContent = mine.length ? mine.length + "개" : "";
+        fill($("mine"), mine.map(g => card(Object.assign({ tone: toneOf(g.id) }, g),
+          "♥ " + g.likeCount + " · ▶ " + g.playCount,
+          g.hidden || !P.visible(g) ? "숨겨짐" : "")).join(""),
+          '아직 올린 게임이 없어요. <a href="/upload/">첫 게임 올리기 →</a>');
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
