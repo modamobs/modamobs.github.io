@@ -207,6 +207,14 @@ button { font: inherit; }
   transition: transform .15s ease;
 }
 .hero .feed-cta:hover { transform: translateY(-2px); }
+.hero .hero-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.hero .hero-ctas .feed-cta { margin-top: 0; }
+.hero .feed-cta.ghost {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.hero .feed-cta.ghost:hover { background: var(--accent-dim); }
 
 /* ===== 장르 필터 ===== */
 
