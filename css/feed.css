@@ -93,7 +93,8 @@ body.is-playing .feed-top > * { pointer-events: none; }
 }
 @media (max-width: 400px) {
   .feed-top { gap: 6px; padding-left: 10px; padding-right: 10px; }
-  .round-btn, .acct.round .acct-avatar { width: 38px; height: 38px; }
+  .round-btn, .acct.round .acct-avatar, .acct.round .acct-bell { width: 38px; height: 38px; }
+  .acct { gap: 6px; }
   .acct.round .acct-btn { height: 38px; padding: 0 11px; }
 }
 .round-btn.upload { background: var(--pill); color: var(--pill-ink); border-color: transparent; }

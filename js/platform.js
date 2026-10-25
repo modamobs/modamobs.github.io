@@ -419,6 +419,42 @@ async function setSubscribe(cid, on) {
   await b.commit();
 }
 
+/* ---------- 알림 ---------- */
+// 구독한 제작자가 "구독한 뒤에" 올린 게임 = 알림. 서버 없이 볼 때마다 계산합니다(fan-out on read).
+// 마지막으로 알림을 연 시각은 users/{uid}.notifSeenAt 에 남겨 다른 기기에서도 읽음이 이어집니다.
+
+async function notifications() {
+  await firstAuth;
+  if (!isMember()) return { items: [], unread: 0 };
+  const [subSnap, meSnap] = await Promise.all([
+    getDocs(collection(db, "users", user.uid, "subscriptions")),
+    getDoc(doc(db, "users", user.uid))
+  ]);
+  const since = {};
+  subSnap.docs.forEach(d => {
+    if (d.id !== "mobs") since[d.id] = d.data().at ? d.data().at.toMillis() : 0;
+  });
+  const seenAt = meSnap.exists() && meSnap.data().notifSeenAt ? meSnap.data().notifSeenAt.toMillis() : 0;
+
+  const owners = Object.keys(since);
+  const items = [];
+  for (let i = 0; i < owners.length; i += 30) {          // "in"은 한 번에 30명까지
+    const snap = await getDocs(query(collection(db, "games"),
+      where("ownerUid", "in", owners.slice(i, i + 30)), orderBy("createdAt", "desc"), limit(50)));
+    snap.docs.map(gameFromDoc).forEach(g => {
+      if (visible(g) && g.createdAt > since[g.ownerUid]) items.push(g);
+    });
+  }
+  items.sort((a, b) => b.createdAt - a.createdAt);
+  const top = items.slice(0, 30).map(g => Object.assign(g, { unread: g.createdAt > seenAt }));
+  return { items: top, unread: top.filter(g => g.unread).length };
+}
+
+async function markNotificationsSeen() {
+  if (!isMember()) return;
+  await setDoc(doc(db, "users", user.uid), { notifSeenAt: serverTimestamp() });
+}
+
 /* 여러 사람의 공개 프로필 */
 async function getProfiles(uids) {
   const list = await Promise.all(uids.map(uid => getProfile(uid).catch(() => null)));
@@ -447,6 +483,7 @@ window.MobsPlatform = {
   currentViewer, myHistory, myLikedList, getGames, clearHistory, visible,
   saveProfile, getProfile, gamesByOwner, getProfiles,
   subscriberCount, mySubscriptions, setSubscribe,
+  notifications, markNotificationsSeen,
   setLike, addPlay, report,
   uploadGame, deleteGame, setHidden
 };
