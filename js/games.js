@@ -103,6 +103,18 @@ const GAMES = [
     portrait: true
   },
   {
+    slug: "fruitgame",
+    title: "과일 콕콕",
+    desc: "빈칸을 콕 누르면 상하좌우로 가장 가까운 같은 과일이 지워집니다. 2분 동안 판을 깨며 이번 주 순위를 겨룹니다.",
+    genres: ["퍼즐", "캐주얼"],
+    status: "web",
+    playable: true,
+    play: "/fruitgame/play/",
+    thumb: "/assets/images/fruitgame.png",
+    accent: "#ef4b2e",
+    portrait: true
+  },
+  {
     slug: "arrow-box",
     title: "Arrow Box",
     desc: "상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 막다른 길이 없으니 순서만 찾으면 됩니다.",
