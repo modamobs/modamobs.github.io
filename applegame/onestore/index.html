@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<base href="../play/">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>사과 게임</title>
+<meta name="description" content="합이 10이 되게 사과를 묶어 따는 2분 퍼즐">
+<meta name="theme-color" content="#e7dcc8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#35302b" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="사과 게임">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
+<style>
+/* Layout: a handmade felt play mat. Felt patches with cream stitching up top, a felt strip timer,
+   then a green felt tray of stuffed felt apples. Results are a stitched felt card.
+   Art (www/art/felt-*.png|jpg) is optional: without it the felt is drawn in CSS. */
+:root {
+  --bg: #e7dcc8;            /* oatmeal felt */
+  --dim: rgba(0, 0, 0, 0);  /* darkens the felt photos at night */
+  --ink: #3a2a22;
+  --muted: #7a6656;
+  --card: #f7f0e3;          /* cream felt patch */
+  --card-edge: #d8c9ae;
+  --board: #3e6b49;         /* green felt tray */
+  --board-deep: #2c5236;
+  --thread: #fbf3e2;        /* cream sewing thread */
+  --red: #d2382b;
+  --red-deep: #9c241b;
+  --apple-hi: #f2705d;
+  --leaf: #4f8f3a;
+  --stem: #6b4a2a;
+  --num: #2f221b;           /* number on the patch: as dark as possible */
+  --pick: #ffd34d;          /* yellow felt */
+  --ok: #ffd34d;
+  --shade: rgba(58, 42, 34, 0.28);
+  --scrim: rgba(46, 34, 26, 0.55);
+  --display: "Jua", "Gowun Dodum", sans-serif;
+  --body: "Gowun Dodum", system-ui, -apple-system, "Malgun Gothic", sans-serif;
+  --fuzz: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #35302b; --dim: rgba(18, 14, 10, 0.62); --ink: #f3eadb; --muted: #c4b49f;
+    --card: #4b423a; --card-edge: #2c2520;
+    --board: #2a4a33; --board-deep: #1c3423; --thread: #e8dcc5;
+    --red: #e04b3d; --red-deep: #a8291e; --apple-hi: #ff8a72;
+    --leaf: #66a84f; --stem: #8a6440; --num: #2f221b; --pick: #ffd34d; --ok: #ffd34d;
+    --shade: rgba(0, 0, 0, 0.45); --scrim: rgba(12, 9, 6, 0.7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #35302b; --dim: rgba(18, 14, 10, 0.62); --ink: #f3eadb; --muted: #c4b49f;
+  --card: #4b423a; --card-edge: #2c2520;
+  --board: #2a4a33; --board-deep: #1c3423; --thread: #e8dcc5;
+  --red: #e04b3d; --red-deep: #a8291e; --apple-hi: #ff8a72;
+  --leaf: #66a84f; --stem: #8a6440; --num: #2f221b; --pick: #ffd34d; --ok: #ffd34d;
+  --shade: rgba(0, 0, 0, 0.45); --scrim: rgba(12, 9, 6, 0.7);
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+body {
+  background:
+    var(--fuzz),
+    linear-gradient(var(--dim), var(--dim)),
+    url("art/felt-bg.jpg") center / cover,
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+button, input { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px solid var(--red); outline-offset: 3px; }
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: max(12px, var(--safe-top, env(safe-area-inset-top, 0px)));
+  padding-bottom: max(12px, var(--safe-bottom, env(safe-area-inset-bottom, 0px)));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* a cut piece of felt with a running stitch just inside its edge */
+.felt {
+  position: relative;
+  background: var(--fuzz), var(--card);
+  border-radius: 14px;
+  box-shadow: 0 2px 0 var(--card-edge), 0 4px 8px var(--shade);
+}
+.felt::after {
+  content: ""; position: absolute; inset: 4px; pointer-events: none;
+  border: 1.5px dashed var(--card-edge); border-radius: 10px;
+}
+
+/* ---- top: title banner, score patch, time badge, the rival's patch ---- */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.brand { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.brand h1 {
+  margin: 0; font-family: var(--display); font-weight: 400; font-size: 2rem; line-height: 1;
+  color: var(--red); text-shadow: 0 2px 0 var(--card-edge); text-wrap: balance;
+}
+.brand .sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+.stats { display: flex; align-items: center; gap: 10px; }
+.stat .k { display: block; font-size: 0.66rem; color: var(--muted); white-space: nowrap; }
+.stat .v { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.tag { padding: 6px 14px 7px; text-align: center; }
+.tag .v { font-family: var(--display); font-size: 1.1rem; line-height: 1; color: var(--ink); }
+.tag .v b { font-weight: 400; font-size: 1.5em; color: var(--red); }
+
+
+.rival { padding: 6px 12px 7px; text-align: center; }
+.rival .v { font-family: var(--display); font-size: 1.05rem; line-height: 1; color: var(--muted); }
+.rival .v b { font-weight: 400; font-size: 1.3em; color: var(--ink); }
+
+/* ---- controls: felt buttons ---- */
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.chip, .seg button {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--fuzz), var(--card); color: var(--ink);
+  border: 0; border-radius: 12px;
+  box-shadow: 0 2px 0 var(--card-edge), 0 3px 6px var(--shade);
+  padding: 7px 12px; font-size: 0.84rem; cursor: pointer;
+}
+.chip::after, .seg button::after {
+  content: ""; position: absolute; inset: 3px; pointer-events: none;
+  border: 1.5px dashed var(--card-edge); border-radius: 9px;
+}
+.chip:active, .seg button:active { transform: translateY(2px); box-shadow: 0 0 0 var(--card-edge), 0 1px 3px var(--shade); }
+.seg { display: inline-flex; gap: 6px; }
+.seg button[aria-pressed="true"] { background: var(--fuzz), var(--red); color: var(--thread); box-shadow: 0 2px 0 var(--red-deep), 0 3px 6px var(--shade); }
+.seg button[aria-pressed="true"]::after { border-color: var(--thread); opacity: .8; }
+.chip input { accent-color: var(--red); margin: 0; width: 15px; height: 15px; }
+.chip[aria-pressed="false"] { color: var(--muted); }
+.spacer { flex: 1; }
+
+/* a yellow felt strip that shortens as time runs out, with the time sewn on as a little cream label */
+.timer {
+  position: relative; height: 24px; flex: none; border-radius: 12px; overflow: hidden;
+  background: var(--fuzz), var(--card-edge);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, .18);
+}
+.timer .fill {
+  position: absolute; inset: 0; transform-origin: left; border-radius: 12px;
+  background: var(--fuzz), var(--pick);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .18);
+}
+.timer .fill::after {
+  content: ""; position: absolute; inset: 4px 6px; border: 1.5px dashed rgba(58, 42, 34, .35); border-radius: 8px;
+}
+.timer.low .fill { background: var(--fuzz), var(--red); }
+.timer .t {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  padding: 1px 10px; border-radius: 9px;
+  background: #fffaf0; color: #2f221b; box-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  font-family: var(--display); font-size: 0.95rem; line-height: 1.15;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.timer.urgent .t { animation: thump 1s ease-in-out infinite; color: var(--red-deep); }
+@keyframes thump { 50% { transform: translate(-50%, -50%) scale(1.15); } }
+
+/* ---- the green felt tray ---- */
+.stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: start center; touch-action: none; cursor: crosshair; }
+.crate {
+  --cell: 40px; --cw: 40px; --ch: 40px; --frame: 14px;
+  position: relative;
+  isolation: isolate;
+  padding: var(--frame);
+  border-radius: 22px;
+  background:
+    var(--fuzz),
+    linear-gradient(var(--dim), var(--dim)),
+    url("art/felt-board.jpg") center / cover,
+    var(--board);
+  box-shadow: 0 4px 0 var(--board-deep), 0 12px 24px var(--shade);
+}
+.crate::before {
+  /* stitched hem around the tray */
+  content: ""; position: absolute; inset: calc(var(--frame) * .4); pointer-events: none;
+  border: 2px dashed var(--thread); border-radius: 16px; opacity: .75;
+}
+.board { position: relative; }
+
+/* ---- apples ---- */
+.a {
+  position: absolute;
+  left: calc((var(--c) + var(--dx, 0)) * var(--cw));
+  top: calc((var(--r) + var(--dy, 0)) * var(--ch));
+  width: var(--cw); height: var(--ch);
+  display: grid; place-items: center;
+  pointer-events: none;
+}
+.a i {
+  position: relative;
+  width: calc(var(--cell) * .9); height: calc(var(--cell) * .88);
+  border-radius: 50% 50% 47% 47% / 56% 56% 44% 44%;
+  background: var(--fuzz), radial-gradient(circle at 32% 28%, var(--apple-hi) 0 9%, var(--red) 46%, var(--red-deep) 100%);
+  box-shadow: inset 0 0 0 max(1px, calc(var(--cell) * .03)) var(--red-deep), 0 calc(var(--cell) * .05) calc(var(--cell) * .07) var(--shade);
+  display: grid; place-items: center;
+  font-style: normal;
+  transform: rotate(var(--rot, 0deg));
+  transition: transform .09s ease-out, filter .09s;
+}
+.a i::before {
+  content: ""; position: absolute; top: -6%; left: 47%;
+  width: 8%; height: 16%; background: var(--stem); border-radius: 3px; transform: rotate(10deg);
+}
+.a i::after {
+  content: ""; position: absolute; top: -9%; left: 54%;
+  width: 26%; height: 13%; background: var(--leaf); border-radius: 0 100% 0 100%; transform: rotate(-20deg);
+}
+:root.art .a i {
+  background: var(--img) center / contain no-repeat;
+  border-radius: 0; box-shadow: none;
+  filter: drop-shadow(0 calc(var(--cell) * .05) calc(var(--cell) * .04) var(--shade));
+}
+:root.art .a i::before, :root.art .a i::after { display: none; }
+
+/* the number is on a cream felt circle sewn onto the apple: big, dark and bold so it reads at a glance */
+.a b {
+  position: relative;
+  width: 62%; aspect-ratio: 1; margin-top: 12%;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: #fffaf0;
+  box-shadow: 0 max(1px, calc(var(--cell) * .025)) 0 rgba(0, 0, 0, .25);
+  font-family: var(--display); font-weight: 400; font-size: calc(var(--cell) * .46); line-height: 1;
+  color: var(--num);
+  font-variant-numeric: tabular-nums;
+  transform: rotate(calc(var(--rot, 0deg) * -1)); /* keep the digit upright even when the apple leans */
+}
+.a b::after {
+  content: ""; position: absolute; inset: 8%; border-radius: 50%;
+  border: max(1px, calc(var(--cell) * .022)) dashed rgba(58, 42, 34, .35);
+}
+.a.on i { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.1); filter: brightness(1.06) drop-shadow(0 calc(var(--cell) * .12) calc(var(--cell) * .08) var(--shade)); }
+.a.on b { background: var(--pick); }
+.a.gone i { animation: lift .5s cubic-bezier(.3, .1, .6, 1) forwards; }
+.a.gone.done { visibility: hidden; }
+@keyframes lift {
+  0% { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.1); opacity: 1; }
+  30% { transform: rotate(calc(var(--rot, 0deg) - 8deg)) translateY(-30%) scale(1.16); opacity: 1; }
+  100% { transform: rotate(calc(var(--rot, 0deg) + 14deg)) translateY(-150%) scale(.55); opacity: 0; }
+}
+
+/* the drag box is a basting stitch in cream thread, yellow when the apples make 10 */
+.sel {
+  position: absolute; pointer-events: none; box-sizing: border-box;
+  border: 3px dashed var(--thread); border-radius: 16px;
+  background: rgba(255, 250, 240, .1);
+}
+.sel.hit { border-color: var(--pick); border-width: 4px; background: rgba(255, 211, 77, .16); }
+.sel .sum {
+  position: absolute; top: -16px; right: -12px;
+  min-width: 34px; padding: 3px 9px 4px; box-sizing: border-box; border-radius: 12px;
+  background: var(--fuzz), var(--card); box-shadow: 0 2px 0 var(--card-edge), 0 3px 6px var(--shade);
+  font-family: var(--display); font-size: 1.3rem; line-height: 1; text-align: center; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.sel.hit .sum { background: var(--fuzz), var(--red); box-shadow: 0 2px 0 var(--red-deep); color: var(--thread); }
+.sel.over .sum { text-decoration: line-through; color: var(--muted); }
+
+.plus {
+  position: absolute; pointer-events: none; transform: translate(-50%, -50%);
+  font-family: var(--display); font-size: 2rem; color: var(--pick);
+  text-shadow: 0 2px 0 var(--board-deep), 0 0 6px var(--board-deep);
+  animation: rise .9s ease-out forwards;
+}
+@keyframes rise { to { transform: translate(-50%, -170%); opacity: 0; } }
+
+/* ---- results: a stitched felt card ---- */
+.overlay {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: var(--scrim); cursor: default; padding: 8px 0; box-sizing: border-box;
+}
+.sheet {
+  width: min(320px, 100%); max-height: 100%; overflow: auto;
+  display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+  padding: 6px; box-sizing: border-box;
+  animation: drop .35s ease-out;
+}
+@keyframes drop { from { transform: translateY(-14px); opacity: 0; } }
+.receipt {
+  position: relative;
+  background: var(--fuzz), var(--card); color: var(--ink);
+  font-size: 0.92rem;
+  padding: 20px 20px 18px; border-radius: 18px;
+  box-shadow: 0 3px 0 var(--card-edge), 0 10px 20px var(--shade);
+}
+.receipt::after {
+  content: ""; position: absolute; inset: 6px; pointer-events: none;
+  border: 2px dashed var(--card-edge); border-radius: 13px;
+}
+.receipt .shop { font-family: var(--display); font-size: 1.5rem; text-align: center; margin: 0; font-weight: 400; color: var(--red); }
+.receipt .meta { text-align: center; font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+.receipt hr { border: 0; border-top: 2px dotted var(--card-edge); margin: 10px 0; }
+.receipt dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; margin: 0; }
+.receipt dt, .receipt dd { margin: 0; }
+.receipt dt { color: var(--muted); }
+.receipt dd { text-align: right; font-family: var(--display); font-variant-numeric: tabular-nums; }
+.receipt .total dt { font-size: 1.05rem; color: var(--ink); align-self: center; }
+.receipt .total dd { font-size: 2.2rem; line-height: 1; color: var(--red); }
+.receipt .thanks { text-align: center; font-size: 0.78rem; color: var(--muted); margin-top: 10px; }
+.receipt .mark {
+  position: absolute; right: 14px; top: 14px; z-index: 1;
+  font-family: var(--display); font-size: 0.9rem; color: var(--thread);
+  background: var(--fuzz), var(--red); border-radius: 10px; padding: 4px 9px;
+  transform: rotate(8deg); box-shadow: 0 2px 0 var(--red-deep);
+  max-width: 45%; text-align: center; line-height: 1.15;
+}
+.sheet .row { display: flex; gap: 8px; }
+.sheet .row .btn { flex: 1; }
+.btn {
+  position: relative;
+  background: var(--fuzz), var(--card); color: var(--ink);
+  border: 0; border-radius: 14px; box-shadow: 0 3px 0 var(--card-edge), 0 4px 8px var(--shade);
+  padding: 12px 12px; font-family: var(--display); font-size: 1rem; cursor: pointer;
+}
+.btn::after { content: ""; position: absolute; inset: 4px; border: 1.5px dashed var(--card-edge); border-radius: 10px; pointer-events: none; }
+.btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--card-edge), 0 1px 3px var(--shade); }
+.btn.primary { background: var(--fuzz), var(--red); box-shadow: 0 3px 0 var(--red-deep), 0 4px 8px var(--shade); color: var(--thread); }
+.btn.primary::after { border-color: var(--thread); opacity: .75; }
+.copied { font-size: 0.8rem; color: var(--thread); min-height: 1em; text-align: center; white-space: pre-line; }
+
+.lb-result { font-size: 0.92rem; color: var(--thread); text-align: center; }
+.lb-result .muted { display: block; font-size: 0.78rem; opacity: .8; margin-top: 2px; }
+.nick-row { display: flex; gap: 8px; }
+.nick-row input {
+  flex: 1; min-width: 0; border: 0; background: var(--card); color: var(--ink);
+  border-radius: 12px; padding: 10px 12px; font-size: 1rem; -webkit-user-select: text; user-select: text;
+  box-shadow: inset 0 2px 0 var(--card-edge);
+}
+.lb-sheet { width: min(360px, 100%); }
+.lb-list {
+  list-style: none; margin: 0; padding: 0; overflow: auto; touch-action: pan-y;
+  max-height: min(44vh, 400px); min-height: 3em; position: relative; z-index: 1;
+}
+.lb-list li {
+  display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; align-items: baseline;
+  padding: 6px 2px; border-bottom: 2px dotted var(--card-edge); font-variant-numeric: tabular-nums;
+}
+.lb-list li:last-child { border-bottom: 0; }
+.lb-list .n { text-align: right; font-family: var(--display); color: var(--muted); }
+.lb-list li:nth-child(-n+3) .n { color: var(--red); }
+.lb-list .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-list .pts { font-family: var(--display); }
+.lb-list li.me { background: rgba(255, 211, 77, .4); border-radius: 8px; }
+.lb-list .empty { display: block; border: 0; text-align: center; padding: 14px 0; color: var(--muted); }
+.lb-me { font-size: 0.8rem; text-align: center; min-height: 1em; color: var(--muted); }
+.linkish { border: 0; background: none; color: var(--thread); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 2px; }
+
+@media (max-width: 520px) {
+  .brand .sub { font-size: 0.7rem; max-width: 11em; line-height: 1.3; }
+  .brand h1 { font-size: 1.6rem; }
+  .stats { gap: 8px; }
+  .tag, .rival { padding: 5px 9px 6px; }
+  .tag .v, .rival .v { font-size: 0.95rem; }
+  .chip, .seg button { padding: 6px 9px; font-size: 0.76rem; }
+  .spacer { display: none; }
+}
+/* Phone held sideways: too short for stacked bars, so the HUD becomes a left column and the tray takes the rest. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .app {
+    display: grid; grid-template-columns: 236px 1fr; grid-template-rows: auto auto auto 1fr;
+    column-gap: 16px; row-gap: 10px; max-width: none;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+  .bar { grid-column: 1; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .brand .sub { font-size: 0.72rem; }
+  .brand h1 { font-size: 1.6rem; }
+  .stats { gap: 8px; }
+  .chip, .seg button { padding: 6px 9px; font-size: 0.78rem; }
+  .spacer { display: none; }
+  .timer { grid-column: 1; }
+  .stage { grid-column: 2; grid-row: 1 / -1; }
+  .receipt { padding: 14px 16px 12px; }
+  .receipt .total dd { font-size: 1.6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .a.gone i, .plus, .sheet, .timer.urgent .t { animation-duration: .01s; animation-iteration-count: 1; }
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <h1>사과 게임</h1>
+      <span class="sub" id="sub">드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.</span>
+      <div class="controls">
+        <button class="chip" id="sound" aria-pressed="true">소리 켬</button>
+        <button class="chip" id="restart">새 판</button>
+        <button class="chip" id="rank" hidden>순위</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat tag felt"><span class="k">딴 사과</span><span class="v"><b id="score">0</b>개</span></div>
+      <div class="stat rival felt"><span class="k">옆가게 사장님</span><span class="v"><b id="target">–</b>개</span></div>
+    </div>
+  </header>
+
+  <div class="timer" id="timer" role="timer" aria-label="남은 시간"><div class="fill" id="fill"></div><span class="t" id="time">2:00</span></div>
+
+  <main class="stage" id="stage">
+    <div class="crate" id="crate"><div class="board" id="board"></div></div>
+    <div class="overlay" id="over" hidden>
+      <div class="sheet" role="dialog" aria-labelledby="over-title">
+        <div class="receipt">
+          <h2 class="shop">사과상회</h2>
+          <div class="meta" id="over-date"></div>
+          <div class="mark" id="over-title">시간 종료</div>
+          <hr>
+          <dl>
+            <dt>품목</dt><dd>사과 한 상자 (170개)</dd>
+          </dl>
+          <hr>
+          <dl class="total">
+            <dt>딴 사과</dt><dd id="over-score">0개</dd>
+          </dl>
+          <hr>
+          <dl>
+            <dt>옆가게 사장님</dt><dd id="over-est">0개</dd>
+            <dt>내 최고 기록</dt><dd id="over-best">0개</dd>
+          </dl>
+          <div class="thanks">또 오세요</div>
+        </div>
+        <div class="row">
+          <button class="btn" id="again-same">같은 판 다시</button>
+          <button class="btn primary" id="again-new">새 판</button>
+        </div>
+        <div class="lb-result" id="lb-result" hidden></div>
+        <form class="nick-row" id="nick-form" hidden>
+          <input id="nick" maxlength="12" placeholder="닉네임" autocomplete="nickname" enterkeyhint="done" aria-label="닉네임">
+          <button class="btn primary" type="submit">순위에 올리기</button>
+        </form>
+        <button class="btn" id="copy">결과 복사</button>
+        <div class="copied" id="copied" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="overlay" id="lb" hidden>
+      <div class="sheet lb-sheet" role="dialog" aria-labelledby="lb-title">
+        <div class="receipt">
+          <h2 class="shop" id="lb-title">오늘의 순위</h2>
+          <hr>
+          <ol class="lb-list" id="lb-list"></ol>
+          <hr>
+          <div class="lb-me" id="lb-me"></div>
+        </div>
+        <div class="row">
+          <button class="btn" id="lb-close">닫기</button>
+          <button class="btn primary" id="lb-play">한 판 하기</button>
+        </div>
+        <button class="linkish" id="lb-rename">닉네임 바꾸기</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>window.ONESTORE = true; // no offline service worker inside the ONE store app</script>
+<script type="module" src="onestore.js"></script>
+<script src="ads.js"></script>
+<script>
+// one board size only: the original Fruit Box crate, 17 by 10 (the server still files it under 'classic')
+const MODES = {
+  classic: { r: 10, c: 17, label: '17×10' }, // canonical shape: wide
+};
+const TIME = 120;
+
+const $ = id => document.getElementById(id);
+const stage = $('stage'), crate = $('crate'), board = $('board');
+
+// ---------- random + board generation ----------
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+// The ranking day turns over at midnight Korea time for everyone, wherever their phone is.
+function todayKey() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(new Date()).map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+function randomGrid(R, C, rng) {
+  const g = new Array(R * C);
+  let s = 0;
+  for (let i = 0; i < g.length; i++) { g[i] = 1 + Math.floor(rng() * 9); s += g[i]; }
+  // keep the total a multiple of 10, so clearing everything is at least arithmetically possible
+  for (let k = 0; s % 10 && k < 1000; k++) {
+    const i = Math.floor(rng() * g.length);
+    if (g[i] < 9) { g[i]++; s++; }
+  }
+  return g;
+}
+
+// All tight rectangles (every edge row/col holds an apple) whose apples sum to 10.
+function findMoves(g, R, C) {
+  const W = C + 1;
+  const P = new Int32Array((R + 1) * W), N = new Int32Array((R + 1) * W);
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const v = g[r * C + c], i = (r + 1) * W + c + 1;
+    P[i] = v + P[i - 1] + P[i - W] - P[i - W - 1];
+    N[i] = (v > 0) + N[i - 1] + N[i - W] - N[i - W - 1];
+  }
+  const sum = (A, r1, c1, r2, c2) => A[(r2 + 1) * W + c2 + 1] - A[r1 * W + c2 + 1] - A[(r2 + 1) * W + c1] + A[r1 * W + c1];
+  const out = [];
+  for (let r1 = 0; r1 < R; r1++) for (let c1 = 0; c1 < C; c1++) {
+    for (let r2 = r1; r2 < R; r2++) {
+      if (sum(P, r1, c1, r2, c1) > 10) break;
+      for (let c2 = c1; c2 < C; c2++) {
+        const s = sum(P, r1, c1, r2, c2);
+        if (s > 10) break;
+        if (s < 10) continue;
+        if (!sum(N, r1, c1, r1, c2) || !sum(N, r2, c1, r2, c2) || !sum(N, r1, c1, r2, c1) || !sum(N, r1, c2, r2, c2)) continue;
+        out.push({ r1, c1, r2, c2, n: sum(N, r1, c1, r2, c2), area: (r2 - r1 + 1) * (c2 - c1 + 1) });
+      }
+    }
+  }
+  return out;
+}
+
+function clearRect(g, C, m) {
+  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) g[r * C + c] = 0;
+}
+
+// Greedy player: prefer small rectangles (they disturb the board least), with a little noise.
+function greedy(g0, R, C, rng, noise) {
+  const g = g0.slice();
+  let score = 0;
+  for (;;) {
+    const ms = findMoves(g, R, C);
+    if (!ms.length) return score;
+    let best = null, bk = Infinity;
+    for (const m of ms) {
+      const k = m.area + m.n * 0.5 + rng() * noise;
+      if (k < bk) { bk = k; best = m; }
+    }
+    clearRect(g, C, best);
+    score += best.n;
+  }
+}
+function estimate(g, R, C, rng) {
+  let best = greedy(g, R, C, rng, 0);
+  for (let i = 0; i < 5; i++) best = Math.max(best, greedy(g, R, C, rng, [1, 2, 4, 8][i % 4]));
+  return best;
+}
+
+// Generate boards until the computer clears at least 80% of the apples; keep the best one seen.
+function makeBoard(mode) {
+  const { r: R, c: C } = MODES[mode];
+  const seed = (Math.random() * 2 ** 32) >>> 0;
+  const rng = mulberry32(seed);
+  let pick = null;
+  for (let t = 0; t < 8; t++) {
+    const g = randomGrid(R, C, rng);
+    const est = estimate(g, R, C, rng);
+    if (!pick || est > pick.est) pick = { g, est };
+    if (est >= R * C * 0.8) break;
+  }
+  return { R, C, g: pick.g, est: pick.est };
+}
+
+function transpose(g, R, C) {
+  const t = new Array(R * C);
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) t[c * R + r] = g[r * C + c];
+  return t;
+}
+
+// ---------- state ----------
+let S = null;
+let prefs = { mode: 'classic', sound: true };
+let els = [];
+let drag = null;
+let raf = 0, lastTick = 0;
+
+function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function load(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+const bestKey = m => 'apple-best-' + m;
+
+// Show the board tall on portrait screens and wide on landscape ones. Transposing keeps every rectangle a rectangle.
+function orient(b) {
+  const r = stage.getBoundingClientRect();
+  const wantTall = r.height >= r.width;
+  if ((b.R >= b.C) === wantTall) return { R: b.R, C: b.C, g: b.g.slice() };
+  return { R: b.C, C: b.R, g: transpose(b.g, b.R, b.C) };
+}
+
+function newGame(sameBoard) {
+  stopClock();
+  const day = sameBoard && S ? S.day : todayKey();
+  const base = sameBoard && S ? S.base : makeBoard(prefs.mode);
+  const o = orient(base);
+  S = {
+    base, R: o.R, C: o.C, g: o.g,
+    est: base.est, total: o.g.length,
+    score: 0, time: TIME, started: false, over: false,
+    mode: prefs.mode, day,
+  };
+  render();
+}
+
+// ---------- rendering ----------
+function render() {
+  board.textContent = '';
+  els = [];
+  for (let r = 0; r < S.R; r++) for (let c = 0; c < S.C; c++) {
+    const v = S.g[r * S.C + c];
+    const d = document.createElement('div');
+    d.className = 'a';
+    d.style.setProperty('--r', r);
+    d.style.setProperty('--c', c);
+    // apples sit a little crooked in a real crate; the same cell always gets the same look
+    const h = hashStr(r + ':' + c + ':' + S.total);
+    d.dataset.h = h;
+    d.style.setProperty('--rot', (h % 25) - 12 + 'deg');
+    d.style.setProperty('--dx', ((h >>> 5) % 9 - 4) / 100);
+    d.style.setProperty('--dy', ((h >>> 9) % 9 - 4) / 100);
+    const i = document.createElement('i');
+    const b = document.createElement('b');
+    b.textContent = v;
+    i.appendChild(b);
+    d.appendChild(i);
+    if (!v) d.classList.add('gone', 'done');
+    board.appendChild(d);
+    els.push(d);
+  }
+  const sel = document.createElement('div');
+  sel.className = 'sel'; sel.id = 'sel'; sel.hidden = true;
+  sel.innerHTML = '<span class="sum" id="sum"></span>';
+  board.appendChild(sel);
+  $('over').hidden = !S.over;
+  paintApples();
+  layout();
+  hud();
+}
+
+// ---------- art (optional) ----------
+// Drop felt-apple-1..3.png into www/art/ and they replace the drawn apples; see www/art/PROMPTS.md.
+const appleArt = [];
+for (const n of [1, 2, 3]) {
+  const im = new Image();
+  im.onload = () => {
+    appleArt.push(`url("art/felt-apple-${n}.png")`);
+    appleArt.sort();
+    document.documentElement.classList.add('art');
+    paintApples();
+  };
+  im.src = `art/felt-apple-${n}.png`;
+}
+function paintApples() {
+  if (!appleArt.length) return;
+  for (const el of els) el.style.setProperty('--img', appleArt[(el.dataset.h >>> 13) % appleArt.length]);
+}
+
+function layout() {
+  if (!S) return;
+  const r = stage.getBoundingClientRect();
+  const frame = Math.round(Math.max(8, Math.min(18, Math.min(r.width, r.height) * 0.028)));
+  const fitW = (r.width - frame * 2) / S.C, fitH = (r.height - frame * 2) / S.R;
+  const cell = Math.max(18, Math.min(84, Math.floor(Math.min(fitW, fitH))));
+  // stretch the cells up to 1.4x along the roomy side so the tray fills the screen instead of
+  // leaving bare strips at the sides; apples keep their size and just spread out a little
+  const cw = Math.max(cell, Math.floor(Math.min(fitW, cell * 1.4)));
+  const ch = Math.max(cell, Math.floor(Math.min(fitH, cell * 1.4)));
+  crate.style.setProperty('--frame', frame + 'px');
+  // apples may grow a little past a short cell; neighbours just nestle closer, like in a real crate
+  crate.style.setProperty('--cell', Math.floor(Math.min(cw, ch * 1.12)) + 'px');
+  crate.style.setProperty('--cw', cw + 'px');
+  crate.style.setProperty('--ch', ch + 'px');
+  board.style.width = cw * S.C + 'px';
+  board.style.height = ch * S.R + 'px';
+}
+
+const clock = t => { const s = Math.ceil(Math.max(0, t)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+function hud() {
+  $('score').textContent = S.score;
+  $('time').textContent = clock(S.time);
+  $('target').textContent = S.est;
+  $('fill').style.transform = `scaleX(${Math.max(0, S.time) / TIME})`;
+  $('timer').classList.toggle('low', S.time <= 20);
+  $('timer').classList.toggle('urgent', S.started && !S.over && S.time <= 10);
+  $('sub').textContent = !lbOn() ? '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.'
+    : rankedToday(S.mode) ? '오늘 순위전은 끝났어요. 지금은 연습이에요.'
+    : '이번 판이 오늘의 순위전이에요.';
+  $('sound').setAttribute('aria-pressed', prefs.sound);
+  $('sound').textContent = prefs.sound ? '소리 켬' : '소리 끔';
+}
+
+// ---------- clock ----------
+function startClock() {
+  if (S.started || S.over) return;
+  S.started = true;
+  lastTick = performance.now();
+  raf = requestAnimationFrame(tick);
+}
+function stopClock() { cancelAnimationFrame(raf); }
+function tick(now) {
+  const before = Math.ceil(S.time);
+  S.time -= (now - lastTick) / 1000;
+  lastTick = now;
+  if (Math.ceil(S.time) < before && before <= 10 && S.time > 0) play('tick', 0.6);
+  if (S.time <= 0) { S.time = 0; hud(); return end('time'); }
+  hud();
+  raf = requestAnimationFrame(tick);
+}
+
+// ---------- input ----------
+function cellAt(e) {
+  const r = board.getBoundingClientRect();
+  const cw = r.width / S.C, ch = r.height / S.R;
+  return {
+    r: Math.min(S.R - 1, Math.max(0, Math.floor((e.clientY - r.top) / ch))),
+    c: Math.min(S.C - 1, Math.max(0, Math.floor((e.clientX - r.left) / cw))),
+  };
+}
+function rectOf(d) {
+  return { r1: Math.min(d.a.r, d.b.r), r2: Math.max(d.a.r, d.b.r), c1: Math.min(d.a.c, d.b.c), c2: Math.max(d.a.c, d.b.c) };
+}
+function measure(m) {
+  let s = 0, n = 0;
+  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) {
+    const v = S.g[r * S.C + c];
+    if (v) { s += v; n++; }
+  }
+  return { s, n };
+}
+
+function showSel() {
+  const m = rectOf(drag), { s, n } = measure(m);
+  const sel = $('sel');
+  sel.hidden = false;
+  sel.style.left = `calc(${m.c1} * var(--cw))`;
+  sel.style.top = `calc(${m.r1} * var(--ch))`;
+  sel.style.width = `calc(${m.c2 - m.c1 + 1} * var(--cw))`;
+  sel.style.height = `calc(${m.r2 - m.r1 + 1} * var(--ch))`;
+  sel.classList.toggle('hit', s === 10);
+  sel.classList.toggle('over', s > 10);
+  $('sum').textContent = s;
+  for (let r = 0; r < S.R; r++) for (let c = 0; c < S.C; c++) {
+    const inside = r >= m.r1 && r <= m.r2 && c >= m.c1 && c <= m.c2 && S.g[r * S.C + c] > 0;
+    els[r * S.C + c].classList.toggle('on', inside);
+  }
+  return { m, s, n };
+}
+function clearSel() {
+  $('sel').hidden = true;
+  for (const el of els) el.classList.remove('on');
+}
+
+stage.addEventListener('pointerdown', e => {
+  if (!S || S.over || e.target.closest('.overlay')) return;
+  e.preventDefault();
+  stage.setPointerCapture(e.pointerId);
+  unlockAudio();
+  startClock();
+  const p = cellAt(e);
+  drag = { id: e.pointerId, a: p, b: p };
+  showSel();
+});
+stage.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const p = cellAt(e);
+  if (p.r === drag.b.r && p.c === drag.b.c) return;
+  drag.b = p;
+  showSel();
+});
+function release(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const { m, s, n } = showSel();
+  drag = null;
+  clearSel();
+  if (S.over) return;
+  if (s === 10) harvest(m, n);
+  else if (n >= 2) play('miss', 0.5);
+}
+stage.addEventListener('pointerup', release);
+stage.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; clearSel(); } });
+
+function harvest(m, n) {
+  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) {
+    const i = r * S.C + c;
+    if (!S.g[i]) continue;
+    S.g[i] = 0;
+    const el = els[i];
+    el.classList.add('gone');
+    el.firstChild.addEventListener('animationend', () => el.classList.add('done'), { once: true });
+  }
+  S.score += n;
+  floatPlus(m, n);
+  if (n >= 3) play('harvest-big', 0.9);
+  else play('harvest-' + (1 + Math.floor(Math.random() * 3)), 0.9);
+  hud();
+  if (!findMoves(S.g, S.R, S.C).length) end(S.g.some(v => v) ? 'stuck' : 'all');
+}
+
+function floatPlus(m, n) {
+  const p = document.createElement('div');
+  p.className = 'plus';
+  p.textContent = '+' + n;
+  p.style.left = `calc(${(m.c1 + m.c2 + 1) / 2} * var(--cw))`;
+  p.style.top = `calc(${(m.r1 + m.r2 + 1) / 2} * var(--ch))`;
+  board.appendChild(p);
+  p.addEventListener('animationend', () => p.remove());
+}
+
+// ---------- end ----------
+function end(reason) {
+  stopClock();
+  S.over = true;
+  const best = Math.max(load(bestKey(S.mode), 0), S.score);
+  store(bestKey(S.mode), best);
+  $('over-title').textContent = { time: '시간 종료', stuck: '더 묶을 사과가 없어요', all: '완판!' }[reason];
+  $('over-score').textContent = S.score + '개';
+  const now = new Date();
+  // the first game finished each day is the ranked one; later games are practice,
+  // so playing more does not buy more chances at the board
+  const ranked = lbOn() && !S.ranked && !rankedToday(S.mode) && !S.restored;
+  if (ranked) { S.ranked = true; markRanked(S.day, S.mode, S.score); }
+  $('over-date').textContent = `${S.day} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} · ${S.ranked ? '오늘의 순위전' : '연습'}`;
+  $('timer').classList.remove('urgent');
+  play('bell', 0.8);
+  $('over-est').textContent = S.est + '개';
+  $('over-best').textContent = best + '개';
+  $('copied').textContent = '';
+  $('over').hidden = false;
+  $('again-new').focus();
+  $('nick-form').hidden = true;
+  if (ranked) lbAfterGame();
+  else if (lbOn()) showLbResult('연습 판이라 순위에는 안 올라가요. <span class="muted">순위는 하루 첫 판 기록으로 정해져요.</span>' +
+    '<button class="linkish" type="button" data-open-lb>오늘 순위 보기</button>');
+  else $('lb-result').hidden = true;
+  hud();
+  // the site's feed player embeds games in an iframe and listens for these
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'mobs:score', score: S.score }, '*');
+    window.parent.postMessage({ type: 'mobs:end' }, '*');
+  }
+}
+
+function shareText() {
+  const ratio = Math.round((S.score / S.total) * 10);
+  return `사과 게임\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개 (옆가게 사장님 ${S.est}개)`;
+}
+$('copy').addEventListener('click', () => {
+  const t = shareText();
+  const done = () => { $('copied').textContent = '결과를 복사했어요.'; };
+  try {
+    navigator.clipboard.writeText(t).then(done, () => { $('copied').textContent = t; });
+  } catch (e) { $('copied').textContent = t; }
+});
+// the Android app may show an interstitial between games (www/ads.js); elsewhere this starts the game at once
+function nextGame(sameBoard) {
+  const adBreak = window.adBreak || ((finished, go) => go());
+  adBreak(!!(S && S.over), () => newGame(sameBoard));
+}
+$('again-new').addEventListener('click', () => nextGame(false));
+$('again-same').addEventListener('click', () => nextGame(true));
+$('restart').addEventListener('click', () => nextGame(false));
+
+$('sound').addEventListener('click', () => {
+  prefs.sound = !prefs.sound;
+  store('apple-prefs', prefs);
+  unlockAudio();
+  hud();
+});
+
+// ---------- leaderboard (Supabase) ----------
+// From the Supabase project's Settings → API. The anon key is meant to be public:
+// the table is read-only for it, and scores only go in through submit_score() (supabase/schema.sql).
+const LB = { url: 'https://uomtujakthnwjcuqegvk.supabase.co', key: 'sb_publishable_jo_fDlw76PjqpwEZn3lqcA_k3v2Wi8m' };
+const lbOn = () => !!(LB.url && LB.key);
+let lbMode = 'classic';
+
+async function lbFetch(path, body) {
+  const res = await fetch(LB.url.replace(/\/+$/, '') + '/rest/v1/' + path, {
+    method: body ? 'POST' : 'GET',
+    headers: {
+      apikey: LB.key, 'Content-Type': 'application/json',
+      // a new publishable key (sb_...) is not a JWT and is refused in Authorization
+      ...(LB.key.startsWith('sb_') ? {} : { Authorization: 'Bearer ' + LB.key }),
+    },
+    body: body && JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(res.status + ' ' + (await res.text()).slice(0, 200));
+  return res.json();
+}
+
+function playerId() {
+  let id = load('apple-player', null);
+  if (!id) {
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    const h = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+    id = `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+    store('apple-player', id);
+  }
+  return id;
+}
+const nickname = () => load('apple-nick', '');
+// today's ranked score per mode; the first finished game of the day goes here and to the server
+const rankedToday = mode => load('apple-daily-best', {})[todayKey() + '|' + mode] != null;
+function markRanked(day, mode, score) {
+  const db = load('apple-daily-best', {});
+  db[day + '|' + mode] = score;
+  store('apple-daily-best', db);
+  queueScore(day, mode, score); // sent now if there is a nickname, otherwise once one is set
+}
+const dayLabel = d => `${+d.slice(5, 7)}월 ${+d.slice(8)}일`;
+
+// Scores that could not be sent (offline) wait here, best per day and mode, and go out on the next chance.
+function queueScore(day, mode, score) {
+  const q = load('apple-pending', {}), k = day + '|' + mode;
+  q[k] = Math.max(q[k] || 0, score);
+  store('apple-pending', q);
+}
+async function submitScore(day, mode, score) {
+  const [r] = await lbFetch('rpc/apple_submit_score', { p_day: day, p_mode: mode, p_player: playerId(), p_nickname: nickname(), p_score: score });
+  const q = load('apple-pending', {});
+  delete q[day + '|' + mode];
+  store('apple-pending', q);
+  return r;
+}
+async function flushPending() {
+  if (!lbOn() || !nickname()) return;
+  const q = load('apple-pending', {}), today = todayKey();
+  for (const k of Object.keys(q)) {
+    const [day, mode] = k.split('|');
+    if (day < today && Date.parse(today) - Date.parse(day) > 864e5) { delete q[k]; store('apple-pending', q); continue; }
+    try { await submitScore(day, mode, q[k]); } catch (e) { return; }
+  }
+}
+
+function showLbResult(html) { const el = $('lb-result'); el.hidden = false; el.innerHTML = html; }
+async function lbAfterGame() {
+  const game = { day: S.day, mode: S.mode, score: S.score };
+  $('nick-form').hidden = true;
+  if (!lbOn()) { $('lb-result').hidden = true; return; }
+  if (!nickname()) {
+    showLbResult('오늘 순위에 올릴 닉네임을 정해요.');
+    $('nick-form').hidden = false;
+    $('nick-form').onsubmit = e => {
+      e.preventDefault();
+      const n = $('nick').value.trim();
+      if (!n) return $('nick').focus();
+      store('apple-nick', n);
+      $('nick-form').hidden = true;
+      sendGame(game);
+    };
+    return;
+  }
+  sendGame(game);
+}
+async function sendGame(g) {
+  showLbResult('순위에 올리는 중…');
+  try {
+    const r = await submitScore(g.day, g.mode, g.score);
+    showLbResult(`오늘 ${r.rank}위 <span class="muted">${r.total}명 중 · 오늘 내 최고 ${r.best}개</span>` +
+      '<button class="linkish" type="button" data-open-lb>전체 순위 보기</button>');
+  } catch (e) {
+    queueScore(g.day, g.mode, g.score);
+    showLbResult('지금은 순위에 못 올렸어요. <span class="muted">연결되면 자동으로 올릴게요.</span>');
+  }
+}
+
+async function openBoard(mode) {
+  lbMode = mode || lbMode;
+  const day = todayKey();
+  $('lb').hidden = false;
+  $('lb-title').textContent = `${dayLabel(day)} 오늘의 순위`;
+  const list = $('lb-list');
+  list.innerHTML = '<li class="empty">불러오는 중…</li>';
+  $('lb-me').textContent = '';
+  await flushPending();
+  try {
+    const rows = await lbFetch(`apple_daily_scores?select=nickname,score,plays&day=eq.${day}&mode=eq.${lbMode}&order=score.desc,updated_at.asc&limit=100`);
+    const mine = nickname() ? await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() }) : [];
+    const me = mine[0];
+    list.textContent = '';
+    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>오늘 첫 판을 끝내고 닉네임을 정하면 여기에 올라가요.</li>';
+    rows.forEach((r, i) => {
+      const li = document.createElement('li');
+      if (me && me.rank === i + 1) li.className = 'me';
+      li.innerHTML = '<span class="n"></span><span class="who"></span><span class="pts"></span>';
+      li.children[0].textContent = i + 1;
+      li.children[1].textContent = r.nickname;
+      li.children[2].textContent = r.score + '개';
+      list.appendChild(li);
+    });
+    $('lb-me').textContent = me ? `내 순위 ${me.rank}위 / ${me.total}명 · 최고 ${me.best}개` : (nickname() ? '오늘 아직 기록이 없어요.' : '');
+    list.querySelector('.me')?.scrollIntoView({ block: 'nearest' });
+  } catch (e) {
+    list.innerHTML = '<li class="empty">순위를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</li>';
+  }
+}
+
+$('rank').hidden = !lbOn();
+$('rank').addEventListener('click', () => openBoard(prefs.mode));
+$('lb-result').addEventListener('click', e => {
+  if (e.target.closest('[data-open-lb]')) openBoard(S.mode);
+});
+$('lb-close').addEventListener('click', () => { $('lb').hidden = true; });
+$('lb-play').addEventListener('click', () => {
+  $('lb').hidden = true;
+  nextGame(false);
+});
+$('lb-rename').addEventListener('click', () => {
+  const n = prompt('새 닉네임 (12자까지)', nickname());
+  if (n == null || !n.trim()) return;
+  store('apple-nick', n.trim().slice(0, 12));
+  const q = load('apple-pending', {});
+  const best = load('apple-daily-best', {});
+  // re-send today's ranked score so the new name shows up on the board
+  for (const m of Object.keys(MODES)) { const k = todayKey() + '|' + m; if (best[k] != null) q[k] = Math.max(q[k] || 0, best[k]); }
+  store('apple-pending', q);
+  openBoard();
+});
+
+// ---------- sound ----------
+// Recorded effects made with ElevenLabs (www/sfx). They load after the first touch, when audio is allowed.
+const SFX = ['harvest-1', 'harvest-2', 'harvest-3', 'harvest-big', 'miss', 'tick', 'bell'];
+const sfx = {};
+let actx = null;
+function unlockAudio() {
+  if (actx || !prefs.sound) return;
+  try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  for (const name of SFX) {
+    fetch(`sfx/${name}.mp3`)
+      .then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+      .then(buf => new Promise((ok, no) => actx.decodeAudioData(buf, ok, no)))
+      .then(audio => { sfx[name] = audio; }, () => {});
+  }
+}
+let silent = false; // the phone's silent switch, when a host app reports it
+function play(name, volume) {
+  if (!prefs.sound || silent || !actx || !sfx[name]) return;
+  if (actx.state === 'suspended') actx.resume();
+  const src = actx.createBufferSource(), g = actx.createGain();
+  src.buffer = sfx[name];
+  src.playbackRate.value = 0.95 + Math.random() * 0.1; // keep repeats from sounding identical
+  g.gain.value = volume;
+  src.connect(g).connect(actx.destination);
+  src.start();
+}
+
+// ---------- host app interface (www/onestore.js) ----------
+window.AppleGame = {
+  pause() {
+    if (S && S.started && !S.over && !S.paused) { stopClock(); S.paused = true; }
+    if (actx) actx.suspend().catch(() => {});
+  },
+  resume() {
+    if (S && S.paused) { S.paused = false; lastTick = performance.now(); raf = requestAnimationFrame(tick); }
+    if (actx) actx.resume().catch(() => {});
+  },
+  // back button: close an open sheet and say so; false lets the app ask whether to quit
+  back() {
+    if (!$('lb').hidden) { $('lb').hidden = true; return true; }
+    return false;
+  },
+  setSilent(on) { silent = !!on; },
+};
+
+// ---------- boot ----------
+addEventListener('resize', layout);
+
+window.claude?.hot?.snapshot?.(() => ({ prefs, S: S && { ...S, started: false } }));
+
+function start(data) {
+  prefs = { ...prefs, ...load('apple-prefs', {}), ...(data && data.prefs) };
+  delete prefs.daily;
+  prefs.mode = 'classic';
+  if (data && data.S) {
+    S = { ...data.S, restored: data.S.over }; // resumes paused; the clock restarts on the next drag
+    render();
+    if (S.over) end(S.score === S.total ? 'all' : 'time');
+  } else {
+    newGame(false);
+  }
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+flushPending();
+
+// Installable / offline when served from its own site (GitHub Pages, the Android app). Skipped inside previews.
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && window.top === window && !window.ONESTORE) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>

@@ -88,8 +88,8 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-top: max(12px, env(safe-area-inset-top, 0px));
-  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  padding-top: max(12px, var(--safe-top, env(safe-area-inset-top, 0px)));
+  padding-bottom: max(12px, var(--safe-bottom, env(safe-area-inset-bottom, 0px)));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   box-sizing: border-box;
@@ -474,6 +474,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   </main>
 </div>
 
+<script src="ads.js"></script>
 <script>
 // one board size only: the original Fruit Box crate, 17 by 10 (the server still files it under 'classic')
 const MODES = {
@@ -873,9 +874,14 @@ $('copy').addEventListener('click', () => {
     navigator.clipboard.writeText(t).then(done, () => { $('copied').textContent = t; });
   } catch (e) { $('copied').textContent = t; }
 });
-$('again-new').addEventListener('click', () => newGame(false));
-$('again-same').addEventListener('click', () => newGame(true));
-$('restart').addEventListener('click', () => newGame(false));
+// the Android app may show an interstitial between games (www/ads.js); elsewhere this starts the game at once
+function nextGame(sameBoard) {
+  const adBreak = window.adBreak || ((finished, go) => go());
+  adBreak(!!(S && S.over), () => newGame(sameBoard));
+}
+$('again-new').addEventListener('click', () => nextGame(false));
+$('again-same').addEventListener('click', () => nextGame(true));
+$('restart').addEventListener('click', () => nextGame(false));
 
 $('sound').addEventListener('click', () => {
   prefs.sound = !prefs.sound;
@@ -1021,7 +1027,7 @@ $('lb-result').addEventListener('click', e => {
 $('lb-close').addEventListener('click', () => { $('lb').hidden = true; });
 $('lb-play').addEventListener('click', () => {
   $('lb').hidden = true;
-  newGame(false);
+  nextGame(false);
 });
 $('lb-rename').addEventListener('click', () => {
   const n = prompt('새 닉네임 (12자까지)', nickname());
@@ -1050,8 +1056,9 @@ function unlockAudio() {
       .then(audio => { sfx[name] = audio; }, () => {});
   }
 }
+let silent = false; // the phone's silent switch, when a host app reports it
 function play(name, volume) {
-  if (!prefs.sound || !actx || !sfx[name]) return;
+  if (!prefs.sound || silent || !actx || !sfx[name]) return;
   if (actx.state === 'suspended') actx.resume();
   const src = actx.createBufferSource(), g = actx.createGain();
   src.buffer = sfx[name];
@@ -1060,6 +1067,24 @@ function play(name, volume) {
   src.connect(g).connect(actx.destination);
   src.start();
 }
+
+// ---------- host app interface (www/onestore.js) ----------
+window.AppleGame = {
+  pause() {
+    if (S && S.started && !S.over && !S.paused) { stopClock(); S.paused = true; }
+    if (actx) actx.suspend().catch(() => {});
+  },
+  resume() {
+    if (S && S.paused) { S.paused = false; lastTick = performance.now(); raf = requestAnimationFrame(tick); }
+    if (actx) actx.resume().catch(() => {});
+  },
+  // back button: close an open sheet and say so; false lets the app ask whether to quit
+  back() {
+    if (!$('lb').hidden) { $('lb').hidden = true; return true; }
+    return false;
+  },
+  setSilent(on) { silent = !!on; },
+};
 
 // ---------- boot ----------
 addEventListener('resize', layout);
@@ -1082,7 +1107,7 @@ window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude
 flushPending();
 
 // Installable / offline when served from its own site (GitHub Pages, the Android app). Skipped inside previews.
-if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && window.top === window) {
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && window.top === window && !window.ONESTORE) {
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
