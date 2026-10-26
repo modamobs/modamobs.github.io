@@ -3,6 +3,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>사과 게임</title>
+<meta name="description" content="합이 10이 되게 사과를 묶어 따는 2분 퍼즐">
+<meta name="theme-color" content="#eef2df" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131b12" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="사과 게임">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,6 +64,7 @@
 
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
 body {
   background: var(--bg);
   color: var(--ink);
@@ -71,7 +81,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outl
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-block: 12px;
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   box-sizing: border-box;
@@ -205,12 +216,62 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outl
 .btn.primary { background: var(--apple); border-color: var(--apple); color: var(--on-apple); }
 .copied { font-size: 0.8rem; color: var(--ok); min-height: 1em; }
 
+.lb-result { font-size: 0.95rem; font-weight: 800; }
+.lb-result .muted { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.nick-row { display: flex; gap: 8px; }
+.nick-row input {
+  flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 12px;
+  padding: 10px 12px; font-size: 1rem; -webkit-user-select: text; user-select: text;
+}
+.lb-card { width: min(380px, 100%); max-height: 100%; }
+.lb-seg { align-self: center; }
+.lb-list {
+  list-style: none; margin: 0; padding: 0; overflow: auto; touch-action: pan-y;
+  max-height: min(48vh, 420px); min-height: 3em; text-align: left;
+}
+.lb-list li {
+  display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; align-items: baseline;
+  padding: 7px 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums;
+}
+.lb-list li:last-child { border-bottom: 0; }
+.lb-list .n { font-family: var(--display); color: var(--muted); text-align: right; }
+.lb-list li:nth-child(-n+3) .n { color: var(--apple); }
+.lb-list .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-list .pts { font-weight: 800; }
+.lb-list li.me { background: var(--pick-wash); border-radius: 8px; }
+.lb-list .empty { display: block; border: 0; color: var(--muted); text-align: center; padding: 16px 0; }
+.lb-me { font-size: 0.85rem; color: var(--muted); min-height: 1em; }
+.linkish { border: 0; background: none; color: var(--muted); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 2px; }
+
 @media (max-width: 520px) {
   .brand .sub { display: none; }
   .brand h1 { font-size: 1.4rem; }
   .stats { gap: 14px; }
   .stat .v { font-size: 1.35rem; }
   .seg button, .chip { padding: 6px 10px; font-size: 0.8rem; }
+  .spacer { display: none; }
+}
+/* Phone held sideways: too short for stacked bars, so the HUD becomes a left column and the board takes the rest. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .app {
+    display: grid; grid-template-columns: 232px 1fr; grid-template-rows: auto auto auto 1fr;
+    column-gap: 16px; row-gap: 10px; max-width: none;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+  .bar { grid-column: 1; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .brand .sub { display: none; }
+  .brand h1 { font-size: 1.4rem; }
+  .stats { gap: 14px; }
+  .stat { align-items: flex-start; }
+  .stat .v { font-size: 1.35rem; }
+  .controls { grid-column: 1; gap: 6px; }
+  .seg button, .chip { padding: 6px 10px; font-size: 0.8rem; }
+  .spacer { display: none; }
+  .timer { grid-column: 1; }
+  .stage { grid-column: 2; grid-row: 1 / -1; }
+  .card { padding: 14px 18px 12px; gap: 8px; max-height: 100%; overflow: auto; }
+  .card .big { font-size: 2.4rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .a.gone i, .a.hint i, .plus { animation-duration: .01s; }
@@ -240,6 +301,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outl
     <button class="chip" id="hint">힌트 −5초</button>
     <button class="chip" id="sound" aria-pressed="true">소리 켬</button>
     <button class="chip" id="restart">새 판</button>
+    <button class="chip" id="rank" hidden>순위</button>
   </div>
 
   <div class="timer" id="timer"><div class="fill" id="fill"></div></div>
@@ -258,8 +320,29 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outl
           <button class="btn" id="again-same">같은 판 다시</button>
           <button class="btn primary" id="again-new">새 판</button>
         </div>
+        <div class="lb-result" id="lb-result" hidden></div>
+        <form class="nick-row" id="nick-form" hidden>
+          <input id="nick" maxlength="12" placeholder="닉네임" autocomplete="nickname" enterkeyhint="done" aria-label="닉네임">
+          <button class="btn primary" type="submit">순위에 올리기</button>
+        </form>
         <button class="btn" id="copy">결과 복사</button>
         <div class="copied" id="copied" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="overlay" id="lb" hidden>
+      <div class="card lb-card" role="dialog" aria-labelledby="lb-title">
+        <h2 id="lb-title">오늘의 순위</h2>
+        <div class="seg lb-seg" role="group" aria-label="순위 모드">
+          <button data-lb="easy" aria-pressed="true">쉬움</button>
+          <button data-lb="classic" aria-pressed="false">클래식</button>
+        </div>
+        <ol class="lb-list" id="lb-list"></ol>
+        <div class="lb-me" id="lb-me"></div>
+        <div class="row">
+          <button class="btn" id="lb-close">닫기</button>
+          <button class="btn primary" id="lb-play">오늘의 판 하기</button>
+        </div>
+        <button class="linkish" id="lb-rename">닉네임 바꾸기</button>
       </div>
     </div>
   </main>
@@ -290,9 +373,11 @@ function hashStr(s) {
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
+// The daily board turns over at midnight Korea time for everyone, wherever their phone is.
 function todayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(new Date()).map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
 }
 
 function randomGrid(R, C, rng) {
@@ -360,9 +445,9 @@ function estimate(g, R, C, rng) {
 }
 
 // Generate boards until the computer clears at least 80% of the apples; keep the best one seen.
-function makeBoard(mode, daily) {
+function makeBoard(mode, daily, day) {
   const { r: R, c: C } = MODES[mode];
-  const seed = daily ? hashStr(todayKey() + ':' + mode) : (Math.random() * 2 ** 32) >>> 0;
+  const seed = daily ? hashStr(day + ':' + mode) : (Math.random() * 2 ** 32) >>> 0;
   const rng = mulberry32(seed);
   let pick = null;
   for (let t = 0; t < 8; t++) {
@@ -401,13 +486,14 @@ function orient(b) {
 
 function newGame(sameBoard) {
   stopClock();
-  const base = sameBoard && S ? S.base : makeBoard(prefs.mode, prefs.daily);
+  const day = sameBoard && S ? S.day : todayKey();
+  const base = sameBoard && S ? S.base : makeBoard(prefs.mode, prefs.daily, day);
   const o = orient(base);
   S = {
     base, R: o.R, C: o.C, g: o.g,
     est: base.est, total: o.g.length,
     score: 0, time: TIME, started: false, over: false,
-    mode: prefs.mode, daily: prefs.daily, day: todayKey(),
+    mode: prefs.mode, daily: prefs.daily, day,
   };
   render();
 }
@@ -604,6 +690,13 @@ function end(reason) {
   $('copied').textContent = '';
   $('over').hidden = false;
   $('again-new').focus();
+  if (S.daily) {
+    const db = load('apple-daily-best', {}), k = S.day + '|' + S.mode;
+    db[k] = Math.max(db[k] || 0, S.score);
+    store('apple-daily-best', db);
+    lbAfterGame();
+  }
+  else { $('lb-result').hidden = true; $('nick-form').hidden = true; }
   // the site's feed player embeds games in an iframe and listens for these
   if (window.parent !== window) {
     window.parent.postMessage({ type: 'mobs:score', score: S.score }, '*');
@@ -646,6 +739,147 @@ $('sound').addEventListener('click', () => {
   hud();
 });
 
+// ---------- leaderboard (Supabase) ----------
+// From the Supabase project's Settings → API. The anon key is meant to be public:
+// the table is read-only for it, and scores only go in through submit_score() (supabase/schema.sql).
+const LB = { url: '', key: '' };
+const lbOn = () => !!(LB.url && LB.key);
+let lbMode = 'easy';
+
+async function lbFetch(path, body) {
+  const res = await fetch(LB.url.replace(/\/+$/, '') + '/rest/v1/' + path, {
+    method: body ? 'POST' : 'GET',
+    headers: { apikey: LB.key, Authorization: 'Bearer ' + LB.key, 'Content-Type': 'application/json' },
+    body: body && JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(res.status + ' ' + (await res.text()).slice(0, 200));
+  return res.json();
+}
+
+function playerId() {
+  let id = load('apple-player', null);
+  if (!id) {
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    const h = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+    id = `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+    store('apple-player', id);
+  }
+  return id;
+}
+const nickname = () => load('apple-nick', '');
+const dayLabel = d => `${+d.slice(5, 7)}월 ${+d.slice(8)}일`;
+
+// Scores that could not be sent (offline) wait here, best per day and mode, and go out on the next chance.
+function queueScore(day, mode, score) {
+  const q = load('apple-pending', {}), k = day + '|' + mode;
+  q[k] = Math.max(q[k] || 0, score);
+  store('apple-pending', q);
+}
+async function submitScore(day, mode, score) {
+  const [r] = await lbFetch('rpc/submit_score', { p_day: day, p_mode: mode, p_player: playerId(), p_nickname: nickname(), p_score: score });
+  const q = load('apple-pending', {});
+  delete q[day + '|' + mode];
+  store('apple-pending', q);
+  return r;
+}
+async function flushPending() {
+  if (!lbOn() || !nickname()) return;
+  const q = load('apple-pending', {}), today = todayKey();
+  for (const k of Object.keys(q)) {
+    const [day, mode] = k.split('|');
+    if (day < today && Date.parse(today) - Date.parse(day) > 864e5) { delete q[k]; store('apple-pending', q); continue; }
+    try { await submitScore(day, mode, q[k]); } catch (e) { return; }
+  }
+}
+
+function showLbResult(html) { const el = $('lb-result'); el.hidden = false; el.innerHTML = html; }
+async function lbAfterGame() {
+  const game = { day: S.day, mode: S.mode, score: S.score };
+  $('nick-form').hidden = true;
+  if (!lbOn()) { $('lb-result').hidden = true; return; }
+  if (!nickname()) {
+    showLbResult('오늘의 판 순위에 올릴 닉네임을 정해요.');
+    $('nick-form').hidden = false;
+    $('nick-form').onsubmit = e => {
+      e.preventDefault();
+      const n = $('nick').value.trim();
+      if (!n) return $('nick').focus();
+      store('apple-nick', n);
+      $('nick-form').hidden = true;
+      sendGame(game);
+    };
+    return;
+  }
+  sendGame(game);
+}
+async function sendGame(g) {
+  showLbResult('순위에 올리는 중…');
+  try {
+    const r = await submitScore(g.day, g.mode, g.score);
+    showLbResult(`오늘 ${MODES[g.mode].label} ${r.rank}위 <span class="muted">${r.total}명 중 · 오늘 내 최고 ${r.best}개</span>` +
+      '<button class="linkish" type="button" data-open-lb>전체 순위 보기</button>');
+  } catch (e) {
+    queueScore(g.day, g.mode, g.score);
+    showLbResult('지금은 순위에 못 올렸어요. <span class="muted">연결되면 자동으로 올릴게요.</span>');
+  }
+}
+
+async function openBoard(mode) {
+  lbMode = mode || lbMode;
+  const day = todayKey();
+  $('lb').hidden = false;
+  $('lb-title').textContent = `${dayLabel(day)} 오늘의 순위`;
+  for (const b of document.querySelectorAll('[data-lb]')) b.setAttribute('aria-pressed', b.dataset.lb === lbMode);
+  const list = $('lb-list');
+  list.innerHTML = '<li class="empty">불러오는 중…</li>';
+  $('lb-me').textContent = '';
+  await flushPending();
+  try {
+    const rows = await lbFetch(`daily_scores?select=nickname,score,plays&day=eq.${day}&mode=eq.${lbMode}&order=score.desc,updated_at.asc&limit=100`);
+    const mine = nickname() ? await lbFetch('rpc/my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() }) : [];
+    const me = mine[0];
+    list.textContent = '';
+    if (!rows.length) list.innerHTML = '<li class="empty">아직 아무도 안 했어요. 첫 기록을 남겨요!</li>';
+    rows.forEach((r, i) => {
+      const li = document.createElement('li');
+      if (me && me.rank === i + 1) li.className = 'me';
+      li.innerHTML = '<span class="n"></span><span class="who"></span><span class="pts"></span>';
+      li.children[0].textContent = i + 1;
+      li.children[1].textContent = r.nickname;
+      li.children[2].textContent = r.score + '개';
+      list.appendChild(li);
+    });
+    $('lb-me').textContent = me ? `내 순위 ${me.rank}위 / ${me.total}명 · 최고 ${me.best}개` : (nickname() ? '오늘 아직 기록이 없어요.' : '');
+    list.querySelector('.me')?.scrollIntoView({ block: 'nearest' });
+  } catch (e) {
+    list.innerHTML = '<li class="empty">순위를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</li>';
+  }
+}
+
+$('rank').hidden = !lbOn();
+$('rank').addEventListener('click', () => openBoard(prefs.mode));
+for (const b of document.querySelectorAll('[data-lb]')) b.addEventListener('click', () => openBoard(b.dataset.lb));
+$('lb-result').addEventListener('click', e => { if (e.target.closest('[data-open-lb]')) openBoard(S.mode); });
+$('lb-close').addEventListener('click', () => { $('lb').hidden = true; });
+$('lb-play').addEventListener('click', () => {
+  $('lb').hidden = true;
+  prefs.mode = lbMode; prefs.daily = true;
+  store('apple-prefs', prefs);
+  newGame(false);
+});
+$('lb-rename').addEventListener('click', () => {
+  const n = prompt('새 닉네임 (12자까지)', nickname());
+  if (n == null || !n.trim()) return;
+  store('apple-nick', n.trim().slice(0, 12));
+  const q = load('apple-pending', {});
+  const best = load('apple-daily-best', {});
+  // re-send today's best so the new name shows up on the board
+  for (const m of Object.keys(MODES)) { const k = todayKey() + '|' + m; if (best[k] != null) q[k] = Math.max(q[k] || 0, best[k]); }
+  store('apple-pending', q);
+  openBoard();
+});
+
 // ---------- sound ----------
 let actx = null;
 function unlockAudio() {
@@ -682,4 +916,10 @@ function start(data) {
   }
 }
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+flushPending();
+
+// Installable / offline when served from its own site (GitHub Pages, the Android app). Skipped inside previews.
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && window.top === window) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
