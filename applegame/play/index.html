@@ -4,8 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>사과 게임</title>
 <meta name="description" content="합이 10이 되게 사과를 묶어 따는 2분 퍼즐">
-<meta name="theme-color" content="#d8b88e" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#2a1f17" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#e7dcc8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#35302b" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="사과 게임">
@@ -15,65 +15,53 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nanum+Brush+Script&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
 <style>
-/* Layout: a fruit stall on kraft paper. Cardboard sign, price tag and ink stamp up top, a masking-tape timer,
-   then the wooden crate of apples fills the rest. Results print as a shop receipt.
-   Art (www/art/*.png|jpg) is optional: without it the crate, paper and apples are drawn in CSS. */
+/* Layout: a handmade felt play mat. Felt patches with cream stitching up top, a felt strip timer,
+   then a green felt tray of stuffed felt apples. Results are a stitched felt card.
+   Art (www/art/felt-*.png|jpg) is optional: without it the felt is drawn in CSS. */
 :root {
-  --bg: #d8b88e;            /* kraft paper */
-  --dim: rgba(0, 0, 0, 0);  /* darkens paper and wood at night */
-  --ink: #2b1d14;           /* marker */
-  --muted: #6e5543;
-  --card: #f1e1c4;          /* cardboard tag */
-  --card-edge: #b48a5a;
-  --wood: #d6ad74;
-  --wood-hi: #e2bf8d;
-  --wood-dark: #8e6236;
-  --wood-gap: #4b2f17;
-  --red: #c42a1f;           /* apple red, stamp ink */
-  --red-deep: #8f1d15;
-  --apple-hi: #f0715a;
-  --leaf: #3f7a2c;
-  --stem: #5b3b1f;
-  --sticker: #fbf6ea;
-  --pick: #ffd65a;          /* highlighter */
-  --ok: #2e7d3a;
-  --tape: rgba(246, 232, 190, 0.92);
-  --tape-track: rgba(43, 29, 20, 0.14);
-  --shade: rgba(43, 29, 20, 0.32);
-  --scrim: rgba(60, 40, 22, 0.55);
-  --receipt: #fbfaf4;
-  --receipt-ink: #2b2620;
-  --lamp: rgba(255, 255, 255, 0);
-  --wood-light: 1;
-  --brush: "Nanum Brush Script", "Gowun Dodum", cursive;
-  --sign: "Do Hyeon", "Gowun Dodum", sans-serif;
+  --bg: #e7dcc8;            /* oatmeal felt */
+  --dim: rgba(0, 0, 0, 0);  /* darkens the felt photos at night */
+  --ink: #3a2a22;
+  --muted: #7a6656;
+  --card: #f7f0e3;          /* cream felt patch */
+  --card-edge: #d8c9ae;
+  --board: #3e6b49;         /* green felt tray */
+  --board-deep: #2c5236;
+  --thread: #fbf3e2;        /* cream sewing thread */
+  --red: #d2382b;
+  --red-deep: #9c241b;
+  --apple-hi: #f2705d;
+  --leaf: #4f8f3a;
+  --stem: #6b4a2a;
+  --num: #2f221b;           /* number on the patch: as dark as possible */
+  --pick: #ffd34d;          /* yellow felt */
+  --ok: #ffd34d;
+  --shade: rgba(58, 42, 34, 0.28);
+  --scrim: rgba(46, 34, 26, 0.55);
+  --display: "Jua", "Gowun Dodum", sans-serif;
   --body: "Gowun Dodum", system-ui, -apple-system, "Malgun Gothic", sans-serif;
-  --mono: "Nanum Gothic Coding", ui-monospace, "Consolas", monospace;
+  --fuzz: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #3a2a1d; --dim: rgba(22, 13, 6, 0.68); --ink: #f3e5cc; --muted: #c2a888;
-    --card: #4a3626; --card-edge: #2a1c11;
-    --wood: #7a5532; --wood-hi: #8a6140; --wood-dark: #3e2913; --wood-gap: #170e06;
-    --red: #e24a3b; --red-deep: #a8291e; --apple-hi: #ff8a72;
-    --leaf: #5ea245; --stem: #8a6440; --pick: #ffd65a; --ok: #71c67d;
-    --tape: rgba(214, 194, 140, 0.55); --tape-track: rgba(243, 229, 204, 0.14);
-    --shade: rgba(0, 0, 0, 0.5); --scrim: rgba(10, 6, 3, 0.7);
-    --lamp: rgba(255, 186, 102, 0.16); --wood-light: .55;
+    --bg: #35302b; --dim: rgba(18, 14, 10, 0.62); --ink: #f3eadb; --muted: #c4b49f;
+    --card: #4b423a; --card-edge: #2c2520;
+    --board: #2a4a33; --board-deep: #1c3423; --thread: #e8dcc5;
+    --red: #e04b3d; --red-deep: #a8291e; --apple-hi: #ff8a72;
+    --leaf: #66a84f; --stem: #8a6440; --num: #2f221b; --pick: #ffd34d; --ok: #ffd34d;
+    --shade: rgba(0, 0, 0, 0.45); --scrim: rgba(12, 9, 6, 0.7);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #3a2a1d; --dim: rgba(22, 13, 6, 0.68); --ink: #f3e5cc; --muted: #c2a888;
-  --card: #4a3626; --card-edge: #2a1c11;
-  --wood: #7a5532; --wood-hi: #8a6140; --wood-dark: #3e2913; --wood-gap: #170e06;
-  --red: #e24a3b; --red-deep: #a8291e; --apple-hi: #ff8a72;
-  --leaf: #5ea245; --stem: #8a6440; --pick: #ffd65a; --ok: #71c67d;
-  --tape: rgba(214, 194, 140, 0.55); --tape-track: rgba(243, 229, 204, 0.14);
-  --shade: rgba(0, 0, 0, 0.5); --scrim: rgba(10, 6, 3, 0.7);
-  --lamp: rgba(255, 186, 102, 0.16); --wood-light: .55;
+  --bg: #35302b; --dim: rgba(18, 14, 10, 0.62); --ink: #f3eadb; --muted: #c4b49f;
+  --card: #4b423a; --card-edge: #2c2520;
+  --board: #2a4a33; --board-deep: #1c3423; --thread: #e8dcc5;
+  --red: #e04b3d; --red-deep: #a8291e; --apple-hi: #ff8a72;
+  --leaf: #66a84f; --stem: #8a6440; --num: #2f221b; --pick: #ffd34d; --ok: #ffd34d;
+  --shade: rgba(0, 0, 0, 0.45); --scrim: rgba(12, 9, 6, 0.7);
   color-scheme: dark;
 }
 
@@ -82,10 +70,9 @@ html, body { height: 100%; margin: 0; }
 @supports (height: 100dvh) { html, body { height: 100dvh; } }
 body {
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .1 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    radial-gradient(ellipse 70% 45% at 50% 0%, var(--lamp), transparent 70%),
+    var(--fuzz),
     linear-gradient(var(--dim), var(--dim)),
-    url("art/kraft.jpg") center / cover,
+    url("art/felt-bg.jpg") center / cover,
     var(--bg);
   color: var(--ink);
   font-family: var(--body);
@@ -94,7 +81,7 @@ body {
   user-select: none;
 }
 button, input { font: inherit; color: inherit; }
-button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px dashed var(--red); outline-offset: 3px; }
+button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px solid var(--red); outline-offset: 3px; }
 
 .app {
   height: 100%;
@@ -110,114 +97,107 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px das
   margin: 0 auto;
 }
 
-/* ---- top: cardboard sign, price tag, stamp, the rival's note ---- */
-.bar { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; }
+/* a cut piece of felt with a running stitch just inside its edge */
+.felt {
+  position: relative;
+  background: var(--fuzz), var(--card);
+  border-radius: 14px;
+  box-shadow: 0 2px 0 var(--card-edge), 0 4px 8px var(--shade);
+}
+.felt::after {
+  content: ""; position: absolute; inset: 4px; pointer-events: none;
+  border: 1.5px dashed var(--card-edge); border-radius: 10px;
+}
+
+/* ---- top: title banner, score patch, time badge, the rival's patch ---- */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
 .brand { display: flex; flex-direction: column; gap: 0; min-width: 0; }
 .brand h1 {
-  margin: 0; font-family: var(--brush); font-weight: 400; font-size: 2.7rem; line-height: .9;
-  color: var(--red); transform: rotate(-3deg); transform-origin: left bottom; text-wrap: balance;
+  margin: 0; font-family: var(--display); font-weight: 400; font-size: 2rem; line-height: 1;
+  color: var(--red); text-shadow: 0 2px 0 var(--card-edge); text-wrap: balance;
 }
 .brand .sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
-.stats { display: flex; align-items: center; gap: 14px; }
-.stat .k { display: block; font-size: 0.66rem; color: var(--muted); letter-spacing: 0.02em; white-space: nowrap; }
+.stats { display: flex; align-items: center; gap: 10px; }
+.stat .k { display: block; font-size: 0.66rem; color: var(--muted); white-space: nowrap; }
 .stat .v { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-.tag {
-  position: relative;
-  background:
-    radial-gradient(circle at 11px 50%, var(--card-edge) 0 3px, transparent 3.5px),
-    var(--card);
-  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
-  padding: 4px 12px 4px 22px;
-  transform: rotate(-2deg);
-  filter: drop-shadow(0 2px 0 var(--card-edge));
-}
-.tag .k { color: var(--muted); }
-.tag .v { font-family: var(--brush); font-size: 1.35rem; line-height: 1; color: var(--ink); }
-.tag .v b { font-weight: 400; font-size: 1.6em; color: var(--red); }
+.tag { padding: 6px 14px 7px; text-align: center; }
+.tag .v { font-family: var(--display); font-size: 1.1rem; line-height: 1; color: var(--ink); }
+.tag .v b { font-weight: 400; font-size: 1.5em; color: var(--red); }
 
 .stamp {
-  width: 62px; height: 62px; box-sizing: border-box;
-  border: 3px solid var(--red); border-radius: 50%;
-  box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px var(--red);
-  display: grid; place-content: center; text-align: center;
-  color: var(--red); transform: rotate(9deg); opacity: .9;
+  width: 60px; height: 60px; box-sizing: border-box; border-radius: 50%;
+  background: var(--fuzz), var(--red);
+  box-shadow: 0 2px 0 var(--red-deep), 0 4px 8px var(--shade);
+  display: grid; place-content: center; text-align: center; position: relative;
+  color: var(--thread);
 }
-.stamp .k { color: var(--red); font-size: 0.56rem; }
-.stamp .v { font-family: var(--sign); font-size: 1.25rem; line-height: 1; }
+.stamp::after { content: ""; position: absolute; inset: 4px; border: 1.5px dashed var(--thread); border-radius: 50%; opacity: .85; }
+.stamp .k { color: var(--thread); font-size: 0.54rem; opacity: .9; }
+.stamp .v { font-family: var(--display); font-size: 1.15rem; line-height: 1; }
 .stamp.low { animation: thump 1s ease-in-out infinite; }
-@keyframes thump { 50% { transform: rotate(9deg) scale(1.08); } }
+@keyframes thump { 50% { transform: scale(1.08); } }
 
-.rival { text-align: left; }
-.rival .v { font-family: var(--brush); font-size: 1.3rem; line-height: 1; color: var(--ink); }
-.rival .v b { font-weight: 400; font-size: 1.35em; }
+.rival { padding: 6px 12px 7px; text-align: center; }
+.rival .v { font-family: var(--display); font-size: 1.05rem; line-height: 1; color: var(--muted); }
+.rival .v b { font-weight: 400; font-size: 1.3em; color: var(--ink); }
 
-/* ---- controls: cardboard tabs and labels ---- */
+/* ---- controls: felt buttons ---- */
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .chip, .seg button {
+  position: relative;
   display: inline-flex; align-items: center; gap: 6px;
-  background: var(--card); color: var(--ink);
-  border: 1px solid var(--card-edge); border-radius: 3px;
-  box-shadow: 0 2px 0 var(--card-edge);
-  padding: 6px 11px; font-size: 0.84rem; cursor: pointer;
+  background: var(--fuzz), var(--card); color: var(--ink);
+  border: 0; border-radius: 12px;
+  box-shadow: 0 2px 0 var(--card-edge), 0 3px 6px var(--shade);
+  padding: 7px 12px; font-size: 0.84rem; cursor: pointer;
 }
-.chip:active, .seg button:active { transform: translateY(2px); box-shadow: none; }
+.chip::after, .seg button::after {
+  content: ""; position: absolute; inset: 3px; pointer-events: none;
+  border: 1.5px dashed var(--card-edge); border-radius: 9px;
+}
+.chip:active, .seg button:active { transform: translateY(2px); box-shadow: 0 0 0 var(--card-edge), 0 1px 3px var(--shade); }
 .seg { display: inline-flex; gap: 6px; }
-.seg button[aria-pressed="true"] { background: var(--red); border-color: var(--red-deep); box-shadow: 0 2px 0 var(--red-deep); color: var(--sticker); }
-.controls > :nth-child(2) { transform: rotate(-1deg); }
-.controls > :nth-child(5) { transform: rotate(1deg); }
+.seg button[aria-pressed="true"] { background: var(--fuzz), var(--red); color: var(--thread); box-shadow: 0 2px 0 var(--red-deep), 0 3px 6px var(--shade); }
+.seg button[aria-pressed="true"]::after { border-color: var(--thread); opacity: .8; }
 .chip input { accent-color: var(--red); margin: 0; width: 15px; height: 15px; }
 .chip[aria-pressed="false"] { color: var(--muted); }
 .spacer { flex: 1; }
 
-/* masking tape that tears shorter as time runs out */
-.timer { height: 12px; flex: none; background: linear-gradient(var(--tape-track), var(--tape-track)) 0 50% / 100% 2px no-repeat; }
+/* a yellow felt strip, stitched down the middle, that shortens as time runs out */
+.timer { height: 14px; flex: none; border-radius: 7px; background: var(--fuzz), var(--card-edge); overflow: hidden; }
 .timer .fill {
-  height: 100%; width: 100%; background: var(--tape); transform-origin: left;
-  clip-path: polygon(0 0, 100% 0, 99.4% 20%, 100% 40%, 99.3% 62%, 100% 82%, 99.5% 100%, 0 100%);
+  height: 100%; width: 100%; transform-origin: left; border-radius: 7px;
+  background:
+    linear-gradient(90deg, var(--ink) 50%, transparent 0) 0 50% / 10px 1.5px repeat-x,
+    var(--fuzz), var(--pick);
+  opacity: .95;
 }
-.timer.low .fill { background: var(--red); opacity: .8; }
+.timer.low .fill {
+  background: linear-gradient(90deg, var(--thread) 50%, transparent 0) 0 50% / 10px 1.5px repeat-x, var(--fuzz), var(--red);
+}
 
-/* ---- the crate ---- */
+/* ---- the green felt tray ---- */
 .stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: start center; touch-action: none; cursor: crosshair; }
 .crate {
   --cell: 40px; --frame: 14px;
   position: relative;
   isolation: isolate;
   padding: var(--frame);
-  border-radius: 6px;
+  border-radius: 22px;
   background:
+    var(--fuzz),
     linear-gradient(var(--dim), var(--dim)),
-    url("art/crate.jpg") 0 0 / calc(var(--cell) * 5),
-    repeating-linear-gradient(180deg,
-      var(--wood) 0, var(--wood-hi) calc(var(--cell) * .45), var(--wood) calc(var(--cell) - 3px),
-      var(--wood-gap) calc(var(--cell) - 3px), var(--wood-gap) var(--cell)) 0 var(--frame) / 100% var(--cell),
-    var(--wood);
-  box-shadow:
-    inset 0 0 0 var(--frame) var(--wood-dark),
-    inset 0 0 0 calc(var(--frame) + 1px) var(--wood-gap),
-    inset 0 0 calc(var(--frame) * 1.6) calc(var(--frame) * 1.1) rgba(0, 0, 0, .28),
-    0 10px 22px var(--shade);
+    url("art/felt-board.jpg") center / cover,
+    var(--board);
+  box-shadow: 0 4px 0 var(--board-deep), 0 12px 24px var(--shade);
 }
 .crate::before {
-  /* four nail heads in the frame corners */
-  content: ""; position: absolute; inset: calc(var(--frame) * .5 - 3px); pointer-events: none;
-  background:
-    radial-gradient(circle, #cfc6b8 0 2px, #6f675c 2.5px, transparent 3.5px) 0 0 / 7px 7px no-repeat,
-    radial-gradient(circle, #cfc6b8 0 2px, #6f675c 2.5px, transparent 3.5px) 100% 0 / 7px 7px no-repeat,
-    radial-gradient(circle, #cfc6b8 0 2px, #6f675c 2.5px, transparent 3.5px) 0 100% / 7px 7px no-repeat,
-    radial-gradient(circle, #cfc6b8 0 2px, #6f675c 2.5px, transparent 3.5px) 100% 100% / 7px 7px no-repeat;
+  /* stitched hem around the tray */
+  content: ""; position: absolute; inset: calc(var(--frame) * .4); pointer-events: none;
+  border: 2px dashed var(--thread); border-radius: 16px; opacity: .75;
 }
 .board { position: relative; }
-/* with art/crate.jpg the photo becomes the crate: its walls are 9-sliced into the frame, the slats stretch inside */
-:root.crate-art .crate { background: none; box-shadow: 0 10px 22px var(--shade); }
-:root.crate-art .crate::before {
-  inset: 0; z-index: -1;
-  border: var(--frame) solid transparent;
-  border-image: url("art/crate.jpg") 60 fill / var(--frame) stretch;
-  background: none;
-  filter: brightness(var(--wood-light));
-}
 
 /* ---- apples ---- */
 .a {
@@ -230,22 +210,22 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px das
 }
 .a i {
   position: relative;
-  width: 88%; height: 86%;
+  width: 90%; height: 88%;
   border-radius: 50% 50% 47% 47% / 56% 56% 44% 44%;
-  background: radial-gradient(circle at 32% 28%, var(--apple-hi) 0 9%, var(--red) 44%, var(--red-deep) 100%);
-  box-shadow: inset calc(var(--cell) * -.06) calc(var(--cell) * -.07) calc(var(--cell) * .12) rgba(0,0,0,.22), 0 calc(var(--cell) * .05) calc(var(--cell) * .07) var(--shade);
+  background: var(--fuzz), radial-gradient(circle at 32% 28%, var(--apple-hi) 0 9%, var(--red) 46%, var(--red-deep) 100%);
+  box-shadow: inset 0 0 0 max(1px, calc(var(--cell) * .03)) var(--red-deep), 0 calc(var(--cell) * .05) calc(var(--cell) * .07) var(--shade);
   display: grid; place-items: center;
   font-style: normal;
   transform: rotate(var(--rot, 0deg));
   transition: transform .09s ease-out, filter .09s;
 }
 .a i::before {
-  content: ""; position: absolute; top: -6%; left: 49%;
-  width: 6%; height: 15%; background: var(--stem); border-radius: 2px; transform: rotate(10deg);
+  content: ""; position: absolute; top: -6%; left: 47%;
+  width: 8%; height: 16%; background: var(--stem); border-radius: 3px; transform: rotate(10deg);
 }
 .a i::after {
-  content: ""; position: absolute; top: -8%; left: 54%;
-  width: 22%; height: 11%; background: var(--leaf); border-radius: 0 100% 0 100%; transform: rotate(-20deg);
+  content: ""; position: absolute; top: -9%; left: 54%;
+  width: 26%; height: 13%; background: var(--leaf); border-radius: 0 100% 0 100%; transform: rotate(-20deg);
 }
 :root.art .a i {
   background: var(--img) center / contain no-repeat;
@@ -254,25 +234,31 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px das
 }
 :root.art .a i::before, :root.art .a i::after { display: none; }
 
-/* the number is printed on a fruit sticker */
+/* the number is on a cream felt circle sewn onto the apple: big, dark and bold so it reads at a glance */
 .a b {
-  min-width: 52%; height: 42%; box-sizing: border-box; padding: 0 6%;
+  position: relative;
+  width: 62%; aspect-ratio: 1; margin-top: 12%;
   display: grid; place-items: center;
   border-radius: 50%;
-  background: var(--sticker);
-  box-shadow: inset 0 0 0 max(1.5px, calc(var(--cell) * .035)) var(--red), 0 1px 1px rgba(0,0,0,.3);
-  font-family: var(--sign); font-weight: 400; font-size: calc(var(--cell) * .36); line-height: 1;
-  color: var(--red-deep);
+  background: #fffaf0;
+  box-shadow: 0 max(1px, calc(var(--cell) * .025)) 0 rgba(0, 0, 0, .25);
+  font-family: var(--display); font-weight: 400; font-size: calc(var(--cell) * .46); line-height: 1;
+  color: var(--num);
   font-variant-numeric: tabular-nums;
+  transform: rotate(calc(var(--rot, 0deg) * -1)); /* keep the digit upright even when the apple leans */
 }
-.a.on i { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.09); filter: brightness(1.07) drop-shadow(0 calc(var(--cell) * .12) calc(var(--cell) * .08) var(--shade)); }
+.a b::after {
+  content: ""; position: absolute; inset: 8%; border-radius: 50%;
+  border: max(1px, calc(var(--cell) * .022)) dashed rgba(58, 42, 34, .35);
+}
+.a.on i { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.1); filter: brightness(1.06) drop-shadow(0 calc(var(--cell) * .12) calc(var(--cell) * .08) var(--shade)); }
 .a.on b { background: var(--pick); }
 .a.hint i { animation: wobble .18s ease-in-out 8 alternate; }
 .a.gone i { animation: lift .5s cubic-bezier(.3, .1, .6, 1) forwards; }
 .a.gone.done { visibility: hidden; }
 @keyframes lift {
-  0% { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.09); opacity: 1; }
-  30% { transform: rotate(calc(var(--rot, 0deg) - 8deg)) translateY(-30%) scale(1.14); opacity: 1; }
+  0% { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.1); opacity: 1; }
+  30% { transform: rotate(calc(var(--rot, 0deg) - 8deg)) translateY(-30%) scale(1.16); opacity: 1; }
   100% { transform: rotate(calc(var(--rot, 0deg) + 14deg)) translateY(-150%) scale(.55); opacity: 0; }
 }
 @keyframes wobble {
@@ -280,33 +266,32 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px das
   to { transform: rotate(calc(var(--rot, 0deg) + 9deg)); }
 }
 
-/* the drag box is drawn in marker, with a price tag hanging off the corner */
+/* the drag box is a basting stitch in cream thread, yellow when the apples make 10 */
 .sel {
   position: absolute; pointer-events: none; box-sizing: border-box;
-  border: 3px solid var(--ink); opacity: .82;
-  border-radius: 14px 8px 16px 7px / 9px 15px 7px 13px;
+  border: 3px dashed var(--thread); border-radius: 16px;
+  background: rgba(255, 250, 240, .1);
 }
-.sel.hit { border-color: var(--ok); opacity: 1; }
+.sel.hit { border-color: var(--pick); border-width: 4px; background: rgba(255, 211, 77, .16); }
 .sel .sum {
   position: absolute; top: -16px; right: -12px;
-  min-width: 30px; padding: 2px 8px 1px; box-sizing: border-box;
-  background: var(--card); border: 1px solid var(--card-edge);
-  font-family: var(--brush); font-size: 1.5rem; line-height: 1; text-align: center; color: var(--ink);
-  transform: rotate(6deg);
+  min-width: 34px; padding: 3px 9px 4px; box-sizing: border-box; border-radius: 12px;
+  background: var(--fuzz), var(--card); box-shadow: 0 2px 0 var(--card-edge), 0 3px 6px var(--shade);
+  font-family: var(--display); font-size: 1.3rem; line-height: 1; text-align: center; color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-.sel.hit .sum { background: var(--red); border-color: var(--red-deep); color: var(--sticker); }
+.sel.hit .sum { background: var(--fuzz), var(--red); box-shadow: 0 2px 0 var(--red-deep); color: var(--thread); }
 .sel.over .sum { text-decoration: line-through; color: var(--muted); }
 
 .plus {
-  position: absolute; pointer-events: none; transform: translate(-50%, -50%) rotate(-6deg);
-  font-family: var(--brush); font-size: 2.2rem; color: var(--red);
-  text-shadow: 0 0 3px var(--card), 0 0 6px var(--card);
+  position: absolute; pointer-events: none; transform: translate(-50%, -50%);
+  font-family: var(--display); font-size: 2rem; color: var(--pick);
+  text-shadow: 0 2px 0 var(--board-deep), 0 0 6px var(--board-deep);
   animation: rise .9s ease-out forwards;
 }
-@keyframes rise { to { transform: translate(-50%, -170%) rotate(-6deg); opacity: 0; } }
+@keyframes rise { to { transform: translate(-50%, -170%); opacity: 0; } }
 
-/* ---- results: a shop receipt ---- */
+/* ---- results: a stitched felt card ---- */
 .overlay {
   position: absolute; inset: 0; display: grid; place-items: center;
   background: var(--scrim); cursor: default; padding: 8px 0; box-sizing: border-box;
@@ -314,89 +299,92 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px das
 .sheet {
   width: min(320px, 100%); max-height: 100%; overflow: auto;
   display: flex; flex-direction: column; gap: 10px; align-items: stretch;
-  animation: print .35s ease-out;
+  padding: 6px; box-sizing: border-box;
+  animation: drop .35s ease-out;
 }
-@keyframes print { from { transform: translateY(-14px); opacity: 0; } }
+@keyframes drop { from { transform: translateY(-14px); opacity: 0; } }
 .receipt {
   position: relative;
-  background: var(--receipt); color: var(--receipt-ink);
-  font-family: var(--mono); font-size: 0.86rem;
-  padding: 18px 18px 22px; margin-bottom: 8px;
-  box-shadow: 0 8px 18px var(--shade);
-  transform: rotate(-1.2deg);
+  background: var(--fuzz), var(--card); color: var(--ink);
+  font-size: 0.92rem;
+  padding: 20px 20px 18px; border-radius: 18px;
+  box-shadow: 0 3px 0 var(--card-edge), 0 10px 20px var(--shade);
 }
 .receipt::after {
-  /* torn bottom edge */
-  content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 8px;
-  background:
-    linear-gradient(-45deg, transparent 5.5px, var(--receipt) 0) 0 0 / 11px 8px repeat-x,
-    linear-gradient(45deg, transparent 5.5px, var(--receipt) 0) 0 0 / 11px 8px repeat-x;
+  content: ""; position: absolute; inset: 6px; pointer-events: none;
+  border: 2px dashed var(--card-edge); border-radius: 13px;
 }
-.receipt .shop { font-family: var(--sign); font-size: 1.4rem; text-align: center; letter-spacing: .12em; margin: 0; font-weight: 400; }
-.receipt .meta { text-align: center; font-size: 0.74rem; opacity: .7; margin-top: 2px; }
-.receipt hr { border: 0; border-top: 1px dashed var(--receipt-ink); opacity: .45; margin: 10px 0; }
-.receipt dl { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; margin: 0; }
+.receipt .shop { font-family: var(--display); font-size: 1.5rem; text-align: center; margin: 0; font-weight: 400; color: var(--red); }
+.receipt .meta { text-align: center; font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+.receipt hr { border: 0; border-top: 2px dotted var(--card-edge); margin: 10px 0; }
+.receipt dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; margin: 0; }
 .receipt dt, .receipt dd { margin: 0; }
-.receipt dd { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
-.receipt .total dt, .receipt .total dd { font-size: 1.15rem; font-weight: 700; }
-.receipt .total dd { font-size: 1.6rem; }
-.receipt .thanks { text-align: center; font-size: 0.74rem; opacity: .7; margin-top: 10px; }
+.receipt dt { color: var(--muted); }
+.receipt dd { text-align: right; font-family: var(--display); font-variant-numeric: tabular-nums; }
+.receipt .total dt { font-size: 1.05rem; color: var(--ink); align-self: center; }
+.receipt .total dd { font-size: 2.2rem; line-height: 1; color: var(--red); }
+.receipt .thanks { text-align: center; font-size: 0.78rem; color: var(--muted); margin-top: 10px; }
 .receipt .mark {
-  position: absolute; right: 12px; top: 52px;
-  font-family: var(--sign); font-size: 1.05rem; color: var(--red);
-  border: 2.5px solid var(--red); border-radius: 6px; padding: 3px 8px;
-  transform: rotate(-12deg); opacity: .85; max-width: 60%; text-align: center; line-height: 1.15;
-  background: color-mix(in srgb, var(--receipt) 70%, transparent);
+  position: absolute; right: 14px; top: 14px; z-index: 1;
+  font-family: var(--display); font-size: 0.9rem; color: var(--thread);
+  background: var(--fuzz), var(--red); border-radius: 10px; padding: 4px 9px;
+  transform: rotate(8deg); box-shadow: 0 2px 0 var(--red-deep);
+  max-width: 45%; text-align: center; line-height: 1.15;
 }
 .sheet .row { display: flex; gap: 8px; }
 .sheet .row .btn { flex: 1; }
 .btn {
-  background: var(--card); color: var(--ink);
-  border: 1px solid var(--card-edge); border-radius: 3px; box-shadow: 0 3px 0 var(--card-edge);
-  padding: 11px 12px; font-size: 0.92rem; cursor: pointer;
+  position: relative;
+  background: var(--fuzz), var(--card); color: var(--ink);
+  border: 0; border-radius: 14px; box-shadow: 0 3px 0 var(--card-edge), 0 4px 8px var(--shade);
+  padding: 12px 12px; font-family: var(--display); font-size: 1rem; cursor: pointer;
 }
-.btn:active { transform: translateY(3px); box-shadow: none; }
-.btn.primary { background: var(--red); border-color: var(--red-deep); box-shadow: 0 3px 0 var(--red-deep); color: var(--sticker); }
-.copied { font-size: 0.8rem; color: var(--ink); min-height: 1em; text-align: center; white-space: pre-line; }
+.btn::after { content: ""; position: absolute; inset: 4px; border: 1.5px dashed var(--card-edge); border-radius: 10px; pointer-events: none; }
+.btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--card-edge), 0 1px 3px var(--shade); }
+.btn.primary { background: var(--fuzz), var(--red); box-shadow: 0 3px 0 var(--red-deep), 0 4px 8px var(--shade); color: var(--thread); }
+.btn.primary::after { border-color: var(--thread); opacity: .75; }
+.copied { font-size: 0.8rem; color: var(--thread); min-height: 1em; text-align: center; white-space: pre-line; }
 
-.lb-result { font-size: 0.92rem; color: var(--ink); text-align: center; }
-.lb-result .muted { display: block; font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.lb-result { font-size: 0.92rem; color: var(--thread); text-align: center; }
+.lb-result .muted { display: block; font-size: 0.78rem; opacity: .8; margin-top: 2px; }
 .nick-row { display: flex; gap: 8px; }
 .nick-row input {
-  flex: 1; min-width: 0; border: 1px solid var(--card-edge); background: var(--receipt); color: var(--receipt-ink);
-  border-radius: 3px; padding: 10px 12px; font-size: 1rem; -webkit-user-select: text; user-select: text;
+  flex: 1; min-width: 0; border: 0; background: var(--card); color: var(--ink);
+  border-radius: 12px; padding: 10px 12px; font-size: 1rem; -webkit-user-select: text; user-select: text;
+  box-shadow: inset 0 2px 0 var(--card-edge);
 }
 .lb-sheet { width: min(360px, 100%); }
 .lb-seg { align-self: center; justify-content: center; }
 .lb-list {
   list-style: none; margin: 0; padding: 0; overflow: auto; touch-action: pan-y;
-  max-height: min(44vh, 400px); min-height: 3em;
+  max-height: min(44vh, 400px); min-height: 3em; position: relative; z-index: 1;
 }
 .lb-list li {
   display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; align-items: baseline;
-  padding: 5px 0; border-bottom: 1px dotted rgba(43, 38, 32, .35); font-variant-numeric: tabular-nums;
+  padding: 6px 2px; border-bottom: 2px dotted var(--card-edge); font-variant-numeric: tabular-nums;
 }
 .lb-list li:last-child { border-bottom: 0; }
-.lb-list .n { text-align: right; opacity: .7; }
-.lb-list li:nth-child(-n+3) .n { color: var(--red); opacity: 1; font-weight: 700; }
+.lb-list .n { text-align: right; font-family: var(--display); color: var(--muted); }
+.lb-list li:nth-child(-n+3) .n { color: var(--red); }
 .lb-list .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lb-list .pts { font-weight: 700; }
-.lb-list li.me { background: rgba(255, 214, 90, .45); }
-.lb-list .empty { display: block; border: 0; text-align: center; padding: 14px 0; opacity: .7; }
-.lb-me { font-size: 0.8rem; text-align: center; min-height: 1em; }
-.linkish { border: 0; background: none; color: var(--ink); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 2px; }
+.lb-list .pts { font-family: var(--display); }
+.lb-list li.me { background: rgba(255, 211, 77, .4); border-radius: 8px; }
+.lb-list .empty { display: block; border: 0; text-align: center; padding: 14px 0; color: var(--muted); }
+.lb-me { font-size: 0.8rem; text-align: center; min-height: 1em; color: var(--muted); }
+.linkish { border: 0; background: none; color: var(--thread); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 2px; }
 
 @media (max-width: 520px) {
   .brand .sub { display: none; }
-  .brand h1 { font-size: 2.1rem; }
-  .stats { gap: 10px; }
-  .stamp { width: 54px; height: 54px; }
-  .stamp .v { font-size: 1.05rem; }
-  .tag .v, .rival .v { font-size: 1.15rem; }
-  .chip, .seg button { padding: 6px 9px; font-size: 0.8rem; }
+  .brand h1 { font-size: 1.6rem; }
+  .stats { gap: 8px; }
+  .stamp { width: 52px; height: 52px; }
+  .stamp .v { font-size: 1rem; }
+  .tag, .rival { padding: 5px 9px 6px; }
+  .tag .v, .rival .v { font-size: 0.95rem; }
+  .chip, .seg button { padding: 7px 10px; font-size: 0.8rem; }
   .spacer { display: none; }
 }
-/* Phone held sideways: too short for stacked bars, so the HUD becomes a left column and the crate takes the rest. */
+/* Phone held sideways: too short for stacked bars, so the HUD becomes a left column and the tray takes the rest. */
 @media (orientation: landscape) and (max-height: 500px) {
   .app {
     display: grid; grid-template-columns: 236px 1fr; grid-template-rows: auto auto auto 1fr;
@@ -406,17 +394,17 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px das
   }
   .bar { grid-column: 1; flex-direction: column; align-items: flex-start; gap: 8px; }
   .brand .sub { display: none; }
-  .brand h1 { font-size: 2rem; }
-  .stats { gap: 10px; }
-  .stamp { width: 52px; height: 52px; }
-  .stamp .v { font-size: 1rem; }
+  .brand h1 { font-size: 1.6rem; }
+  .stats { gap: 8px; }
+  .stamp { width: 50px; height: 50px; }
+  .stamp .v { font-size: 0.95rem; }
   .controls { grid-column: 1; gap: 6px; }
   .chip, .seg button { padding: 6px 9px; font-size: 0.78rem; }
   .spacer { display: none; }
   .timer { grid-column: 1; }
   .stage { grid-column: 2; grid-row: 1 / -1; }
-  .receipt { padding: 12px 14px 16px; }
-  .receipt .total dd { font-size: 1.3rem; }
+  .receipt { padding: 14px 16px 12px; }
+  .receipt .total dd { font-size: 1.6rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .a.gone i, .a.hint i, .plus, .sheet, .stamp.low { animation-duration: .01s; animation-iteration-count: 1; }
@@ -430,9 +418,9 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px das
       <span class="sub" id="sub">드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.</span>
     </div>
     <div class="stats">
-      <div class="stat tag"><span class="k">딴 사과</span><span class="v"><b id="score">0</b>개</span></div>
+      <div class="stat tag felt"><span class="k">딴 사과</span><span class="v"><b id="score">0</b>개</span></div>
       <div class="stat stamp" id="stamp"><span class="k">남은 시간</span><span class="v" id="time">2:00</span></div>
-      <div class="stat rival"><span class="k">옆가게 사장님</span><span class="v"><b id="target">–</b>개</span></div>
+      <div class="stat rival felt"><span class="k">옆가게 사장님</span><span class="v"><b id="target">–</b>개</span></div>
     </div>
   </header>
 
@@ -697,21 +685,18 @@ function render() {
 }
 
 // ---------- art (optional) ----------
-// Drop apple-1..3.png into www/art/ and they replace the drawn apples; see www/art/PROMPTS.md.
+// Drop felt-apple-1..3.png into www/art/ and they replace the drawn apples; see www/art/PROMPTS.md.
 const appleArt = [];
 for (const n of [1, 2, 3]) {
   const im = new Image();
   im.onload = () => {
-    appleArt.push(`url("art/apple-${n}.png")`);
+    appleArt.push(`url("art/felt-apple-${n}.png")`);
     appleArt.sort();
     document.documentElement.classList.add('art');
     paintApples();
   };
-  im.src = `art/apple-${n}.png`;
+  im.src = `art/felt-apple-${n}.png`;
 }
-const crateArt = new Image();
-crateArt.onload = () => document.documentElement.classList.add('crate-art');
-crateArt.src = 'art/crate.jpg';
 function paintApples() {
   if (!appleArt.length) return;
   for (const el of els) el.style.setProperty('--img', appleArt[(el.dataset.h >>> 13) % appleArt.length]);
