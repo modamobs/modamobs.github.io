@@ -1,0 +1,173 @@
+rules_version = '2';
+
+// ===================================================
+// 모브스 게임 플랫폼 — Firestore 보안 규칙
+// ---------------------------------------------------
+// games/{id}
+//   유저 게임   id = "u_" + 영숫자 10자 (업로드 Worker가 정함)
+//              제목·설명·태그·올린 사람 + 카운터
+//   공식 게임   id = js/games.js의 slug, { official: true } + 카운터만
+//
+// 카운터(likeCount / playCount / reportCount)는 누구나 바꿀 수 있지만
+//   - 좋아요: users/{uid}/likes/{id} 를 만들거나 지우는 것과 "같은 batch"에서만 ±1
+//   - 신고:   users/{uid}/reports/{id} 를 처음 만들 때만 +1 (취소 없음)
+//   - 플레이: +1만 (누가 했는지는 users/{uid}/history/{id} 에 본인만 보게 따로 남김)
+// 이렇게 해서 한 사람이 숫자를 마음대로 부풀리지 못하게 합니다.
+//
+// 보는 사람은 익명 로그인, 게임을 올리려면 구글 로그인이 필요합니다.
+// ===================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function member() {
+      return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+    function admin() {
+      return member()
+        && request.auth.token.email == 'yamoda24@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function bumped(field, by) {
+      return request.resource.data[field] == resource.data[field] + by;
+    }
+    function gamePath(id)   { return /databases/$(database)/documents/games/$(id); }
+    function likePath(id)   { return /databases/$(database)/documents/users/$(request.auth.uid)/likes/$(id); }
+    function reportPath(id) { return /databases/$(database)/documents/users/$(request.auth.uid)/reports/$(id); }
+    function mySubPath(cid) { return /databases/$(database)/documents/users/$(request.auth.uid)/subscriptions/$(cid); }
+    function subsPath(cid)  { return /databases/$(database)/documents/subs/$(cid); }
+    function creatorId(cid) { return cid == 'mobs' || cid.matches('[A-Za-z0-9]{10,64}'); }
+
+    function zeroCounters(d) {
+      return d.likeCount == 0 && d.playCount == 0 && d.reportCount == 0 && d.hidden == false;
+    }
+    function shortText(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+    function validMeta(d) {
+      return shortText(d.title, 1, 40)
+        && shortText(d.desc, 0, 140)
+        && d.tags is list && d.tags.size() <= 5
+        && shortText(d.ownerName, 0, 40)
+        && (d.thumb == '' || (d.thumb is string && d.thumb.matches('__thumb[.](png|jpg|jpeg|webp)')))
+        && d.portrait is bool
+        && d.size is int && d.files is int;
+    }
+
+    match /games/{id} {
+      allow read: if true;
+
+      // 유저 게임 등록 (파일은 업로드 Worker가 먼저 올려 둡니다)
+      allow create: if member()
+        && id.matches('u_[a-z0-9]{10}')
+        && request.resource.data.keys().hasOnly([
+             'title', 'desc', 'tags', 'ownerUid', 'ownerName', 'createdAt', 'portrait',
+             'thumb', 'size', 'files', 'hidden', 'likeCount', 'playCount', 'reportCount'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && zeroCounters(request.resource.data)
+        && validMeta(request.resource.data);
+
+      // 공식 게임 카운터 문서 (처음 좋아요/플레이할 때 피드가 만듭니다)
+      allow create: if signedIn()
+        && id.matches('[a-z0-9-]{1,40}')
+        && request.resource.data.keys().hasOnly(['official', 'hidden', 'likeCount', 'playCount', 'reportCount'])
+        && request.resource.data.official == true
+        && zeroCounters(request.resource.data);
+
+      allow update: if
+        // 올린 사람: 제목·설명·태그만
+        (member() && resource.data.ownerUid == request.auth.uid
+          && changedOnly(['title', 'desc', 'tags'])
+          && validMeta(request.resource.data))
+        // 좋아요 / 좋아요 취소
+        || (signedIn() && changedOnly(['likeCount']) && (
+              (bumped('likeCount', 1)  && !exists(likePath(id)) &&  existsAfter(likePath(id)))
+           || (bumped('likeCount', -1) &&  exists(likePath(id)) && !existsAfter(likePath(id)))))
+        // 신고 (한 사람 한 번)
+        || (signedIn() && changedOnly(['reportCount']) && bumped('reportCount', 1)
+              && !exists(reportPath(id)) && existsAfter(reportPath(id)))
+        // 플레이 수
+        || (signedIn() && changedOnly(['playCount']) && bumped('playCount', 1))
+        // 관리자: 무엇이든
+        || admin();
+
+      allow delete: if admin()
+        || (member() && resource.data.ownerUid == request.auth.uid);
+    }
+
+    // 구독자 수 (공개) — 구독 기록(users/{uid}/subscriptions/{cid})을 만들거나 지울 때만 ±1
+    // 구독은 구글 로그인 회원만 (익명 계정을 여러 개 만들어 숫자를 부풀리지 못하게)
+    match /subs/{cid} {
+      allow read: if true;
+      allow create: if member() && creatorId(cid)
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == 1
+        && !exists(mySubPath(cid)) && existsAfter(mySubPath(cid));
+      allow update: if member()
+        && request.resource.data.keys().hasOnly(['count'])
+        && ((bumped('count', 1)  && !exists(mySubPath(cid)) &&  existsAfter(mySubPath(cid)))
+         || (bumped('count', -1) &&  exists(mySubPath(cid)) && !existsAfter(mySubPath(cid))));
+    }
+
+    // 공개 프로필 (/u/?id=uid) — 게임을 올리는 회원의 이름·구글 프로필 사진
+    match /profiles/{uid} {
+      allow read: if true;
+      allow create, update: if member() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'photo', 'updatedAt'])
+        && shortText(request.resource.data.name, 0, 40)
+        && request.resource.data.photo is string
+        && (request.resource.data.photo == ''
+            || (request.resource.data.photo.size() <= 500
+                && request.resource.data.photo.matches('https://lh[0-9][.]googleusercontent[.]com/.+')))
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if admin() || (member() && request.auth.uid == uid);
+    }
+
+    match /users/{uid} {
+      // 내 설정 — 알림을 마지막으로 확인한 시각(notifSeenAt)만
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['notifSeenAt'])
+        && request.resource.data.notifSeenAt == request.time;
+
+      match /likes/{id} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time
+          && getAfter(gamePath(id)).data.likeCount == get(gamePath(id)).data.likeCount + 1;
+        allow delete: if signedIn() && request.auth.uid == uid
+          && getAfter(gamePath(id)).data.likeCount == get(gamePath(id)).data.likeCount - 1;
+      }
+      // 내가 구독한 사람 — 본인만 봄. 자기 자신은 구독 불가
+      match /subscriptions/{cid} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow create: if member() && request.auth.uid == uid && cid != uid && creatorId(cid)
+          && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time
+          && ((exists(subsPath(cid)) && getAfter(subsPath(cid)).data.count == get(subsPath(cid)).data.count + 1)
+           || (!exists(subsPath(cid)) && getAfter(subsPath(cid)).data.count == 1));
+        allow delete: if member() && request.auth.uid == uid
+          && exists(subsPath(cid))
+          && getAfter(subsPath(cid)).data.count == get(subsPath(cid)).data.count - 1;
+      }
+      // 플레이 기록 (내 페이지의 "기록") — 게임마다 마지막으로 한 시각만
+      match /history/{id} {
+        allow read, delete: if signedIn() && request.auth.uid == uid;
+        allow create, update: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['at'])
+          && request.resource.data.at == request.time;
+      }
+      match /reports/{id} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['at', 'reason'])
+          && request.resource.data.at == request.time
+          && shortText(request.resource.data.reason, 0, 200)
+          && getAfter(gamePath(id)).data.reportCount == get(gamePath(id)).data.reportCount + 1;
+      }
+    }
+  }
+}

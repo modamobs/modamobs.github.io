@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>별 잡기</title>
+  <!--
+    모브스 게임 피드용 샘플 게임 (업로드 템플릿)
+    - 파일 하나로 끝나는 세로 화면 게임입니다. 이 폴더를 zip으로 묶어 /upload/에 올리면 됩니다.
+    - 한 판이 끝나면 점수를 피드로 보냅니다: parent.postMessage({ type: "mobs:score", score }, "*")
+    - 최고 기록은 localStorage에 저장합니다. (바깥 서버 통신은 막혀 있습니다)
+  -->
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; user-select: none; }
+    body {
+      background: linear-gradient(180deg, #1e1b4b, #0f172a);
+      color: #f8fafc;
+      font-family: -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+    .hud {
+      position: fixed; top: 14px; left: 0; right: 0;
+      display: flex; justify-content: space-between; padding: 0 18px;
+      font-weight: 800; font-size: 20px; pointer-events: none;
+    }
+    .overlay {
+      position: fixed; inset: 0; display: grid; place-items: center; text-align: center;
+      background: rgba(15, 23, 42, .55);
+    }
+    .overlay[hidden] { display: none; }
+    .overlay h1 { margin: 0 0 8px; font-size: 34px; }
+    .overlay p { margin: 0 0 20px; opacity: .8; }
+    .overlay button {
+      font: inherit; font-size: 20px; font-weight: 800; padding: 14px 34px;
+      border-radius: 999px; border: 0; background: #facc15; color: #1e1b4b;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div class="hud"><span id="score">0</span><span id="time">30</span></div>
+  <div class="overlay" id="menu">
+    <div>
+      <h1>⭐ 별 잡기</h1>
+      <p id="msg">떨어지는 별을 30초 동안 톡톡!<br>💣는 피하세요.</p>
+      <button id="go">시작</button>
+    </div>
+  </div>
+
+  <script>
+    const c = document.getElementById("c"), g = c.getContext("2d");
+    const $score = document.getElementById("score"), $time = document.getElementById("time");
+    const menu = document.getElementById("menu"), msg = document.getElementById("msg");
+    let W, H, items = [], score = 0, left = 0, last = 0, spawn = 0, running = false;
+
+    function resize() {
+      const r = devicePixelRatio || 1;
+      W = innerWidth; H = innerHeight;
+      c.width = W * r; c.height = H * r;
+      g.setTransform(r, 0, 0, r, 0, 0);
+    }
+    addEventListener("resize", resize); resize();
+
+    function best() { try { return Number(localStorage.getItem("best")) || 0; } catch (e) { return 0; } }
+
+    function start() {
+      items = []; score = 0; left = 30; spawn = 0; running = true;
+      menu.hidden = true; last = performance.now();
+      requestAnimationFrame(loop);
+    }
+
+    function end() {
+      running = false;
+      const b = Math.max(best(), score);
+      try { localStorage.setItem("best", b); } catch (e) {}
+      parent.postMessage({ type: "mobs:score", score }, "*");
+      parent.postMessage({ type: "mobs:end" }, "*");
+      msg.innerHTML = "점수 <b>" + score + "</b> · 최고 " + b;
+      document.getElementById("go").textContent = "다시";
+      menu.hidden = false;
+    }
+
+    function loop(now) {
+      if (!running) return;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      left -= dt; spawn -= dt;
+      if (left <= 0) { left = 0; draw(); return end(); }
+
+      if (spawn <= 0) {
+        spawn = Math.max(0.25, 0.7 - (30 - left) * 0.015);
+        const bomb = Math.random() < 0.18;
+        items.push({ x: 30 + Math.random() * (W - 60), y: -30, v: 140 + Math.random() * 120 + (30 - left) * 6, bomb });
+      }
+      items.forEach(it => { it.y += it.v * dt; });
+      items = items.filter(it => it.y < H + 40);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function draw() {
+      g.clearRect(0, 0, W, H);
+      g.font = "40px serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      items.forEach(it => g.fillText(it.bomb ? "💣" : "⭐", it.x, it.y));
+      $score.textContent = score;
+      $time.textContent = Math.ceil(left);
+    }
+
+    c.addEventListener("pointerdown", e => {
+      if (!running) return;
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (Math.hypot(it.x - e.clientX, it.y - e.clientY) < 34) {
+          score = Math.max(0, score + (it.bomb ? -5 : 1));
+          items.splice(i, 1);
+          break;
+        }
+      }
+    });
+    document.getElementById("go").addEventListener("click", start);
+  </script>
+</body>
+</html>

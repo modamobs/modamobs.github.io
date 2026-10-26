@@ -1,0 +1,14 @@
+{
+  // 모브스 게임 플랫폼 — 업로드·실행 Worker
+  "name": "mobs-play",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "r2_buckets": [
+    { "binding": "BUCKET", "bucket_name": "mobs-play-games" }
+  ],
+  "vars": {
+    "FIREBASE_PROJECT_ID": "mobs-play-platform",
+    "ALLOWED_ORIGINS": "https://modamobs.github.io,http://localhost:8000",
+    "ADMIN_EMAILS": "yamoda24@gmail.com"
+  }
+}
