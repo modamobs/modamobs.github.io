@@ -937,14 +937,18 @@ $('sound').addEventListener('click', () => {
 // ---------- leaderboard (Supabase) ----------
 // From the Supabase project's Settings → API. The anon key is meant to be public:
 // the table is read-only for it, and scores only go in through submit_score() (supabase/schema.sql).
-const LB = { url: '', key: '' };
+const LB = { url: 'https://uomtujakthnwjcuqegvk.supabase.co', key: 'sb_publishable_jo_fDlw76PjqpwEZn3lqcA_k3v2Wi8m' };
 const lbOn = () => !!(LB.url && LB.key);
 let lbMode = 'easy';
 
 async function lbFetch(path, body) {
   const res = await fetch(LB.url.replace(/\/+$/, '') + '/rest/v1/' + path, {
     method: body ? 'POST' : 'GET',
-    headers: { apikey: LB.key, Authorization: 'Bearer ' + LB.key, 'Content-Type': 'application/json' },
+    headers: {
+      apikey: LB.key, 'Content-Type': 'application/json',
+      // a new publishable key (sb_...) is not a JWT and is refused in Authorization
+      ...(LB.key.startsWith('sb_') ? {} : { Authorization: 'Bearer ' + LB.key }),
+    },
     body: body && JSON.stringify(body),
   });
   if (!res.ok) throw new Error(res.status + ' ' + (await res.text()).slice(0, 200));
@@ -972,7 +976,7 @@ function queueScore(day, mode, score) {
   store('apple-pending', q);
 }
 async function submitScore(day, mode, score) {
-  const [r] = await lbFetch('rpc/submit_score', { p_day: day, p_mode: mode, p_player: playerId(), p_nickname: nickname(), p_score: score });
+  const [r] = await lbFetch('rpc/apple_submit_score', { p_day: day, p_mode: mode, p_player: playerId(), p_nickname: nickname(), p_score: score });
   const q = load('apple-pending', {});
   delete q[day + '|' + mode];
   store('apple-pending', q);
@@ -1031,8 +1035,8 @@ async function openBoard(mode) {
   $('lb-me').textContent = '';
   await flushPending();
   try {
-    const rows = await lbFetch(`daily_scores?select=nickname,score,plays&day=eq.${day}&mode=eq.${lbMode}&order=score.desc,updated_at.asc&limit=100`);
-    const mine = nickname() ? await lbFetch('rpc/my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() }) : [];
+    const rows = await lbFetch(`apple_daily_scores?select=nickname,score,plays&day=eq.${day}&mode=eq.${lbMode}&order=score.desc,updated_at.asc&limit=100`);
+    const mine = nickname() ? await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() }) : [];
     const me = mine[0];
     list.textContent = '';
     if (!rows.length) list.innerHTML = '<li class="empty">아직 아무도 안 했어요. 첫 기록을 남겨요!</li>';
