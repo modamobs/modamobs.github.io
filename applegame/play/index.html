@@ -253,17 +253,12 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 }
 .a.on i { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.1); filter: brightness(1.06) drop-shadow(0 calc(var(--cell) * .12) calc(var(--cell) * .08) var(--shade)); }
 .a.on b { background: var(--pick); }
-.a.hint i { animation: wobble .18s ease-in-out 8 alternate; }
 .a.gone i { animation: lift .5s cubic-bezier(.3, .1, .6, 1) forwards; }
 .a.gone.done { visibility: hidden; }
 @keyframes lift {
   0% { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.1); opacity: 1; }
   30% { transform: rotate(calc(var(--rot, 0deg) - 8deg)) translateY(-30%) scale(1.16); opacity: 1; }
   100% { transform: rotate(calc(var(--rot, 0deg) + 14deg)) translateY(-150%) scale(.55); opacity: 0; }
-}
-@keyframes wobble {
-  from { transform: rotate(calc(var(--rot, 0deg) - 9deg)); }
-  to { transform: rotate(calc(var(--rot, 0deg) + 9deg)); }
 }
 
 /* the drag box is a basting stitch in cream thread, yellow when the apples make 10 */
@@ -374,7 +369,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .linkish { border: 0; background: none; color: var(--thread); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 2px; }
 
 @media (max-width: 520px) {
-  .brand .sub { display: none; }
+  .brand .sub { font-size: 0.7rem; max-width: 11em; line-height: 1.3; }
   .brand h1 { font-size: 1.6rem; }
   .stats { gap: 8px; }
   .stamp { width: 52px; height: 52px; }
@@ -393,7 +388,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
     padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
   .bar { grid-column: 1; flex-direction: column; align-items: flex-start; gap: 8px; }
-  .brand .sub { display: none; }
+  .brand .sub { font-size: 0.72rem; }
   .brand h1 { font-size: 1.6rem; }
   .stats { gap: 8px; }
   .stamp { width: 50px; height: 50px; }
@@ -407,7 +402,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   .receipt .total dd { font-size: 1.6rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .a.gone i, .a.hint i, .plus, .sheet, .stamp.low { animation-duration: .01s; animation-iteration-count: 1; }
+  .a.gone i, .plus, .sheet, .stamp.low { animation-duration: .01s; animation-iteration-count: 1; }
 }
 </style>
 
@@ -429,9 +424,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
       <button id="m-easy" data-mode="easy" aria-pressed="true">쉬움 7×10</button>
       <button id="m-classic" data-mode="classic" aria-pressed="false">클래식 17×10</button>
     </div>
-    <label class="chip" for="daily"><input type="checkbox" id="daily"> 오늘의 판</label>
     <span class="spacer"></span>
-    <button class="chip" id="hint">힌트 −5초</button>
     <button class="chip" id="sound" aria-pressed="true">소리 켬</button>
     <button class="chip" id="restart">새 판</button>
     <button class="chip" id="rank" hidden>순위</button>
@@ -491,7 +484,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
         </div>
         <div class="row">
           <button class="btn" id="lb-close">닫기</button>
-          <button class="btn primary" id="lb-play">오늘의 판 하기</button>
+          <button class="btn primary" id="lb-play">한 판 하기</button>
         </div>
         <button class="linkish" id="lb-rename">닉네임 바꾸기</button>
       </div>
@@ -505,7 +498,6 @@ const MODES = {
   classic: { r: 10, c: 17, label: '클래식' }, // canonical shape: wide (the original Fruit Box size)
 };
 const TIME = 120;
-const HINT_COST = 5;
 
 const $ = id => document.getElementById(id);
 const stage = $('stage'), crate = $('crate'), board = $('board');
@@ -524,7 +516,7 @@ function hashStr(s) {
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
-// The daily board turns over at midnight Korea time for everyone, wherever their phone is.
+// The ranking day turns over at midnight Korea time for everyone, wherever their phone is.
 function todayKey() {
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' })
     .formatToParts(new Date()).map(x => [x.type, x.value]));
@@ -596,9 +588,9 @@ function estimate(g, R, C, rng) {
 }
 
 // Generate boards until the computer clears at least 80% of the apples; keep the best one seen.
-function makeBoard(mode, daily, day) {
+function makeBoard(mode) {
   const { r: R, c: C } = MODES[mode];
-  const seed = daily ? hashStr(day + ':' + mode) : (Math.random() * 2 ** 32) >>> 0;
+  const seed = (Math.random() * 2 ** 32) >>> 0;
   const rng = mulberry32(seed);
   let pick = null;
   for (let t = 0; t < 8; t++) {
@@ -618,7 +610,7 @@ function transpose(g, R, C) {
 
 // ---------- state ----------
 let S = null;
-let prefs = { mode: 'easy', daily: false, sound: true };
+let prefs = { mode: 'easy', sound: true };
 let els = [];
 let drag = null;
 let raf = 0, lastTick = 0;
@@ -638,13 +630,13 @@ function orient(b) {
 function newGame(sameBoard) {
   stopClock();
   const day = sameBoard && S ? S.day : todayKey();
-  const base = sameBoard && S ? S.base : makeBoard(prefs.mode, prefs.daily, day);
+  const base = sameBoard && S ? S.base : makeBoard(prefs.mode);
   const o = orient(base);
   S = {
     base, R: o.R, C: o.C, g: o.g,
     est: base.est, total: o.g.length,
     score: 0, time: TIME, started: false, over: false,
-    mode: prefs.mode, daily: prefs.daily, day,
+    mode: prefs.mode, day,
   };
   render();
 }
@@ -722,11 +714,10 @@ function hud() {
   $('fill').style.transform = `scaleX(${Math.max(0, S.time) / TIME})`;
   $('timer').classList.toggle('low', S.time <= 20);
   $('stamp').classList.toggle('low', S.started && !S.over && S.time <= 10);
-  $('sub').textContent = S.daily
-    ? `${S.day.slice(5).replace('-', '월 ')}일의 판 · 오늘은 모두 같은 보드를 받아요.`
-    : '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.';
+  $('sub').textContent = !lbOn() ? '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.'
+    : rankedToday(S.mode) ? '오늘 순위전은 끝났어요. 지금은 연습이에요.'
+    : '이번 판이 오늘의 순위전이에요.';
   for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', b.dataset.mode === prefs.mode);
-  $('daily').checked = prefs.daily;
   $('sound').setAttribute('aria-pressed', prefs.sound);
   $('sound').textContent = prefs.sound ? '소리 켬' : '소리 끔';
 }
@@ -827,7 +818,6 @@ function harvest(m, n) {
     if (!S.g[i]) continue;
     S.g[i] = 0;
     const el = els[i];
-    el.classList.remove('hint');
     el.classList.add('gone');
     el.firstChild.addEventListener('animationend', () => el.classList.add('done'), { once: true });
   }
@@ -849,23 +839,6 @@ function floatPlus(m, n) {
   p.addEventListener('animationend', () => p.remove());
 }
 
-$('hint').addEventListener('click', () => {
-  if (!S || S.over) return;
-  const ms = findMoves(S.g, S.R, S.C);
-  if (!ms.length) return;
-  ms.sort((a, b) => a.area - b.area);
-  const m = ms[0];
-  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) {
-    const el = els[r * S.C + c];
-    if (!S.g[r * S.C + c]) continue;
-    el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint');
-    setTimeout(() => el.classList.remove('hint'), 1600);
-  }
-  unlockAudio();
-  play('hint', 0.7);
-  if (S.started) { S.time -= HINT_COST; hud(); }
-});
-
 // ---------- end ----------
 function end(reason) {
   stopClock();
@@ -875,7 +848,11 @@ function end(reason) {
   $('over-title').textContent = { time: '시간 종료', stuck: '더 묶을 사과가 없어요', all: '완판!' }[reason];
   $('over-score').textContent = S.score + '개';
   const now = new Date();
-  $('over-date').textContent = `${S.daily ? '오늘의 판 · ' : ''}${S.day} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  // the first game finished each day (per mode) is the ranked one; later games are practice,
+  // so playing more does not buy more chances at the board
+  const ranked = lbOn() && !S.ranked && !rankedToday(S.mode) && !S.restored;
+  if (ranked) { S.ranked = true; markRanked(S.day, S.mode, S.score); }
+  $('over-date').textContent = `${S.day} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} · ${S.ranked ? '오늘의 순위전' : '연습'}`;
   $('stamp').classList.remove('low');
   play('bell', 0.8);
   $('over-est').textContent = S.est + '개';
@@ -884,18 +861,12 @@ function end(reason) {
   $('copied').textContent = '';
   $('over').hidden = false;
   $('again-new').focus();
-  if (S.daily) {
-    const db = load('apple-daily-best', {}), k = S.day + '|' + S.mode;
-    db[k] = Math.max(db[k] || 0, S.score);
-    store('apple-daily-best', db);
-    lbAfterGame();
-  }
-  else {
-    $('nick-form').hidden = true;
-    // only the shared daily board is ranked, so say so instead of leaving people wondering why they are not on it
-    if (lbOn()) showLbResult('순위에는 오늘의 판 기록만 올라가요. <button class="linkish" type="button" data-play-daily>오늘의 판 하기</button>');
-    else $('lb-result').hidden = true;
-  }
+  $('nick-form').hidden = true;
+  if (ranked) lbAfterGame();
+  else if (lbOn()) showLbResult('연습 판이라 순위에는 안 올라가요. <span class="muted">순위는 하루에 모드마다 첫 판 기록으로 정해져요.</span>' +
+    '<button class="linkish" type="button" data-open-lb>오늘 순위 보기</button>');
+  else $('lb-result').hidden = true;
+  hud();
   // the site's feed player embeds games in an iframe and listens for these
   if (window.parent !== window) {
     window.parent.postMessage({ type: 'mobs:score', score: S.score }, '*');
@@ -904,9 +875,8 @@ function end(reason) {
 }
 
 function shareText() {
-  const when = S.daily ? ` ${S.day}` : '';
   const ratio = Math.round((S.score / S.total) * 10);
-  return `사과 게임${when} · ${MODES[S.mode].label}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개 (옆가게 사장님 ${S.est}개)`;
+  return `사과 게임 · ${MODES[S.mode].label}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개 (옆가게 사장님 ${S.est}개)`;
 }
 $('copy').addEventListener('click', () => {
   const t = shareText();
@@ -927,11 +897,6 @@ for (const b of document.querySelectorAll('.seg button')) {
     newGame(false);
   });
 }
-$('daily').addEventListener('change', e => {
-  prefs.daily = e.target.checked;
-  store('apple-prefs', prefs);
-  newGame(false);
-});
 $('sound').addEventListener('click', () => {
   prefs.sound = !prefs.sound;
   store('apple-prefs', prefs);
@@ -972,6 +937,14 @@ function playerId() {
   return id;
 }
 const nickname = () => load('apple-nick', '');
+// today's ranked score per mode; the first finished game of the day goes here and to the server
+const rankedToday = mode => load('apple-daily-best', {})[todayKey() + '|' + mode] != null;
+function markRanked(day, mode, score) {
+  const db = load('apple-daily-best', {});
+  db[day + '|' + mode] = score;
+  store('apple-daily-best', db);
+  queueScore(day, mode, score); // sent now if there is a nickname, otherwise once one is set
+}
 const dayLabel = d => `${+d.slice(5, 7)}월 ${+d.slice(8)}일`;
 
 // Scores that could not be sent (offline) wait here, best per day and mode, and go out on the next chance.
@@ -1003,7 +976,7 @@ async function lbAfterGame() {
   $('nick-form').hidden = true;
   if (!lbOn()) { $('lb-result').hidden = true; return; }
   if (!nickname()) {
-    showLbResult('오늘의 판 순위에 올릴 닉네임을 정해요.');
+    showLbResult('오늘 순위에 올릴 닉네임을 정해요.');
     $('nick-form').hidden = false;
     $('nick-form').onsubmit = e => {
       e.preventDefault();
@@ -1044,7 +1017,7 @@ async function openBoard(mode) {
     const mine = nickname() ? await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() }) : [];
     const me = mine[0];
     list.textContent = '';
-    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>오늘의 판을 끝내고 닉네임을 정하면 여기에 올라가요.</li>';
+    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>오늘 첫 판을 끝내고 닉네임을 정하면 여기에 올라가요.</li>';
     rows.forEach((r, i) => {
       const li = document.createElement('li');
       if (me && me.rank === i + 1) li.className = 'me';
@@ -1066,16 +1039,11 @@ $('rank').addEventListener('click', () => openBoard(prefs.mode));
 for (const b of document.querySelectorAll('[data-lb]')) b.addEventListener('click', () => openBoard(b.dataset.lb));
 $('lb-result').addEventListener('click', e => {
   if (e.target.closest('[data-open-lb]')) openBoard(S.mode);
-  if (e.target.closest('[data-play-daily]')) {
-    prefs.daily = true;
-    store('apple-prefs', prefs);
-    newGame(false);
-  }
 });
 $('lb-close').addEventListener('click', () => { $('lb').hidden = true; });
 $('lb-play').addEventListener('click', () => {
   $('lb').hidden = true;
-  prefs.mode = lbMode; prefs.daily = true;
+  prefs.mode = lbMode;
   store('apple-prefs', prefs);
   newGame(false);
 });
@@ -1085,7 +1053,7 @@ $('lb-rename').addEventListener('click', () => {
   store('apple-nick', n.trim().slice(0, 12));
   const q = load('apple-pending', {});
   const best = load('apple-daily-best', {});
-  // re-send today's best so the new name shows up on the board
+  // re-send today's ranked score so the new name shows up on the board
   for (const m of Object.keys(MODES)) { const k = todayKey() + '|' + m; if (best[k] != null) q[k] = Math.max(q[k] || 0, best[k]); }
   store('apple-pending', q);
   openBoard();
@@ -1093,7 +1061,7 @@ $('lb-rename').addEventListener('click', () => {
 
 // ---------- sound ----------
 // Recorded effects made with ElevenLabs (www/sfx). They load after the first touch, when audio is allowed.
-const SFX = ['harvest-1', 'harvest-2', 'harvest-3', 'harvest-big', 'miss', 'tick', 'bell', 'hint'];
+const SFX = ['harvest-1', 'harvest-2', 'harvest-3', 'harvest-big', 'miss', 'tick', 'bell'];
 const sfx = {};
 let actx = null;
 function unlockAudio() {
@@ -1124,8 +1092,9 @@ window.claude?.hot?.snapshot?.(() => ({ prefs, S: S && { ...S, started: false } 
 
 function start(data) {
   prefs = { ...prefs, ...load('apple-prefs', {}), ...(data && data.prefs) };
+  delete prefs.daily;
   if (data && data.S) {
-    S = data.S; // resumes paused; the clock restarts on the next drag
+    S = { ...data.S, restored: data.S.over }; // resumes paused; the clock restarts on the next drag
     render();
     if (S.over) end(S.score === S.total ? 'all' : 'time');
   } else {
