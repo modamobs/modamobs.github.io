@@ -91,6 +91,18 @@ const GAMES = [
     portrait: true
   },
   {
+    slug: "applegame",
+    title: "사과 게임",
+    desc: "2분 안에 합이 10이 되는 사과를 드래그로 묶어 땁니다. 날마다 모두 같은 판을 받는 오늘의 판도 있습니다.",
+    genres: ["퍼즐", "숫자"],
+    status: "web",
+    playable: true,
+    play: "/applegame/play/",
+    thumb: "/assets/images/applegame.png",
+    accent: "#de3b2b",
+    portrait: true
+  },
+  {
     slug: "arrow-box",
     title: "Arrow Box",
     desc: "상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 막다른 길이 없으니 순서만 찾으면 됩니다.",

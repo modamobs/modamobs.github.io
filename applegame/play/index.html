@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>사과 게임</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gothic+A1:wght@400;600;800&display=swap">
+<style>
+/* Layout: one-screen orchard crate. Compact top bar, a stem-green timer line, the board fills everything below. */
+:root {
+  --bg: #eef2df;
+  --panel: #f9fbf1;
+  --ink: #21301d;
+  --muted: #5d6b53;
+  --line: #d2dbbd;
+  --apple: #de3b2b;
+  --apple-hi: #ff7d5e;
+  --apple-lo: #a8231a;
+  --on-apple: #ffffff;
+  --leaf: #4a8f35;
+  --stem: #6b4a2a;
+  --pick: #f2ac33;
+  --pick-hi: #ffd97f;
+  --pick-lo: #c9800f;
+  --pick-wash: rgba(242, 172, 51, 0.16);
+  --ok: #2f8f4e;
+  --ok-wash: rgba(47, 143, 78, 0.16);
+  --shade: rgba(33, 48, 29, 0.22);
+  --scrim: rgba(238, 242, 223, 0.82);
+  --display: "Jua", "Gothic A1", system-ui, sans-serif;
+  --body: "Gothic A1", system-ui, -apple-system, "Malgun Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131b12; --panel: #1c2719; --ink: #e6eedb; --muted: #9dad92; --line: #2e3c2a;
+    --apple: #e4473a; --apple-hi: #ff8c6e; --apple-lo: #962015; --on-apple: #ffffff;
+    --leaf: #6db152; --stem: #a27c55;
+    --pick: #efb24a; --pick-hi: #ffdb8f; --pick-lo: #c0820f; --pick-wash: rgba(239, 178, 74, 0.18);
+    --ok: #5cc27c; --ok-wash: rgba(92, 194, 124, 0.18);
+    --shade: rgba(0, 0, 0, 0.45); --scrim: rgba(19, 27, 18, 0.84);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131b12; --panel: #1c2719; --ink: #e6eedb; --muted: #9dad92; --line: #2e3c2a;
+  --apple: #e4473a; --apple-hi: #ff8c6e; --apple-lo: #962015; --on-apple: #ffffff;
+  --leaf: #6db152; --stem: #a27c55;
+  --pick: #efb24a; --pick-hi: #ffdb8f; --pick-lo: #c0820f; --pick-wash: rgba(239, 178, 74, 0.18);
+  --ok: #5cc27c; --ok-wash: rgba(92, 194, 124, 0.18);
+  --shade: rgba(0, 0, 0, 0.45); --scrim: rgba(19, 27, 18, 0.84);
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+button, input { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; }
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.brand h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.75rem; line-height: 1; color: var(--apple); }
+.brand .sub { font-size: 0.8rem; color: var(--muted); }
+.stats { display: flex; gap: 18px; }
+.stat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.stat .k { font-size: 0.7rem; letter-spacing: 0.04em; color: var(--muted); }
+.stat .v { font-family: var(--display); font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 0.55em; color: var(--muted); margin-left: 1px; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.seg button { border: 0; background: none; padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--apple); color: var(--on-apple); }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.chip input { accent-color: var(--apple); margin: 0; }
+.chip[aria-pressed="false"] { color: var(--muted); }
+.spacer { flex: 1; }
+
+.timer { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; flex: none; }
+.timer .fill { height: 100%; width: 100%; background: var(--leaf); transform-origin: left; transition: background-color .3s; }
+.timer.low .fill { background: var(--apple); }
+
+.stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; touch-action: none; cursor: crosshair; }
+.board { position: relative; --cell: 40px; }
+
+.a {
+  position: absolute;
+  left: calc(var(--c) * var(--cell));
+  top: calc(var(--r) * var(--cell));
+  width: var(--cell); height: var(--cell);
+  display: grid; place-items: center;
+  pointer-events: none;
+}
+.a i {
+  position: relative;
+  width: 86%; height: 84%;
+  margin-top: 8%;
+  border-radius: 50% 50% 47% 47% / 56% 56% 44% 44%;
+  background: radial-gradient(circle at 32% 30%, var(--apple-hi) 0 10%, var(--apple) 46%, var(--apple-lo) 100%);
+  box-shadow: inset 0 calc(var(--cell) * -0.05) 0 rgba(0,0,0,.12), 0 calc(var(--cell) * 0.04) calc(var(--cell) * 0.06) var(--shade);
+  display: grid; place-items: center;
+  font-style: normal;
+  font-family: var(--display);
+  font-size: calc(var(--cell) * 0.46);
+  line-height: 1;
+  color: var(--on-apple);
+  text-shadow: 0 1px 0 rgba(0,0,0,.28);
+  padding-top: 4%;
+  box-sizing: border-box;
+  transition: transform .08s;
+}
+.a i::before {
+  content: ""; position: absolute; top: -7%; left: 50%;
+  width: 7%; height: 16%; background: var(--stem); border-radius: 2px; transform: rotate(8deg);
+}
+.a i::after {
+  content: ""; position: absolute; top: -9%; left: 55%;
+  width: 24%; height: 12%; background: var(--leaf); border-radius: 0 100% 0 100%; transform: rotate(-18deg);
+}
+.a.on i {
+  background: radial-gradient(circle at 32% 30%, var(--pick-hi) 0 12%, var(--pick) 50%, var(--pick-lo) 100%);
+  transform: scale(1.05);
+}
+.a.hint i { animation: hint .5s ease-in-out 3 alternate; }
+.a.gone i { animation: pop .42s ease-in forwards; }
+.a.gone.done { visibility: hidden; }
+@keyframes pop {
+  0% { transform: scale(1.05); opacity: 1; }
+  35% { transform: scale(1.2) translateY(-10%); opacity: 1; }
+  100% { transform: scale(.3) translateY(70%); opacity: 0; }
+}
+@keyframes hint {
+  from { transform: scale(1); box-shadow: 0 0 0 0 var(--pick); }
+  to { transform: scale(1.1); box-shadow: 0 0 0 calc(var(--cell) * 0.08) var(--pick); }
+}
+
+.sel {
+  position: absolute; pointer-events: none;
+  border: 2px dashed var(--pick); background: var(--pick-wash); border-radius: 8px;
+  box-sizing: border-box;
+}
+.sel.hit { border-style: solid; border-color: var(--ok); background: var(--ok-wash); }
+.sel .sum {
+  position: absolute; top: -12px; right: -10px;
+  min-width: 26px; padding: 3px 7px; border-radius: 999px;
+  background: var(--pick); color: var(--ink);
+  font-family: var(--display); font-size: 0.95rem; text-align: center; line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.sel.hit .sum { background: var(--ok); color: var(--on-apple); }
+.sel.over .sum { background: var(--muted); color: var(--bg); }
+
+.plus {
+  position: absolute; pointer-events: none; transform: translate(-50%, -50%);
+  font-family: var(--display); font-size: 1.6rem; color: var(--ok);
+  text-shadow: 0 1px 0 var(--bg), 0 -1px 0 var(--bg), 1px 0 0 var(--bg), -1px 0 0 var(--bg);
+  animation: rise .8s ease-out forwards;
+}
+@keyframes rise { to { transform: translate(-50%, -160%); opacity: 0; } }
+
+.overlay {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: var(--scrim); backdrop-filter: blur(2px); cursor: default;
+}
+.card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
+  padding: 24px 24px 20px; width: min(340px, 100%); box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 14px; text-align: center;
+  box-shadow: 0 10px 30px var(--shade);
+}
+.card h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.5rem; text-wrap: balance; }
+.card .big { font-family: var(--display); font-size: 3.4rem; line-height: 1; color: var(--apple); font-variant-numeric: tabular-nums; }
+.card .big small { font-size: 0.4em; color: var(--muted); }
+.card dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 0; text-align: left; font-size: 0.9rem; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.card .row { display: flex; gap: 8px; }
+.card .row button { flex: 1; }
+.btn {
+  border: 1px solid var(--line); background: var(--bg); border-radius: 12px;
+  padding: 10px 12px; font-weight: 800; font-size: 0.9rem; cursor: pointer;
+}
+.btn.primary { background: var(--apple); border-color: var(--apple); color: var(--on-apple); }
+.copied { font-size: 0.8rem; color: var(--ok); min-height: 1em; }
+
+@media (max-width: 520px) {
+  .brand .sub { display: none; }
+  .brand h1 { font-size: 1.4rem; }
+  .stats { gap: 14px; }
+  .stat .v { font-size: 1.35rem; }
+  .seg button, .chip { padding: 6px 10px; font-size: 0.8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .a.gone i, .a.hint i, .plus { animation-duration: .01s; }
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <h1>사과 게임</h1>
+      <span class="sub" id="sub">드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="k">점수</span><span class="v" id="score">0</span></div>
+      <div class="stat"><span class="k">남은 시간</span><span class="v" id="time">120<small>s</small></span></div>
+      <div class="stat"><span class="k">컴퓨터 기록</span><span class="v" id="target">–</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="모드">
+      <button id="m-easy" data-mode="easy" aria-pressed="true">쉬움 7×10</button>
+      <button id="m-classic" data-mode="classic" aria-pressed="false">클래식 17×10</button>
+    </div>
+    <label class="chip" for="daily"><input type="checkbox" id="daily"> 오늘의 판</label>
+    <span class="spacer"></span>
+    <button class="chip" id="hint">힌트 −5초</button>
+    <button class="chip" id="sound" aria-pressed="true">소리 켬</button>
+    <button class="chip" id="restart">새 판</button>
+  </div>
+
+  <div class="timer" id="timer"><div class="fill" id="fill"></div></div>
+
+  <main class="stage" id="stage">
+    <div class="board" id="board"></div>
+    <div class="overlay" id="over" hidden>
+      <div class="card" role="dialog" aria-labelledby="over-title">
+        <h2 id="over-title">시간 종료</h2>
+        <div class="big" id="over-score">0<small>개</small></div>
+        <dl>
+          <dt>컴퓨터가 이 판에서 딴 사과</dt><dd id="over-est">0개</dd>
+          <dt>내 최고 기록 (<span id="over-mode">쉬움</span>)</dt><dd id="over-best">0개</dd>
+        </dl>
+        <div class="row">
+          <button class="btn" id="again-same">같은 판 다시</button>
+          <button class="btn primary" id="again-new">새 판</button>
+        </div>
+        <button class="btn" id="copy">결과 복사</button>
+        <div class="copied" id="copied" aria-live="polite"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const MODES = {
+  easy: { r: 10, c: 7, label: '쉬움' },       // canonical shape: tall
+  classic: { r: 10, c: 17, label: '클래식' }, // canonical shape: wide (the original Fruit Box size)
+};
+const TIME = 120;
+const HINT_COST = 5;
+
+const $ = id => document.getElementById(id);
+const stage = $('stage'), board = $('board');
+
+// ---------- random + board generation ----------
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function randomGrid(R, C, rng) {
+  const g = new Array(R * C);
+  let s = 0;
+  for (let i = 0; i < g.length; i++) { g[i] = 1 + Math.floor(rng() * 9); s += g[i]; }
+  // keep the total a multiple of 10, so clearing everything is at least arithmetically possible
+  for (let k = 0; s % 10 && k < 1000; k++) {
+    const i = Math.floor(rng() * g.length);
+    if (g[i] < 9) { g[i]++; s++; }
+  }
+  return g;
+}
+
+// All tight rectangles (every edge row/col holds an apple) whose apples sum to 10.
+function findMoves(g, R, C) {
+  const W = C + 1;
+  const P = new Int32Array((R + 1) * W), N = new Int32Array((R + 1) * W);
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const v = g[r * C + c], i = (r + 1) * W + c + 1;
+    P[i] = v + P[i - 1] + P[i - W] - P[i - W - 1];
+    N[i] = (v > 0) + N[i - 1] + N[i - W] - N[i - W - 1];
+  }
+  const sum = (A, r1, c1, r2, c2) => A[(r2 + 1) * W + c2 + 1] - A[r1 * W + c2 + 1] - A[(r2 + 1) * W + c1] + A[r1 * W + c1];
+  const out = [];
+  for (let r1 = 0; r1 < R; r1++) for (let c1 = 0; c1 < C; c1++) {
+    for (let r2 = r1; r2 < R; r2++) {
+      if (sum(P, r1, c1, r2, c1) > 10) break;
+      for (let c2 = c1; c2 < C; c2++) {
+        const s = sum(P, r1, c1, r2, c2);
+        if (s > 10) break;
+        if (s < 10) continue;
+        if (!sum(N, r1, c1, r1, c2) || !sum(N, r2, c1, r2, c2) || !sum(N, r1, c1, r2, c1) || !sum(N, r1, c2, r2, c2)) continue;
+        out.push({ r1, c1, r2, c2, n: sum(N, r1, c1, r2, c2), area: (r2 - r1 + 1) * (c2 - c1 + 1) });
+      }
+    }
+  }
+  return out;
+}
+
+function clearRect(g, C, m) {
+  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) g[r * C + c] = 0;
+}
+
+// Greedy player: prefer small rectangles (they disturb the board least), with a little noise.
+function greedy(g0, R, C, rng, noise) {
+  const g = g0.slice();
+  let score = 0;
+  for (;;) {
+    const ms = findMoves(g, R, C);
+    if (!ms.length) return score;
+    let best = null, bk = Infinity;
+    for (const m of ms) {
+      const k = m.area + m.n * 0.5 + rng() * noise;
+      if (k < bk) { bk = k; best = m; }
+    }
+    clearRect(g, C, best);
+    score += best.n;
+  }
+}
+function estimate(g, R, C, rng) {
+  let best = greedy(g, R, C, rng, 0);
+  for (let i = 0; i < 5; i++) best = Math.max(best, greedy(g, R, C, rng, [1, 2, 4, 8][i % 4]));
+  return best;
+}
+
+// Generate boards until the computer clears at least 80% of the apples; keep the best one seen.
+function makeBoard(mode, daily) {
+  const { r: R, c: C } = MODES[mode];
+  const seed = daily ? hashStr(todayKey() + ':' + mode) : (Math.random() * 2 ** 32) >>> 0;
+  const rng = mulberry32(seed);
+  let pick = null;
+  for (let t = 0; t < 8; t++) {
+    const g = randomGrid(R, C, rng);
+    const est = estimate(g, R, C, rng);
+    if (!pick || est > pick.est) pick = { g, est };
+    if (est >= R * C * 0.8) break;
+  }
+  return { R, C, g: pick.g, est: pick.est };
+}
+
+function transpose(g, R, C) {
+  const t = new Array(R * C);
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) t[c * R + r] = g[r * C + c];
+  return t;
+}
+
+// ---------- state ----------
+let S = null;
+let prefs = { mode: 'easy', daily: false, sound: true };
+let els = [];
+let drag = null;
+let raf = 0, lastTick = 0;
+
+function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function load(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+const bestKey = m => 'apple-best-' + m;
+
+// Show the board tall on portrait screens and wide on landscape ones. Transposing keeps every rectangle a rectangle.
+function orient(b) {
+  const r = stage.getBoundingClientRect();
+  const wantTall = r.height >= r.width;
+  if ((b.R >= b.C) === wantTall) return { R: b.R, C: b.C, g: b.g.slice() };
+  return { R: b.C, C: b.R, g: transpose(b.g, b.R, b.C) };
+}
+
+function newGame(sameBoard) {
+  stopClock();
+  const base = sameBoard && S ? S.base : makeBoard(prefs.mode, prefs.daily);
+  const o = orient(base);
+  S = {
+    base, R: o.R, C: o.C, g: o.g,
+    est: base.est, total: o.g.length,
+    score: 0, time: TIME, started: false, over: false,
+    mode: prefs.mode, daily: prefs.daily, day: todayKey(),
+  };
+  render();
+}
+
+// ---------- rendering ----------
+function render() {
+  board.textContent = '';
+  els = [];
+  for (let r = 0; r < S.R; r++) for (let c = 0; c < S.C; c++) {
+    const v = S.g[r * S.C + c];
+    const d = document.createElement('div');
+    d.className = 'a';
+    d.style.setProperty('--r', r);
+    d.style.setProperty('--c', c);
+    const i = document.createElement('i');
+    i.textContent = v;
+    d.appendChild(i);
+    if (!v) d.classList.add('gone', 'done');
+    board.appendChild(d);
+    els.push(d);
+  }
+  const sel = document.createElement('div');
+  sel.className = 'sel'; sel.id = 'sel'; sel.hidden = true;
+  sel.innerHTML = '<span class="sum" id="sum"></span>';
+  board.appendChild(sel);
+  $('over').hidden = !S.over;
+  layout();
+  hud();
+}
+
+function layout() {
+  if (!S) return;
+  const r = stage.getBoundingClientRect();
+  const cell = Math.max(18, Math.min(84, Math.floor(Math.min(r.width / S.C, r.height / S.R))));
+  board.style.setProperty('--cell', cell + 'px');
+  board.style.width = cell * S.C + 'px';
+  board.style.height = cell * S.R + 'px';
+}
+
+function hud() {
+  $('score').textContent = S.score;
+  $('time').innerHTML = Math.ceil(Math.max(0, S.time)) + '<small>s</small>';
+  $('target').textContent = S.est;
+  $('fill').style.transform = `scaleX(${Math.max(0, S.time) / TIME})`;
+  $('timer').classList.toggle('low', S.time <= 20);
+  $('sub').textContent = S.daily
+    ? `${S.day.slice(5).replace('-', '월 ')}일의 판 · 오늘은 모두 같은 보드를 받아요.`
+    : '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.';
+  for (const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', b.dataset.mode === prefs.mode);
+  $('daily').checked = prefs.daily;
+  $('sound').setAttribute('aria-pressed', prefs.sound);
+  $('sound').textContent = prefs.sound ? '소리 켬' : '소리 끔';
+}
+
+// ---------- clock ----------
+function startClock() {
+  if (S.started || S.over) return;
+  S.started = true;
+  lastTick = performance.now();
+  raf = requestAnimationFrame(tick);
+}
+function stopClock() { cancelAnimationFrame(raf); }
+function tick(now) {
+  S.time -= (now - lastTick) / 1000;
+  lastTick = now;
+  if (S.time <= 0) { S.time = 0; hud(); return end('time'); }
+  hud();
+  raf = requestAnimationFrame(tick);
+}
+
+// ---------- input ----------
+function cellAt(e) {
+  const r = board.getBoundingClientRect();
+  const cell = r.width / S.C;
+  return {
+    r: Math.min(S.R - 1, Math.max(0, Math.floor((e.clientY - r.top) / cell))),
+    c: Math.min(S.C - 1, Math.max(0, Math.floor((e.clientX - r.left) / cell))),
+  };
+}
+function rectOf(d) {
+  return { r1: Math.min(d.a.r, d.b.r), r2: Math.max(d.a.r, d.b.r), c1: Math.min(d.a.c, d.b.c), c2: Math.max(d.a.c, d.b.c) };
+}
+function measure(m) {
+  let s = 0, n = 0;
+  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) {
+    const v = S.g[r * S.C + c];
+    if (v) { s += v; n++; }
+  }
+  return { s, n };
+}
+
+function showSel() {
+  const m = rectOf(drag), { s, n } = measure(m);
+  const sel = $('sel');
+  sel.hidden = false;
+  sel.style.left = `calc(${m.c1} * var(--cell))`;
+  sel.style.top = `calc(${m.r1} * var(--cell))`;
+  sel.style.width = `calc(${m.c2 - m.c1 + 1} * var(--cell))`;
+  sel.style.height = `calc(${m.r2 - m.r1 + 1} * var(--cell))`;
+  sel.classList.toggle('hit', s === 10);
+  sel.classList.toggle('over', s > 10);
+  $('sum').textContent = s;
+  for (let r = 0; r < S.R; r++) for (let c = 0; c < S.C; c++) {
+    const inside = r >= m.r1 && r <= m.r2 && c >= m.c1 && c <= m.c2 && S.g[r * S.C + c] > 0;
+    els[r * S.C + c].classList.toggle('on', inside);
+  }
+  return { m, s, n };
+}
+function clearSel() {
+  $('sel').hidden = true;
+  for (const el of els) el.classList.remove('on');
+}
+
+stage.addEventListener('pointerdown', e => {
+  if (!S || S.over || e.target.closest('.overlay')) return;
+  e.preventDefault();
+  stage.setPointerCapture(e.pointerId);
+  unlockAudio();
+  startClock();
+  const p = cellAt(e);
+  drag = { id: e.pointerId, a: p, b: p };
+  showSel();
+});
+stage.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const p = cellAt(e);
+  if (p.r === drag.b.r && p.c === drag.b.c) return;
+  drag.b = p;
+  showSel();
+});
+function release(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const { m, s, n } = showSel();
+  drag = null;
+  clearSel();
+  if (s === 10 && !S.over) harvest(m, n);
+}
+stage.addEventListener('pointerup', release);
+stage.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; clearSel(); } });
+
+function harvest(m, n) {
+  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) {
+    const i = r * S.C + c;
+    if (!S.g[i]) continue;
+    S.g[i] = 0;
+    const el = els[i];
+    el.classList.remove('hint');
+    el.classList.add('gone');
+    el.firstChild.addEventListener('animationend', () => el.classList.add('done'), { once: true });
+  }
+  S.score += n;
+  floatPlus(m, n);
+  blip(n);
+  hud();
+  if (!findMoves(S.g, S.R, S.C).length) end(S.g.some(v => v) ? 'stuck' : 'all');
+}
+
+function floatPlus(m, n) {
+  const p = document.createElement('div');
+  p.className = 'plus';
+  p.textContent = '+' + n;
+  p.style.left = `calc(${(m.c1 + m.c2 + 1) / 2} * var(--cell))`;
+  p.style.top = `calc(${(m.r1 + m.r2 + 1) / 2} * var(--cell))`;
+  board.appendChild(p);
+  p.addEventListener('animationend', () => p.remove());
+}
+
+$('hint').addEventListener('click', () => {
+  if (!S || S.over) return;
+  const ms = findMoves(S.g, S.R, S.C);
+  if (!ms.length) return;
+  ms.sort((a, b) => a.area - b.area);
+  const m = ms[0];
+  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) {
+    const el = els[r * S.C + c];
+    if (!S.g[r * S.C + c]) continue;
+    el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint');
+    setTimeout(() => el.classList.remove('hint'), 1600);
+  }
+  if (S.started) { S.time -= HINT_COST; hud(); }
+});
+
+// ---------- end ----------
+function end(reason) {
+  stopClock();
+  S.over = true;
+  const best = Math.max(load(bestKey(S.mode), 0), S.score);
+  store(bestKey(S.mode), best);
+  $('over-title').textContent = { time: '시간 종료', stuck: '더 묶을 수 있는 사과가 없어요', all: '사과를 전부 땄어요!' }[reason];
+  $('over-score').innerHTML = `${S.score}<small>개</small>`;
+  $('over-est').textContent = S.est + '개';
+  $('over-best').textContent = best + '개';
+  $('over-mode').textContent = MODES[S.mode].label;
+  $('copied').textContent = '';
+  $('over').hidden = false;
+  $('again-new').focus();
+  // the site's feed player embeds games in an iframe and listens for these
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'mobs:score', score: S.score }, '*');
+    window.parent.postMessage({ type: 'mobs:end' }, '*');
+  }
+}
+
+function shareText() {
+  const when = S.daily ? ` ${S.day}` : '';
+  const ratio = Math.round((S.score / S.total) * 10);
+  return `사과 게임${when} · ${MODES[S.mode].label}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개 (컴퓨터 ${S.est}개)`;
+}
+$('copy').addEventListener('click', () => {
+  const t = shareText();
+  const done = () => { $('copied').textContent = '결과를 복사했어요.'; };
+  try {
+    navigator.clipboard.writeText(t).then(done, () => { $('copied').textContent = t; });
+  } catch (e) { $('copied').textContent = t; }
+});
+$('again-new').addEventListener('click', () => newGame(false));
+$('again-same').addEventListener('click', () => newGame(true));
+$('restart').addEventListener('click', () => newGame(false));
+
+for (const b of document.querySelectorAll('.seg button')) {
+  b.addEventListener('click', () => {
+    if (prefs.mode === b.dataset.mode) return;
+    prefs.mode = b.dataset.mode;
+    store('apple-prefs', prefs);
+    newGame(false);
+  });
+}
+$('daily').addEventListener('change', e => {
+  prefs.daily = e.target.checked;
+  store('apple-prefs', prefs);
+  newGame(false);
+});
+$('sound').addEventListener('click', () => {
+  prefs.sound = !prefs.sound;
+  store('apple-prefs', prefs);
+  hud();
+});
+
+// ---------- sound ----------
+let actx = null;
+function unlockAudio() {
+  if (actx || !prefs.sound) return;
+  try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+}
+function blip(n) {
+  if (!prefs.sound || !actx) return;
+  const t = actx.currentTime;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = 'triangle';
+  o.frequency.setValueAtTime(440 + n * 60, t);
+  o.frequency.exponentialRampToValueAtTime(880 + n * 90, t + 0.09);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+  o.connect(g).connect(actx.destination);
+  o.start(t); o.stop(t + 0.2);
+}
+
+// ---------- boot ----------
+addEventListener('resize', layout);
+
+window.claude?.hot?.snapshot?.(() => ({ prefs, S: S && { ...S, started: false } }));
+
+function start(data) {
+  prefs = { ...prefs, ...load('apple-prefs', {}), ...(data && data.prefs) };
+  if (data && data.S) {
+    S = data.S; // resumes paused; the clock restarts on the next drag
+    render();
+    if (S.over) end(S.score === S.total ? 'all' : 'time');
+  } else {
+    newGame(false);
+  }
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
