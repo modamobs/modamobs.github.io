@@ -890,7 +890,12 @@ function end(reason) {
     store('apple-daily-best', db);
     lbAfterGame();
   }
-  else { $('lb-result').hidden = true; $('nick-form').hidden = true; }
+  else {
+    $('nick-form').hidden = true;
+    // only the shared daily board is ranked, so say so instead of leaving people wondering why they are not on it
+    if (lbOn()) showLbResult('순위에는 오늘의 판 기록만 올라가요. <button class="linkish" type="button" data-play-daily>오늘의 판 하기</button>');
+    else $('lb-result').hidden = true;
+  }
   // the site's feed player embeds games in an iframe and listens for these
   if (window.parent !== window) {
     window.parent.postMessage({ type: 'mobs:score', score: S.score }, '*');
@@ -1039,7 +1044,7 @@ async function openBoard(mode) {
     const mine = nickname() ? await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() }) : [];
     const me = mine[0];
     list.textContent = '';
-    if (!rows.length) list.innerHTML = '<li class="empty">아직 아무도 안 했어요. 첫 기록을 남겨요!</li>';
+    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>오늘의 판을 끝내고 닉네임을 정하면 여기에 올라가요.</li>';
     rows.forEach((r, i) => {
       const li = document.createElement('li');
       if (me && me.rank === i + 1) li.className = 'me';
@@ -1059,7 +1064,14 @@ async function openBoard(mode) {
 $('rank').hidden = !lbOn();
 $('rank').addEventListener('click', () => openBoard(prefs.mode));
 for (const b of document.querySelectorAll('[data-lb]')) b.addEventListener('click', () => openBoard(b.dataset.lb));
-$('lb-result').addEventListener('click', e => { if (e.target.closest('[data-open-lb]')) openBoard(S.mode); });
+$('lb-result').addEventListener('click', e => {
+  if (e.target.closest('[data-open-lb]')) openBoard(S.mode);
+  if (e.target.closest('[data-play-daily]')) {
+    prefs.daily = true;
+    store('apple-prefs', prefs);
+    newGame(false);
+  }
+});
 $('lb-close').addEventListener('click', () => { $('lb').hidden = true; });
 $('lb-play').addEventListener('click', () => {
   $('lb').hidden = true;
