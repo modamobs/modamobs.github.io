@@ -180,7 +180,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 /* ---- the green felt tray ---- */
 .stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: start center; touch-action: none; cursor: crosshair; }
 .crate {
-  --cell: 40px; --frame: 14px;
+  --cell: 40px; --cw: 40px; --ch: 40px; --frame: 14px;
   position: relative;
   isolation: isolate;
   padding: var(--frame);
@@ -202,15 +202,15 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 /* ---- apples ---- */
 .a {
   position: absolute;
-  left: calc((var(--c) + var(--dx, 0)) * var(--cell));
-  top: calc((var(--r) + var(--dy, 0)) * var(--cell));
-  width: var(--cell); height: var(--cell);
+  left: calc((var(--c) + var(--dx, 0)) * var(--cw));
+  top: calc((var(--r) + var(--dy, 0)) * var(--ch));
+  width: var(--cw); height: var(--ch);
   display: grid; place-items: center;
   pointer-events: none;
 }
 .a i {
   position: relative;
-  width: 90%; height: 88%;
+  width: calc(var(--cell) * .9); height: calc(var(--cell) * .88);
   border-radius: 50% 50% 47% 47% / 56% 56% 44% 44%;
   background: var(--fuzz), radial-gradient(circle at 32% 28%, var(--apple-hi) 0 9%, var(--red) 46%, var(--red-deep) 100%);
   box-shadow: inset 0 0 0 max(1px, calc(var(--cell) * .03)) var(--red-deep), 0 calc(var(--cell) * .05) calc(var(--cell) * .07) var(--shade);
@@ -688,11 +688,19 @@ function layout() {
   if (!S) return;
   const r = stage.getBoundingClientRect();
   const frame = Math.round(Math.max(8, Math.min(18, Math.min(r.width, r.height) * 0.028)));
-  const cell = Math.max(18, Math.min(84, Math.floor(Math.min((r.width - frame * 2) / S.C, (r.height - frame * 2) / S.R))));
+  const fitW = (r.width - frame * 2) / S.C, fitH = (r.height - frame * 2) / S.R;
+  const cell = Math.max(18, Math.min(84, Math.floor(Math.min(fitW, fitH))));
+  // stretch the cells up to 1.4x along the roomy side so the tray fills the screen instead of
+  // leaving bare strips at the sides; apples keep their size and just spread out a little
+  const cw = Math.max(cell, Math.floor(Math.min(fitW, cell * 1.4)));
+  const ch = Math.max(cell, Math.floor(Math.min(fitH, cell * 1.4)));
   crate.style.setProperty('--frame', frame + 'px');
-  crate.style.setProperty('--cell', cell + 'px');
-  board.style.width = cell * S.C + 'px';
-  board.style.height = cell * S.R + 'px';
+  // apples may grow a little past a short cell; neighbours just nestle closer, like in a real crate
+  crate.style.setProperty('--cell', Math.floor(Math.min(cw, ch * 1.12)) + 'px');
+  crate.style.setProperty('--cw', cw + 'px');
+  crate.style.setProperty('--ch', ch + 'px');
+  board.style.width = cw * S.C + 'px';
+  board.style.height = ch * S.R + 'px';
 }
 
 const clock = t => { const s = Math.ceil(Math.max(0, t)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -732,10 +740,10 @@ function tick(now) {
 // ---------- input ----------
 function cellAt(e) {
   const r = board.getBoundingClientRect();
-  const cell = r.width / S.C;
+  const cw = r.width / S.C, ch = r.height / S.R;
   return {
-    r: Math.min(S.R - 1, Math.max(0, Math.floor((e.clientY - r.top) / cell))),
-    c: Math.min(S.C - 1, Math.max(0, Math.floor((e.clientX - r.left) / cell))),
+    r: Math.min(S.R - 1, Math.max(0, Math.floor((e.clientY - r.top) / ch))),
+    c: Math.min(S.C - 1, Math.max(0, Math.floor((e.clientX - r.left) / cw))),
   };
 }
 function rectOf(d) {
@@ -754,10 +762,10 @@ function showSel() {
   const m = rectOf(drag), { s, n } = measure(m);
   const sel = $('sel');
   sel.hidden = false;
-  sel.style.left = `calc(${m.c1} * var(--cell))`;
-  sel.style.top = `calc(${m.r1} * var(--cell))`;
-  sel.style.width = `calc(${m.c2 - m.c1 + 1} * var(--cell))`;
-  sel.style.height = `calc(${m.r2 - m.r1 + 1} * var(--cell))`;
+  sel.style.left = `calc(${m.c1} * var(--cw))`;
+  sel.style.top = `calc(${m.r1} * var(--ch))`;
+  sel.style.width = `calc(${m.c2 - m.c1 + 1} * var(--cw))`;
+  sel.style.height = `calc(${m.r2 - m.r1 + 1} * var(--ch))`;
   sel.classList.toggle('hit', s === 10);
   sel.classList.toggle('over', s > 10);
   $('sum').textContent = s;
@@ -822,8 +830,8 @@ function floatPlus(m, n) {
   const p = document.createElement('div');
   p.className = 'plus';
   p.textContent = '+' + n;
-  p.style.left = `calc(${(m.c1 + m.c2 + 1) / 2} * var(--cell))`;
-  p.style.top = `calc(${(m.r1 + m.r2 + 1) / 2} * var(--cell))`;
+  p.style.left = `calc(${(m.c1 + m.c2 + 1) / 2} * var(--cw))`;
+  p.style.top = `calc(${(m.r1 + m.r2 + 1) / 2} * var(--ch))`;
   board.appendChild(p);
   p.addEventListener('animationend', () => p.remove());
 }
