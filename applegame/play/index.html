@@ -4,8 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>사과 게임</title>
 <meta name="description" content="합이 10이 되게 사과를 묶어 따는 2분 퍼즐">
-<meta name="theme-color" content="#eef2df" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#131b12" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#d8b88e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#2a1f17" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="사과 게임">
@@ -15,50 +15,65 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gothic+A1:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nanum+Brush+Script&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
 <style>
-/* Layout: one-screen orchard crate. Compact top bar, a stem-green timer line, the board fills everything below. */
+/* Layout: a fruit stall on kraft paper. Cardboard sign, price tag and ink stamp up top, a masking-tape timer,
+   then the wooden crate of apples fills the rest. Results print as a shop receipt.
+   Art (www/art/*.png|jpg) is optional: without it the crate, paper and apples are drawn in CSS. */
 :root {
-  --bg: #eef2df;
-  --panel: #f9fbf1;
-  --ink: #21301d;
-  --muted: #5d6b53;
-  --line: #d2dbbd;
-  --apple: #de3b2b;
-  --apple-hi: #ff7d5e;
-  --apple-lo: #a8231a;
-  --on-apple: #ffffff;
-  --leaf: #4a8f35;
-  --stem: #6b4a2a;
-  --pick: #f2ac33;
-  --pick-hi: #ffd97f;
-  --pick-lo: #c9800f;
-  --pick-wash: rgba(242, 172, 51, 0.16);
-  --ok: #2f8f4e;
-  --ok-wash: rgba(47, 143, 78, 0.16);
-  --shade: rgba(33, 48, 29, 0.22);
-  --scrim: rgba(238, 242, 223, 0.82);
-  --display: "Jua", "Gothic A1", system-ui, sans-serif;
-  --body: "Gothic A1", system-ui, -apple-system, "Malgun Gothic", sans-serif;
+  --bg: #d8b88e;            /* kraft paper */
+  --dim: rgba(0, 0, 0, 0);  /* darkens paper and wood at night */
+  --ink: #2b1d14;           /* marker */
+  --muted: #6e5543;
+  --card: #f1e1c4;          /* cardboard tag */
+  --card-edge: #b48a5a;
+  --wood: #d6ad74;
+  --wood-hi: #e2bf8d;
+  --wood-dark: #8e6236;
+  --wood-gap: #4b2f17;
+  --red: #c42a1f;           /* apple red, stamp ink */
+  --red-deep: #8f1d15;
+  --apple-hi: #f0715a;
+  --leaf: #3f7a2c;
+  --stem: #5b3b1f;
+  --sticker: #fbf6ea;
+  --pick: #ffd65a;          /* highlighter */
+  --ok: #2e7d3a;
+  --tape: rgba(246, 232, 190, 0.92);
+  --tape-track: rgba(43, 29, 20, 0.14);
+  --shade: rgba(43, 29, 20, 0.32);
+  --scrim: rgba(60, 40, 22, 0.55);
+  --receipt: #fbfaf4;
+  --receipt-ink: #2b2620;
+  --lamp: rgba(255, 255, 255, 0);
+  --wood-light: 1;
+  --brush: "Nanum Brush Script", "Gowun Dodum", cursive;
+  --sign: "Do Hyeon", "Gowun Dodum", sans-serif;
+  --body: "Gowun Dodum", system-ui, -apple-system, "Malgun Gothic", sans-serif;
+  --mono: "Nanum Gothic Coding", ui-monospace, "Consolas", monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #131b12; --panel: #1c2719; --ink: #e6eedb; --muted: #9dad92; --line: #2e3c2a;
-    --apple: #e4473a; --apple-hi: #ff8c6e; --apple-lo: #962015; --on-apple: #ffffff;
-    --leaf: #6db152; --stem: #a27c55;
-    --pick: #efb24a; --pick-hi: #ffdb8f; --pick-lo: #c0820f; --pick-wash: rgba(239, 178, 74, 0.18);
-    --ok: #5cc27c; --ok-wash: rgba(92, 194, 124, 0.18);
-    --shade: rgba(0, 0, 0, 0.45); --scrim: rgba(19, 27, 18, 0.84);
+    --bg: #3a2a1d; --dim: rgba(22, 13, 6, 0.68); --ink: #f3e5cc; --muted: #c2a888;
+    --card: #4a3626; --card-edge: #2a1c11;
+    --wood: #7a5532; --wood-hi: #8a6140; --wood-dark: #3e2913; --wood-gap: #170e06;
+    --red: #e24a3b; --red-deep: #a8291e; --apple-hi: #ff8a72;
+    --leaf: #5ea245; --stem: #8a6440; --pick: #ffd65a; --ok: #71c67d;
+    --tape: rgba(214, 194, 140, 0.55); --tape-track: rgba(243, 229, 204, 0.14);
+    --shade: rgba(0, 0, 0, 0.5); --scrim: rgba(10, 6, 3, 0.7);
+    --lamp: rgba(255, 186, 102, 0.16); --wood-light: .55;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #131b12; --panel: #1c2719; --ink: #e6eedb; --muted: #9dad92; --line: #2e3c2a;
-  --apple: #e4473a; --apple-hi: #ff8c6e; --apple-lo: #962015; --on-apple: #ffffff;
-  --leaf: #6db152; --stem: #a27c55;
-  --pick: #efb24a; --pick-hi: #ffdb8f; --pick-lo: #c0820f; --pick-wash: rgba(239, 178, 74, 0.18);
-  --ok: #5cc27c; --ok-wash: rgba(92, 194, 124, 0.18);
-  --shade: rgba(0, 0, 0, 0.45); --scrim: rgba(19, 27, 18, 0.84);
+  --bg: #3a2a1d; --dim: rgba(22, 13, 6, 0.68); --ink: #f3e5cc; --muted: #c2a888;
+  --card: #4a3626; --card-edge: #2a1c11;
+  --wood: #7a5532; --wood-hi: #8a6140; --wood-dark: #3e2913; --wood-gap: #170e06;
+  --red: #e24a3b; --red-deep: #a8291e; --apple-hi: #ff8a72;
+  --leaf: #5ea245; --stem: #8a6440; --pick: #ffd65a; --ok: #71c67d;
+  --tape: rgba(214, 194, 140, 0.55); --tape-track: rgba(243, 229, 204, 0.14);
+  --shade: rgba(0, 0, 0, 0.5); --scrim: rgba(10, 6, 3, 0.7);
+  --lamp: rgba(255, 186, 102, 0.16); --wood-light: .55;
   color-scheme: dark;
 }
 
@@ -66,7 +81,12 @@
 html, body { height: 100%; margin: 0; }
 @supports (height: 100dvh) { html, body { height: 100dvh; } }
 body {
-  background: var(--bg);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .1 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 70% 45% at 50% 0%, var(--lamp), transparent 70%),
+    linear-gradient(var(--dim), var(--dim)),
+    url("art/kraft.jpg") center / cover,
+    var(--bg);
   color: var(--ink);
   font-family: var(--body);
   overflow: hidden;
@@ -74,7 +94,7 @@ body {
   user-select: none;
 }
 button, input { font: inherit; color: inherit; }
-button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; }
+button:focus-visible, input:focus-visible, .chip:focus-within { outline: 2px dashed var(--red); outline-offset: 3px; }
 
 .app {
   height: 100%;
@@ -90,191 +110,316 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outl
   margin: 0 auto;
 }
 
-.bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.brand h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.75rem; line-height: 1; color: var(--apple); }
-.brand .sub { font-size: 0.8rem; color: var(--muted); }
-.stats { display: flex; gap: 18px; }
-.stat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
-.stat .k { font-size: 0.7rem; letter-spacing: 0.04em; color: var(--muted); }
-.stat .v { font-family: var(--display); font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
-.stat .v small { font-size: 0.55em; color: var(--muted); margin-left: 1px; }
+/* ---- top: cardboard sign, price tag, stamp, the rival's note ---- */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; }
+.brand { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.brand h1 {
+  margin: 0; font-family: var(--brush); font-weight: 400; font-size: 2.7rem; line-height: .9;
+  color: var(--red); transform: rotate(-3deg); transform-origin: left bottom; text-wrap: balance;
+}
+.brand .sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+.stats { display: flex; align-items: center; gap: 14px; }
+.stat .k { display: block; font-size: 0.66rem; color: var(--muted); letter-spacing: 0.02em; white-space: nowrap; }
+.stat .v { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+.tag {
+  position: relative;
+  background:
+    radial-gradient(circle at 11px 50%, var(--card-edge) 0 3px, transparent 3.5px),
+    var(--card);
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  padding: 4px 12px 4px 22px;
+  transform: rotate(-2deg);
+  filter: drop-shadow(0 2px 0 var(--card-edge));
+}
+.tag .k { color: var(--muted); }
+.tag .v { font-family: var(--brush); font-size: 1.35rem; line-height: 1; color: var(--ink); }
+.tag .v b { font-weight: 400; font-size: 1.6em; color: var(--red); }
+
+.stamp {
+  width: 62px; height: 62px; box-sizing: border-box;
+  border: 3px solid var(--red); border-radius: 50%;
+  box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px var(--red);
+  display: grid; place-content: center; text-align: center;
+  color: var(--red); transform: rotate(9deg); opacity: .9;
+}
+.stamp .k { color: var(--red); font-size: 0.56rem; }
+.stamp .v { font-family: var(--sign); font-size: 1.25rem; line-height: 1; }
+.stamp.low { animation: thump 1s ease-in-out infinite; }
+@keyframes thump { 50% { transform: rotate(9deg) scale(1.08); } }
+
+.rival { text-align: left; }
+.rival .v { font-family: var(--brush); font-size: 1.3rem; line-height: 1; color: var(--ink); }
+.rival .v b { font-weight: 400; font-size: 1.35em; }
+
+/* ---- controls: cardboard tabs and labels ---- */
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
-.seg button { border: 0; background: none; padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; color: var(--muted); cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--apple); color: var(--on-apple); }
-.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-.chip input { accent-color: var(--apple); margin: 0; }
+.chip, .seg button {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--card-edge); border-radius: 3px;
+  box-shadow: 0 2px 0 var(--card-edge);
+  padding: 6px 11px; font-size: 0.84rem; cursor: pointer;
+}
+.chip:active, .seg button:active { transform: translateY(2px); box-shadow: none; }
+.seg { display: inline-flex; gap: 6px; }
+.seg button[aria-pressed="true"] { background: var(--red); border-color: var(--red-deep); box-shadow: 0 2px 0 var(--red-deep); color: var(--sticker); }
+.controls > :nth-child(2) { transform: rotate(-1deg); }
+.controls > :nth-child(5) { transform: rotate(1deg); }
+.chip input { accent-color: var(--red); margin: 0; width: 15px; height: 15px; }
 .chip[aria-pressed="false"] { color: var(--muted); }
 .spacer { flex: 1; }
 
-.timer { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; flex: none; }
-.timer .fill { height: 100%; width: 100%; background: var(--leaf); transform-origin: left; transition: background-color .3s; }
-.timer.low .fill { background: var(--apple); }
+/* masking tape that tears shorter as time runs out */
+.timer { height: 12px; flex: none; background: linear-gradient(var(--tape-track), var(--tape-track)) 0 50% / 100% 2px no-repeat; }
+.timer .fill {
+  height: 100%; width: 100%; background: var(--tape); transform-origin: left;
+  clip-path: polygon(0 0, 100% 0, 99.4% 20%, 100% 40%, 99.3% 62%, 100% 82%, 99.5% 100%, 0 100%);
+}
+.timer.low .fill { background: var(--red); opacity: .8; }
 
-.stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; touch-action: none; cursor: crosshair; }
-.board { position: relative; --cell: 40px; }
+/* ---- the crate ---- */
+.stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: start center; touch-action: none; cursor: crosshair; }
+.crate {
+  --cell: 40px; --frame: 14px;
+  position: relative;
+  isolation: isolate;
+  padding: var(--frame);
+  border-radius: 6px;
+  background:
+    linear-gradient(var(--dim), var(--dim)),
+    url("art/crate.jpg") 0 0 / calc(var(--cell) * 5),
+    repeating-linear-gradient(180deg,
+      var(--wood) 0, var(--wood-hi) calc(var(--cell) * .45), var(--wood) calc(var(--cell) - 3px),
+      var(--wood-gap) calc(var(--cell) - 3px), var(--wood-gap) var(--cell)) 0 var(--frame) / 100% var(--cell),
+    var(--wood);
+  box-shadow:
+    inset 0 0 0 var(--frame) var(--wood-dark),
+    inset 0 0 0 calc(var(--frame) + 1px) var(--wood-gap),
+    inset 0 0 calc(var(--frame) * 1.6) calc(var(--frame) * 1.1) rgba(0, 0, 0, .28),
+    0 10px 22px var(--shade);
+}
+.crate::before {
+  /* four nail heads in the frame corners */
+  content: ""; position: absolute; inset: calc(var(--frame) * .5 - 3px); pointer-events: none;
+  background:
+    radial-gradient(circle, #cfc6b8 0 2px, #6f675c 2.5px, transparent 3.5px) 0 0 / 7px 7px no-repeat,
+    radial-gradient(circle, #cfc6b8 0 2px, #6f675c 2.5px, transparent 3.5px) 100% 0 / 7px 7px no-repeat,
+    radial-gradient(circle, #cfc6b8 0 2px, #6f675c 2.5px, transparent 3.5px) 0 100% / 7px 7px no-repeat,
+    radial-gradient(circle, #cfc6b8 0 2px, #6f675c 2.5px, transparent 3.5px) 100% 100% / 7px 7px no-repeat;
+}
+.board { position: relative; }
+/* with art/crate.jpg the photo becomes the crate: its walls are 9-sliced into the frame, the slats stretch inside */
+:root.crate-art .crate { background: none; box-shadow: 0 10px 22px var(--shade); }
+:root.crate-art .crate::before {
+  inset: 0; z-index: -1;
+  border: var(--frame) solid transparent;
+  border-image: url("art/crate.jpg") 60 fill / var(--frame) stretch;
+  background: none;
+  filter: brightness(var(--wood-light));
+}
 
+/* ---- apples ---- */
 .a {
   position: absolute;
-  left: calc(var(--c) * var(--cell));
-  top: calc(var(--r) * var(--cell));
+  left: calc((var(--c) + var(--dx, 0)) * var(--cell));
+  top: calc((var(--r) + var(--dy, 0)) * var(--cell));
   width: var(--cell); height: var(--cell);
   display: grid; place-items: center;
   pointer-events: none;
 }
 .a i {
   position: relative;
-  width: 86%; height: 84%;
-  margin-top: 8%;
+  width: 88%; height: 86%;
   border-radius: 50% 50% 47% 47% / 56% 56% 44% 44%;
-  background: radial-gradient(circle at 32% 30%, var(--apple-hi) 0 10%, var(--apple) 46%, var(--apple-lo) 100%);
-  box-shadow: inset 0 calc(var(--cell) * -0.05) 0 rgba(0,0,0,.12), 0 calc(var(--cell) * 0.04) calc(var(--cell) * 0.06) var(--shade);
+  background: radial-gradient(circle at 32% 28%, var(--apple-hi) 0 9%, var(--red) 44%, var(--red-deep) 100%);
+  box-shadow: inset calc(var(--cell) * -.06) calc(var(--cell) * -.07) calc(var(--cell) * .12) rgba(0,0,0,.22), 0 calc(var(--cell) * .05) calc(var(--cell) * .07) var(--shade);
   display: grid; place-items: center;
   font-style: normal;
-  font-family: var(--display);
-  font-size: calc(var(--cell) * 0.46);
-  line-height: 1;
-  color: var(--on-apple);
-  text-shadow: 0 1px 0 rgba(0,0,0,.28);
-  padding-top: 4%;
-  box-sizing: border-box;
-  transition: transform .08s;
+  transform: rotate(var(--rot, 0deg));
+  transition: transform .09s ease-out, filter .09s;
 }
 .a i::before {
-  content: ""; position: absolute; top: -7%; left: 50%;
-  width: 7%; height: 16%; background: var(--stem); border-radius: 2px; transform: rotate(8deg);
+  content: ""; position: absolute; top: -6%; left: 49%;
+  width: 6%; height: 15%; background: var(--stem); border-radius: 2px; transform: rotate(10deg);
 }
 .a i::after {
-  content: ""; position: absolute; top: -9%; left: 55%;
-  width: 24%; height: 12%; background: var(--leaf); border-radius: 0 100% 0 100%; transform: rotate(-18deg);
+  content: ""; position: absolute; top: -8%; left: 54%;
+  width: 22%; height: 11%; background: var(--leaf); border-radius: 0 100% 0 100%; transform: rotate(-20deg);
 }
-.a.on i {
-  background: radial-gradient(circle at 32% 30%, var(--pick-hi) 0 12%, var(--pick) 50%, var(--pick-lo) 100%);
-  transform: scale(1.05);
+:root.art .a i {
+  background: var(--img) center / contain no-repeat;
+  border-radius: 0; box-shadow: none;
+  filter: drop-shadow(0 calc(var(--cell) * .05) calc(var(--cell) * .04) var(--shade));
 }
-.a.hint i { animation: hint .5s ease-in-out 3 alternate; }
-.a.gone i { animation: pop .42s ease-in forwards; }
-.a.gone.done { visibility: hidden; }
-@keyframes pop {
-  0% { transform: scale(1.05); opacity: 1; }
-  35% { transform: scale(1.2) translateY(-10%); opacity: 1; }
-  100% { transform: scale(.3) translateY(70%); opacity: 0; }
-}
-@keyframes hint {
-  from { transform: scale(1); box-shadow: 0 0 0 0 var(--pick); }
-  to { transform: scale(1.1); box-shadow: 0 0 0 calc(var(--cell) * 0.08) var(--pick); }
-}
+:root.art .a i::before, :root.art .a i::after { display: none; }
 
-.sel {
-  position: absolute; pointer-events: none;
-  border: 2px dashed var(--pick); background: var(--pick-wash); border-radius: 8px;
-  box-sizing: border-box;
-}
-.sel.hit { border-style: solid; border-color: var(--ok); background: var(--ok-wash); }
-.sel .sum {
-  position: absolute; top: -12px; right: -10px;
-  min-width: 26px; padding: 3px 7px; border-radius: 999px;
-  background: var(--pick); color: var(--ink);
-  font-family: var(--display); font-size: 0.95rem; text-align: center; line-height: 1.1;
+/* the number is printed on a fruit sticker */
+.a b {
+  min-width: 52%; height: 42%; box-sizing: border-box; padding: 0 6%;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--sticker);
+  box-shadow: inset 0 0 0 max(1.5px, calc(var(--cell) * .035)) var(--red), 0 1px 1px rgba(0,0,0,.3);
+  font-family: var(--sign); font-weight: 400; font-size: calc(var(--cell) * .36); line-height: 1;
+  color: var(--red-deep);
   font-variant-numeric: tabular-nums;
 }
-.sel.hit .sum { background: var(--ok); color: var(--on-apple); }
-.sel.over .sum { background: var(--muted); color: var(--bg); }
+.a.on i { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.09); filter: brightness(1.07) drop-shadow(0 calc(var(--cell) * .12) calc(var(--cell) * .08) var(--shade)); }
+.a.on b { background: var(--pick); }
+.a.hint i { animation: wobble .18s ease-in-out 8 alternate; }
+.a.gone i { animation: lift .5s cubic-bezier(.3, .1, .6, 1) forwards; }
+.a.gone.done { visibility: hidden; }
+@keyframes lift {
+  0% { transform: rotate(var(--rot, 0deg)) translateY(-7%) scale(1.09); opacity: 1; }
+  30% { transform: rotate(calc(var(--rot, 0deg) - 8deg)) translateY(-30%) scale(1.14); opacity: 1; }
+  100% { transform: rotate(calc(var(--rot, 0deg) + 14deg)) translateY(-150%) scale(.55); opacity: 0; }
+}
+@keyframes wobble {
+  from { transform: rotate(calc(var(--rot, 0deg) - 9deg)); }
+  to { transform: rotate(calc(var(--rot, 0deg) + 9deg)); }
+}
+
+/* the drag box is drawn in marker, with a price tag hanging off the corner */
+.sel {
+  position: absolute; pointer-events: none; box-sizing: border-box;
+  border: 3px solid var(--ink); opacity: .82;
+  border-radius: 14px 8px 16px 7px / 9px 15px 7px 13px;
+}
+.sel.hit { border-color: var(--ok); opacity: 1; }
+.sel .sum {
+  position: absolute; top: -16px; right: -12px;
+  min-width: 30px; padding: 2px 8px 1px; box-sizing: border-box;
+  background: var(--card); border: 1px solid var(--card-edge);
+  font-family: var(--brush); font-size: 1.5rem; line-height: 1; text-align: center; color: var(--ink);
+  transform: rotate(6deg);
+  font-variant-numeric: tabular-nums;
+}
+.sel.hit .sum { background: var(--red); border-color: var(--red-deep); color: var(--sticker); }
+.sel.over .sum { text-decoration: line-through; color: var(--muted); }
 
 .plus {
-  position: absolute; pointer-events: none; transform: translate(-50%, -50%);
-  font-family: var(--display); font-size: 1.6rem; color: var(--ok);
-  text-shadow: 0 1px 0 var(--bg), 0 -1px 0 var(--bg), 1px 0 0 var(--bg), -1px 0 0 var(--bg);
-  animation: rise .8s ease-out forwards;
+  position: absolute; pointer-events: none; transform: translate(-50%, -50%) rotate(-6deg);
+  font-family: var(--brush); font-size: 2.2rem; color: var(--red);
+  text-shadow: 0 0 3px var(--card), 0 0 6px var(--card);
+  animation: rise .9s ease-out forwards;
 }
-@keyframes rise { to { transform: translate(-50%, -160%); opacity: 0; } }
+@keyframes rise { to { transform: translate(-50%, -170%) rotate(-6deg); opacity: 0; } }
 
+/* ---- results: a shop receipt ---- */
 .overlay {
   position: absolute; inset: 0; display: grid; place-items: center;
-  background: var(--scrim); backdrop-filter: blur(2px); cursor: default;
+  background: var(--scrim); cursor: default; padding: 8px 0; box-sizing: border-box;
 }
-.card {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
-  padding: 24px 24px 20px; width: min(340px, 100%); box-sizing: border-box;
-  display: flex; flex-direction: column; gap: 14px; text-align: center;
-  box-shadow: 0 10px 30px var(--shade);
+.sheet {
+  width: min(320px, 100%); max-height: 100%; overflow: auto;
+  display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+  animation: print .35s ease-out;
 }
-.card h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.5rem; text-wrap: balance; }
-.card .big { font-family: var(--display); font-size: 3.4rem; line-height: 1; color: var(--apple); font-variant-numeric: tabular-nums; }
-.card .big small { font-size: 0.4em; color: var(--muted); }
-.card dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 0; text-align: left; font-size: 0.9rem; }
-.card dt { color: var(--muted); }
-.card dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
-.card .row { display: flex; gap: 8px; }
-.card .row button { flex: 1; }
+@keyframes print { from { transform: translateY(-14px); opacity: 0; } }
+.receipt {
+  position: relative;
+  background: var(--receipt); color: var(--receipt-ink);
+  font-family: var(--mono); font-size: 0.86rem;
+  padding: 18px 18px 22px; margin-bottom: 8px;
+  box-shadow: 0 8px 18px var(--shade);
+  transform: rotate(-1.2deg);
+}
+.receipt::after {
+  /* torn bottom edge */
+  content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 8px;
+  background:
+    linear-gradient(-45deg, transparent 5.5px, var(--receipt) 0) 0 0 / 11px 8px repeat-x,
+    linear-gradient(45deg, transparent 5.5px, var(--receipt) 0) 0 0 / 11px 8px repeat-x;
+}
+.receipt .shop { font-family: var(--sign); font-size: 1.4rem; text-align: center; letter-spacing: .12em; margin: 0; font-weight: 400; }
+.receipt .meta { text-align: center; font-size: 0.74rem; opacity: .7; margin-top: 2px; }
+.receipt hr { border: 0; border-top: 1px dashed var(--receipt-ink); opacity: .45; margin: 10px 0; }
+.receipt dl { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; margin: 0; }
+.receipt dt, .receipt dd { margin: 0; }
+.receipt dd { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.receipt .total dt, .receipt .total dd { font-size: 1.15rem; font-weight: 700; }
+.receipt .total dd { font-size: 1.6rem; }
+.receipt .thanks { text-align: center; font-size: 0.74rem; opacity: .7; margin-top: 10px; }
+.receipt .mark {
+  position: absolute; right: 12px; top: 52px;
+  font-family: var(--sign); font-size: 1.05rem; color: var(--red);
+  border: 2.5px solid var(--red); border-radius: 6px; padding: 3px 8px;
+  transform: rotate(-12deg); opacity: .85; max-width: 60%; text-align: center; line-height: 1.15;
+  background: color-mix(in srgb, var(--receipt) 70%, transparent);
+}
+.sheet .row { display: flex; gap: 8px; }
+.sheet .row .btn { flex: 1; }
 .btn {
-  border: 1px solid var(--line); background: var(--bg); border-radius: 12px;
-  padding: 10px 12px; font-weight: 800; font-size: 0.9rem; cursor: pointer;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--card-edge); border-radius: 3px; box-shadow: 0 3px 0 var(--card-edge);
+  padding: 11px 12px; font-size: 0.92rem; cursor: pointer;
 }
-.btn.primary { background: var(--apple); border-color: var(--apple); color: var(--on-apple); }
-.copied { font-size: 0.8rem; color: var(--ok); min-height: 1em; }
+.btn:active { transform: translateY(3px); box-shadow: none; }
+.btn.primary { background: var(--red); border-color: var(--red-deep); box-shadow: 0 3px 0 var(--red-deep); color: var(--sticker); }
+.copied { font-size: 0.8rem; color: var(--ink); min-height: 1em; text-align: center; white-space: pre-line; }
 
-.lb-result { font-size: 0.95rem; font-weight: 800; }
-.lb-result .muted { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.lb-result { font-size: 0.92rem; color: var(--ink); text-align: center; }
+.lb-result .muted { display: block; font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
 .nick-row { display: flex; gap: 8px; }
 .nick-row input {
-  flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 12px;
-  padding: 10px 12px; font-size: 1rem; -webkit-user-select: text; user-select: text;
+  flex: 1; min-width: 0; border: 1px solid var(--card-edge); background: var(--receipt); color: var(--receipt-ink);
+  border-radius: 3px; padding: 10px 12px; font-size: 1rem; -webkit-user-select: text; user-select: text;
 }
-.lb-card { width: min(380px, 100%); max-height: 100%; }
-.lb-seg { align-self: center; }
+.lb-sheet { width: min(360px, 100%); }
+.lb-seg { align-self: center; justify-content: center; }
 .lb-list {
   list-style: none; margin: 0; padding: 0; overflow: auto; touch-action: pan-y;
-  max-height: min(48vh, 420px); min-height: 3em; text-align: left;
+  max-height: min(44vh, 400px); min-height: 3em;
 }
 .lb-list li {
   display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; align-items: baseline;
-  padding: 7px 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums;
+  padding: 5px 0; border-bottom: 1px dotted rgba(43, 38, 32, .35); font-variant-numeric: tabular-nums;
 }
 .lb-list li:last-child { border-bottom: 0; }
-.lb-list .n { font-family: var(--display); color: var(--muted); text-align: right; }
-.lb-list li:nth-child(-n+3) .n { color: var(--apple); }
+.lb-list .n { text-align: right; opacity: .7; }
+.lb-list li:nth-child(-n+3) .n { color: var(--red); opacity: 1; font-weight: 700; }
 .lb-list .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lb-list .pts { font-weight: 800; }
-.lb-list li.me { background: var(--pick-wash); border-radius: 8px; }
-.lb-list .empty { display: block; border: 0; color: var(--muted); text-align: center; padding: 16px 0; }
-.lb-me { font-size: 0.85rem; color: var(--muted); min-height: 1em; }
-.linkish { border: 0; background: none; color: var(--muted); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 2px; }
+.lb-list .pts { font-weight: 700; }
+.lb-list li.me { background: rgba(255, 214, 90, .45); }
+.lb-list .empty { display: block; border: 0; text-align: center; padding: 14px 0; opacity: .7; }
+.lb-me { font-size: 0.8rem; text-align: center; min-height: 1em; }
+.linkish { border: 0; background: none; color: var(--ink); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 2px; }
 
 @media (max-width: 520px) {
   .brand .sub { display: none; }
-  .brand h1 { font-size: 1.4rem; }
-  .stats { gap: 14px; }
-  .stat .v { font-size: 1.35rem; }
-  .seg button, .chip { padding: 6px 10px; font-size: 0.8rem; }
+  .brand h1 { font-size: 2.1rem; }
+  .stats { gap: 10px; }
+  .stamp { width: 54px; height: 54px; }
+  .stamp .v { font-size: 1.05rem; }
+  .tag .v, .rival .v { font-size: 1.15rem; }
+  .chip, .seg button { padding: 6px 9px; font-size: 0.8rem; }
   .spacer { display: none; }
 }
-/* Phone held sideways: too short for stacked bars, so the HUD becomes a left column and the board takes the rest. */
+/* Phone held sideways: too short for stacked bars, so the HUD becomes a left column and the crate takes the rest. */
 @media (orientation: landscape) and (max-height: 500px) {
   .app {
-    display: grid; grid-template-columns: 232px 1fr; grid-template-rows: auto auto auto 1fr;
+    display: grid; grid-template-columns: 236px 1fr; grid-template-rows: auto auto auto 1fr;
     column-gap: 16px; row-gap: 10px; max-width: none;
     padding-top: max(8px, env(safe-area-inset-top, 0px));
     padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
   .bar { grid-column: 1; flex-direction: column; align-items: flex-start; gap: 8px; }
   .brand .sub { display: none; }
-  .brand h1 { font-size: 1.4rem; }
-  .stats { gap: 14px; }
-  .stat { align-items: flex-start; }
-  .stat .v { font-size: 1.35rem; }
+  .brand h1 { font-size: 2rem; }
+  .stats { gap: 10px; }
+  .stamp { width: 52px; height: 52px; }
+  .stamp .v { font-size: 1rem; }
   .controls { grid-column: 1; gap: 6px; }
-  .seg button, .chip { padding: 6px 10px; font-size: 0.8rem; }
+  .chip, .seg button { padding: 6px 9px; font-size: 0.78rem; }
   .spacer { display: none; }
   .timer { grid-column: 1; }
   .stage { grid-column: 2; grid-row: 1 / -1; }
-  .card { padding: 14px 18px 12px; gap: 8px; max-height: 100%; overflow: auto; }
-  .card .big { font-size: 2.4rem; }
+  .receipt { padding: 12px 14px 16px; }
+  .receipt .total dd { font-size: 1.3rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .a.gone i, .a.hint i, .plus { animation-duration: .01s; }
+  .a.gone i, .a.hint i, .plus, .sheet, .stamp.low { animation-duration: .01s; animation-iteration-count: 1; }
 }
 </style>
 
@@ -285,9 +430,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outl
       <span class="sub" id="sub">드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.</span>
     </div>
     <div class="stats">
-      <div class="stat"><span class="k">점수</span><span class="v" id="score">0</span></div>
-      <div class="stat"><span class="k">남은 시간</span><span class="v" id="time">120<small>s</small></span></div>
-      <div class="stat"><span class="k">컴퓨터 기록</span><span class="v" id="target">–</span></div>
+      <div class="stat tag"><span class="k">딴 사과</span><span class="v"><b id="score">0</b>개</span></div>
+      <div class="stat stamp" id="stamp"><span class="k">남은 시간</span><span class="v" id="time">2:00</span></div>
+      <div class="stat rival"><span class="k">옆가게 사장님</span><span class="v"><b id="target">–</b>개</span></div>
     </div>
   </header>
 
@@ -307,15 +452,28 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outl
   <div class="timer" id="timer"><div class="fill" id="fill"></div></div>
 
   <main class="stage" id="stage">
-    <div class="board" id="board"></div>
+    <div class="crate" id="crate"><div class="board" id="board"></div></div>
     <div class="overlay" id="over" hidden>
-      <div class="card" role="dialog" aria-labelledby="over-title">
-        <h2 id="over-title">시간 종료</h2>
-        <div class="big" id="over-score">0<small>개</small></div>
-        <dl>
-          <dt>컴퓨터가 이 판에서 딴 사과</dt><dd id="over-est">0개</dd>
-          <dt>내 최고 기록 (<span id="over-mode">쉬움</span>)</dt><dd id="over-best">0개</dd>
-        </dl>
+      <div class="sheet" role="dialog" aria-labelledby="over-title">
+        <div class="receipt">
+          <h2 class="shop">사과상회</h2>
+          <div class="meta" id="over-date"></div>
+          <div class="mark" id="over-title">시간 종료</div>
+          <hr>
+          <dl>
+            <dt>품목</dt><dd>사과 (<span id="over-mode">쉬움</span>)</dd>
+          </dl>
+          <hr>
+          <dl class="total">
+            <dt>딴 사과</dt><dd id="over-score">0개</dd>
+          </dl>
+          <hr>
+          <dl>
+            <dt>옆가게 사장님</dt><dd id="over-est">0개</dd>
+            <dt>내 최고 기록</dt><dd id="over-best">0개</dd>
+          </dl>
+          <div class="thanks">또 오세요</div>
+        </div>
         <div class="row">
           <button class="btn" id="again-same">같은 판 다시</button>
           <button class="btn primary" id="again-new">새 판</button>
@@ -330,14 +488,19 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--leaf); outl
       </div>
     </div>
     <div class="overlay" id="lb" hidden>
-      <div class="card lb-card" role="dialog" aria-labelledby="lb-title">
-        <h2 id="lb-title">오늘의 순위</h2>
-        <div class="seg lb-seg" role="group" aria-label="순위 모드">
-          <button data-lb="easy" aria-pressed="true">쉬움</button>
-          <button data-lb="classic" aria-pressed="false">클래식</button>
+      <div class="sheet lb-sheet" role="dialog" aria-labelledby="lb-title">
+        <div class="receipt">
+          <h2 class="shop" id="lb-title">오늘의 순위</h2>
+          <hr>
+          <div class="seg lb-seg" role="group" aria-label="순위 모드">
+            <button data-lb="easy" aria-pressed="true">쉬움</button>
+            <button data-lb="classic" aria-pressed="false">클래식</button>
+          </div>
+          <hr>
+          <ol class="lb-list" id="lb-list"></ol>
+          <hr>
+          <div class="lb-me" id="lb-me"></div>
         </div>
-        <ol class="lb-list" id="lb-list"></ol>
-        <div class="lb-me" id="lb-me"></div>
         <div class="row">
           <button class="btn" id="lb-close">닫기</button>
           <button class="btn primary" id="lb-play">오늘의 판 하기</button>
@@ -357,7 +520,7 @@ const TIME = 120;
 const HINT_COST = 5;
 
 const $ = id => document.getElementById(id);
-const stage = $('stage'), board = $('board');
+const stage = $('stage'), crate = $('crate'), board = $('board');
 
 // ---------- random + board generation ----------
 function mulberry32(a) {
@@ -508,8 +671,16 @@ function render() {
     d.className = 'a';
     d.style.setProperty('--r', r);
     d.style.setProperty('--c', c);
+    // apples sit a little crooked in a real crate; the same cell always gets the same look
+    const h = hashStr(r + ':' + c + ':' + S.total);
+    d.dataset.h = h;
+    d.style.setProperty('--rot', (h % 25) - 12 + 'deg');
+    d.style.setProperty('--dx', ((h >>> 5) % 9 - 4) / 100);
+    d.style.setProperty('--dy', ((h >>> 9) % 9 - 4) / 100);
     const i = document.createElement('i');
-    i.textContent = v;
+    const b = document.createElement('b');
+    b.textContent = v;
+    i.appendChild(b);
     d.appendChild(i);
     if (!v) d.classList.add('gone', 'done');
     board.appendChild(d);
@@ -520,29 +691,56 @@ function render() {
   sel.innerHTML = '<span class="sum" id="sum"></span>';
   board.appendChild(sel);
   $('over').hidden = !S.over;
+  paintApples();
   layout();
   hud();
+}
+
+// ---------- art (optional) ----------
+// Drop apple-1..3.png into www/art/ and they replace the drawn apples; see www/art/PROMPTS.md.
+const appleArt = [];
+for (const n of [1, 2, 3]) {
+  const im = new Image();
+  im.onload = () => {
+    appleArt.push(`url("art/apple-${n}.png")`);
+    appleArt.sort();
+    document.documentElement.classList.add('art');
+    paintApples();
+  };
+  im.src = `art/apple-${n}.png`;
+}
+const crateArt = new Image();
+crateArt.onload = () => document.documentElement.classList.add('crate-art');
+crateArt.src = 'art/crate.jpg';
+function paintApples() {
+  if (!appleArt.length) return;
+  for (const el of els) el.style.setProperty('--img', appleArt[(el.dataset.h >>> 13) % appleArt.length]);
 }
 
 function layout() {
   if (!S) return;
   const r = stage.getBoundingClientRect();
-  const cell = Math.max(18, Math.min(84, Math.floor(Math.min(r.width / S.C, r.height / S.R))));
-  board.style.setProperty('--cell', cell + 'px');
+  const frame = Math.round(Math.max(8, Math.min(18, Math.min(r.width, r.height) * 0.028)));
+  const cell = Math.max(18, Math.min(84, Math.floor(Math.min((r.width - frame * 2) / S.C, (r.height - frame * 2) / S.R))));
+  crate.style.setProperty('--frame', frame + 'px');
+  crate.style.setProperty('--cell', cell + 'px');
   board.style.width = cell * S.C + 'px';
   board.style.height = cell * S.R + 'px';
 }
 
+const clock = t => { const s = Math.ceil(Math.max(0, t)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
 function hud() {
   $('score').textContent = S.score;
-  $('time').innerHTML = Math.ceil(Math.max(0, S.time)) + '<small>s</small>';
+  $('time').textContent = clock(S.time);
   $('target').textContent = S.est;
   $('fill').style.transform = `scaleX(${Math.max(0, S.time) / TIME})`;
   $('timer').classList.toggle('low', S.time <= 20);
+  $('stamp').classList.toggle('low', S.started && !S.over && S.time <= 10);
   $('sub').textContent = S.daily
     ? `${S.day.slice(5).replace('-', '월 ')}일의 판 · 오늘은 모두 같은 보드를 받아요.`
     : '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.';
-  for (const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', b.dataset.mode === prefs.mode);
+  for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', b.dataset.mode === prefs.mode);
   $('daily').checked = prefs.daily;
   $('sound').setAttribute('aria-pressed', prefs.sound);
   $('sound').textContent = prefs.sound ? '소리 켬' : '소리 끔';
@@ -557,8 +755,10 @@ function startClock() {
 }
 function stopClock() { cancelAnimationFrame(raf); }
 function tick(now) {
+  const before = Math.ceil(S.time);
   S.time -= (now - lastTick) / 1000;
   lastTick = now;
+  if (Math.ceil(S.time) < before && before <= 10 && S.time > 0) play('tick', 0.6);
   if (S.time <= 0) { S.time = 0; hud(); return end('time'); }
   hud();
   raf = requestAnimationFrame(tick);
@@ -629,7 +829,9 @@ function release(e) {
   const { m, s, n } = showSel();
   drag = null;
   clearSel();
-  if (s === 10 && !S.over) harvest(m, n);
+  if (S.over) return;
+  if (s === 10) harvest(m, n);
+  else if (n >= 2) play('miss', 0.5);
 }
 stage.addEventListener('pointerup', release);
 stage.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; clearSel(); } });
@@ -646,7 +848,8 @@ function harvest(m, n) {
   }
   S.score += n;
   floatPlus(m, n);
-  blip(n);
+  if (n >= 3) play('harvest-big', 0.9);
+  else play('harvest-' + (1 + Math.floor(Math.random() * 3)), 0.9);
   hud();
   if (!findMoves(S.g, S.R, S.C).length) end(S.g.some(v => v) ? 'stuck' : 'all');
 }
@@ -673,6 +876,8 @@ $('hint').addEventListener('click', () => {
     el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint');
     setTimeout(() => el.classList.remove('hint'), 1600);
   }
+  unlockAudio();
+  play('hint', 0.7);
   if (S.started) { S.time -= HINT_COST; hud(); }
 });
 
@@ -682,8 +887,12 @@ function end(reason) {
   S.over = true;
   const best = Math.max(load(bestKey(S.mode), 0), S.score);
   store(bestKey(S.mode), best);
-  $('over-title').textContent = { time: '시간 종료', stuck: '더 묶을 수 있는 사과가 없어요', all: '사과를 전부 땄어요!' }[reason];
-  $('over-score').innerHTML = `${S.score}<small>개</small>`;
+  $('over-title').textContent = { time: '시간 종료', stuck: '더 묶을 사과가 없어요', all: '완판!' }[reason];
+  $('over-score').textContent = S.score + '개';
+  const now = new Date();
+  $('over-date').textContent = `${S.daily ? '오늘의 판 · ' : ''}${S.day} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  $('stamp').classList.remove('low');
+  play('bell', 0.8);
   $('over-est').textContent = S.est + '개';
   $('over-best').textContent = best + '개';
   $('over-mode').textContent = MODES[S.mode].label;
@@ -707,7 +916,7 @@ function end(reason) {
 function shareText() {
   const when = S.daily ? ` ${S.day}` : '';
   const ratio = Math.round((S.score / S.total) * 10);
-  return `사과 게임${when} · ${MODES[S.mode].label}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개 (컴퓨터 ${S.est}개)`;
+  return `사과 게임${when} · ${MODES[S.mode].label}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개 (옆가게 사장님 ${S.est}개)`;
 }
 $('copy').addEventListener('click', () => {
   const t = shareText();
@@ -736,6 +945,7 @@ $('daily').addEventListener('change', e => {
 $('sound').addEventListener('click', () => {
   prefs.sound = !prefs.sound;
   store('apple-prefs', prefs);
+  unlockAudio();
   hud();
 });
 
@@ -881,23 +1091,29 @@ $('lb-rename').addEventListener('click', () => {
 });
 
 // ---------- sound ----------
+// Recorded effects made with ElevenLabs (www/sfx). They load after the first touch, when audio is allowed.
+const SFX = ['harvest-1', 'harvest-2', 'harvest-3', 'harvest-big', 'miss', 'tick', 'bell', 'hint'];
+const sfx = {};
 let actx = null;
 function unlockAudio() {
   if (actx || !prefs.sound) return;
-  try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  for (const name of SFX) {
+    fetch(`sfx/${name}.mp3`)
+      .then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+      .then(buf => new Promise((ok, no) => actx.decodeAudioData(buf, ok, no)))
+      .then(audio => { sfx[name] = audio; }, () => {});
+  }
 }
-function blip(n) {
-  if (!prefs.sound || !actx) return;
-  const t = actx.currentTime;
-  const o = actx.createOscillator(), g = actx.createGain();
-  o.type = 'triangle';
-  o.frequency.setValueAtTime(440 + n * 60, t);
-  o.frequency.exponentialRampToValueAtTime(880 + n * 90, t + 0.09);
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-  o.connect(g).connect(actx.destination);
-  o.start(t); o.stop(t + 0.2);
+function play(name, volume) {
+  if (!prefs.sound || !actx || !sfx[name]) return;
+  if (actx.state === 'suspended') actx.resume();
+  const src = actx.createBufferSource(), g = actx.createGain();
+  src.buffer = sfx[name];
+  src.playbackRate.value = 0.95 + Math.random() * 0.1; // keep repeats from sounding identical
+  g.gain.value = volume;
+  src.connect(g).connect(actx.destination);
+  src.start();
 }
 
 // ---------- boot ----------
