@@ -125,18 +125,6 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .tag .v { font-family: var(--display); font-size: 1.1rem; line-height: 1; color: var(--ink); }
 .tag .v b { font-weight: 400; font-size: 1.5em; color: var(--red); }
 
-.stamp {
-  width: 60px; height: 60px; box-sizing: border-box; border-radius: 50%;
-  background: var(--fuzz), var(--red);
-  box-shadow: 0 2px 0 var(--red-deep), 0 4px 8px var(--shade);
-  display: grid; place-content: center; text-align: center; position: relative;
-  color: var(--thread);
-}
-.stamp::after { content: ""; position: absolute; inset: 4px; border: 1.5px dashed var(--thread); border-radius: 50%; opacity: .85; }
-.stamp .k { color: var(--thread); font-size: 0.54rem; opacity: .9; }
-.stamp .v { font-family: var(--display); font-size: 1.15rem; line-height: 1; }
-.stamp.low { animation: thump 1s ease-in-out infinite; }
-@keyframes thump { 50% { transform: scale(1.08); } }
 
 .rival { padding: 6px 12px 7px; text-align: center; }
 .rival .v { font-family: var(--display); font-size: 1.05rem; line-height: 1; color: var(--muted); }
@@ -164,18 +152,30 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .chip[aria-pressed="false"] { color: var(--muted); }
 .spacer { flex: 1; }
 
-/* a yellow felt strip, stitched down the middle, that shortens as time runs out */
-.timer { height: 14px; flex: none; border-radius: 7px; background: var(--fuzz), var(--card-edge); overflow: hidden; }
+/* a yellow felt strip that shortens as time runs out, with the time sewn on as a little cream label */
+.timer {
+  position: relative; height: 24px; flex: none; border-radius: 12px; overflow: hidden;
+  background: var(--fuzz), var(--card-edge);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, .18);
+}
 .timer .fill {
-  height: 100%; width: 100%; transform-origin: left; border-radius: 7px;
-  background:
-    linear-gradient(90deg, var(--ink) 50%, transparent 0) 0 50% / 10px 1.5px repeat-x,
-    var(--fuzz), var(--pick);
-  opacity: .95;
+  position: absolute; inset: 0; transform-origin: left; border-radius: 12px;
+  background: var(--fuzz), var(--pick);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .18);
 }
-.timer.low .fill {
-  background: linear-gradient(90deg, var(--thread) 50%, transparent 0) 0 50% / 10px 1.5px repeat-x, var(--fuzz), var(--red);
+.timer .fill::after {
+  content: ""; position: absolute; inset: 4px 6px; border: 1.5px dashed rgba(58, 42, 34, .35); border-radius: 8px;
 }
+.timer.low .fill { background: var(--fuzz), var(--red); }
+.timer .t {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  padding: 1px 10px; border-radius: 9px;
+  background: #fffaf0; color: #2f221b; box-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  font-family: var(--display); font-size: 0.95rem; line-height: 1.15;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.timer.urgent .t { animation: thump 1s ease-in-out infinite; color: var(--red-deep); }
+@keyframes thump { 50% { transform: translate(-50%, -50%) scale(1.15); } }
 
 /* ---- the green felt tray ---- */
 .stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: start center; touch-action: none; cursor: crosshair; }
@@ -371,8 +371,6 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   .brand .sub { font-size: 0.7rem; max-width: 11em; line-height: 1.3; }
   .brand h1 { font-size: 1.6rem; }
   .stats { gap: 8px; }
-  .stamp { width: 52px; height: 52px; }
-  .stamp .v { font-size: 1rem; }
   .tag, .rival { padding: 5px 9px 6px; }
   .tag .v, .rival .v { font-size: 0.95rem; }
   .chip, .seg button { padding: 7px 10px; font-size: 0.8rem; }
@@ -390,8 +388,6 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   .brand .sub { font-size: 0.72rem; }
   .brand h1 { font-size: 1.6rem; }
   .stats { gap: 8px; }
-  .stamp { width: 50px; height: 50px; }
-  .stamp .v { font-size: 0.95rem; }
   .controls { grid-column: 1; gap: 6px; }
   .chip, .seg button { padding: 6px 9px; font-size: 0.78rem; }
   .spacer { display: none; }
@@ -401,7 +397,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   .receipt .total dd { font-size: 1.6rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .a.gone i, .plus, .sheet, .stamp.low { animation-duration: .01s; animation-iteration-count: 1; }
+  .a.gone i, .plus, .sheet, .timer.urgent .t { animation-duration: .01s; animation-iteration-count: 1; }
 }
 </style>
 
@@ -413,7 +409,6 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
     </div>
     <div class="stats">
       <div class="stat tag felt"><span class="k">딴 사과</span><span class="v"><b id="score">0</b>개</span></div>
-      <div class="stat stamp" id="stamp"><span class="k">남은 시간</span><span class="v" id="time">2:00</span></div>
       <div class="stat rival felt"><span class="k">옆가게 사장님</span><span class="v"><b id="target">–</b>개</span></div>
     </div>
   </header>
@@ -425,7 +420,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
     <button class="chip" id="rank" hidden>순위</button>
   </div>
 
-  <div class="timer" id="timer"><div class="fill" id="fill"></div></div>
+  <div class="timer" id="timer" role="timer" aria-label="남은 시간"><div class="fill" id="fill"></div><span class="t" id="time">2:00</span></div>
 
   <main class="stage" id="stage">
     <div class="crate" id="crate"><div class="board" id="board"></div></div>
@@ -711,7 +706,7 @@ function hud() {
   $('target').textContent = S.est;
   $('fill').style.transform = `scaleX(${Math.max(0, S.time) / TIME})`;
   $('timer').classList.toggle('low', S.time <= 20);
-  $('stamp').classList.toggle('low', S.started && !S.over && S.time <= 10);
+  $('timer').classList.toggle('urgent', S.started && !S.over && S.time <= 10);
   $('sub').textContent = !lbOn() ? '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.'
     : rankedToday(S.mode) ? '오늘 순위전은 끝났어요. 지금은 연습이에요.'
     : '이번 판이 오늘의 순위전이에요.';
@@ -850,7 +845,7 @@ function end(reason) {
   const ranked = lbOn() && !S.ranked && !rankedToday(S.mode) && !S.restored;
   if (ranked) { S.ranked = true; markRanked(S.day, S.mode, S.score); }
   $('over-date').textContent = `${S.day} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} · ${S.ranked ? '오늘의 순위전' : '연습'}`;
-  $('stamp').classList.remove('low');
+  $('timer').classList.remove('urgent');
   play('bell', 0.8);
   $('over-est').textContent = S.est + '개';
   $('over-best').textContent = best + '개';
