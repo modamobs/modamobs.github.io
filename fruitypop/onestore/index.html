@@ -2012,7 +2012,7 @@ if (AdMob) AdMob.initialize({ initializeForTesting: AD_TEST_DEVICES.length > 0, 
   .then(() => { adReady = true; adPrime(); }).catch(() => {});
 // 웹에서는 광고가 없다. ?test 미리보기에서만 광고를 본 셈 치고 화면 흐름을 확인한다
 // 원스토어 웹게임판: 원스토어 보상형 광고. 지면 ID 는 ONEconsole 수익화 > 인앱 광고에서 발급받아 넣는다 (비어 있으면 광고 버튼이 안 나온다)
-const OS_REWARD_ID = '';
+const OS_REWARD_ID = 'xAE7F-4B67-GF3D-HQ4Q';   // 리워드 비디오 상용 ID (2026-10-27 발급)
 const osSdk = () => window.ONESTORE_SDK || null;
 const adAvailable = () => NATIVE ? adReady
   : osSdk() ? !!OS_REWARD_ID && osSdk().ads.isSupported('rewarded')
