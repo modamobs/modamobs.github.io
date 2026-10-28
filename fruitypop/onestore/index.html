@@ -302,7 +302,7 @@ body::before {
 }
 .map-head {
   position: sticky;
-  top: env(safe-area-inset-top, 0px);
+  top: max(env(safe-area-inset-top, 0px), var(--os-top, 0px));
   z-index: 2;
   box-sizing: border-box;
   width: 100%;
@@ -1064,33 +1064,33 @@ const FULL = Array(8).fill('########');
 // '.' 빈칸  '#' 일반 칸  '1'/'2' 젤리 1·2겹  'i'/'I' 얼음 과일 1·2겹  'c' 잼  'b' 자물쇠 상자  'u' 벌집
 // 'm'/'M'/'X' 휘핑크림 1·2·3겹.  ingredients: 내려야 할 병아리 알 수.  timers: 시한폭탄 과일 { count, start }
 const LEVELS = [
-  { name: '첫 맛', moves: 15, colors: 5, layout: ['###..###', '########', '########', '.######.', '.######.', '########', '########', '###..###'],
-    goals: [{ type: 'score', target: 9000 }], stars: [9000, 12000, 16000] },
-  { name: '딸기와 레몬', moves: 18, colors: 5, layout: ['###..###', '###..###', '########', '########', '#######.', '#######.', '########', '.#######'],
-    goals: [{ type: 'collect', color: 0, count: 20 }, { type: 'collect', color: 2, count: 20 }], stars: [13000, 15500, 18500] },
-  { name: '귤 바구니', moves: 20, colors: 5,
+  { name: '첫 맛', moves: 20, colors: 5, layout: ['###..###', '########', '########', '.######.', '.######.', '########', '########', '###..###'],
+    goals: [{ type: 'score', target: 7000 }], stars: [7000, 12000, 16000] },
+  { name: '딸기와 레몬', moves: 22, colors: 5, layout: ['###..###', '###..###', '########', '########', '#######.', '#######.', '########', '.#######'],
+    goals: [{ type: 'collect', color: 0, count: 15 }, { type: 'collect', color: 2, count: 15 }], stars: [13000, 15500, 18500] },
+  { name: '귤 바구니', moves: 24, colors: 5,
     layout: ['.######.', '########', '########', '###..###', '###..###', '########', '########', '.######.'],
-    goals: [{ type: 'collect', color: 1, count: 18 }, { type: 'collect', color: 3, count: 18 }], stars: [17000, 17500, 18000] },
-  { name: '다이아몬드', moves: 16, colors: 5,
+    goals: [{ type: 'collect', color: 1, count: 15 }, { type: 'collect', color: 3, count: 15 }], stars: [17000, 17500, 18000] },
+  { name: '다이아몬드', moves: 21, colors: 5,
     layout: ['###..###', '###..###', '########', '########', '########', '########', '###..###', '###..###'],
-    goals: [{ type: 'collect', color: 4, count: 16 }, { type: 'collect', color: 3, count: 16 }], stars: [6000, 8500, 12000] },
-  { name: '포도밭', moves: 18, colors: 5,
+    goals: [{ type: 'collect', color: 4, count: 13 }, { type: 'collect', color: 3, count: 13 }], stars: [6000, 8500, 12000] },
+  { name: '포도밭', moves: 22, colors: 5,
     layout: ['##.##.##', '########', '########', '########', '.######.', '########', '########', '##.##.##'],
-    goals: [{ type: 'score', target: 12000 }], stars: [12000, 15000, 18500] },
-  { name: '젤리 바닥', moves: 17, colors: 5, intro: 'jelly',
+    goals: [{ type: 'score', target: 10000 }], stars: [10000, 15000, 18500] },
+  { name: '젤리 바닥', moves: 22, colors: 5, intro: 'jelly',
     layout: ['.##..##.', '########', '#111111#', '#111111#', '.#1111#.', '..#11#..', '...##...'],
     goals: [{ type: 'jelly' }], stars: [9000, 11500, 14000] },
-  { name: '젤리 산책', moves: 14, colors: 5,
+  { name: '젤리 산책', moves: 19, colors: 5,
     layout: ['########', '########', '##1111##', '##1111##', '##1111##', '##1111##', '########', '########'],
     goals: [{ type: 'jelly' }], stars: [14000, 17000, 20500] },
-  { name: '젤리 줄무늬', moves: 21, colors: 5,
+  { name: '젤리 줄무늬', moves: 34, colors: 5,
     layout: ['11111111', '########', '11111111', '########', '11111111', '########', '11111111', '########'],
     goals: [{ type: 'jelly' }], stars: [27000, 30000, 33500] },
-  { name: '오렌지 젤리', moves: 18, colors: 5,
+  { name: '오렌지 젤리', moves: 26, colors: 5,
     layout: ['########', '#1####1#', '#1####1#', '#111111#', '#111111#', '#1####1#', '#1####1#', '########'],
-    goals: [{ type: 'jelly' }, { type: 'collect', color: 1, count: 20 }], stars: [23000, 26500, 31000] },
-  { name: '이중 젤리', moves: 22, colors: 5,
-    layout: ['11####11', '1######1', '##2##2##', '.#2##2#.', '.#2##2#.', '##2##2##', '1######1', '11####11'],
+    goals: [{ type: 'jelly' }, { type: 'collect', color: 1, count: 12 }], stars: [23000, 26500, 31000] },
+  { name: '이중 젤리', moves: 26, colors: 5,
+    layout: ['########', '########', '##2##2##', '.#2##2#.', '.#2##2#.', '##2##2##', '########', '########'],
     goals: [{ type: 'jelly' }], stars: [23000, 26500, 30500] },
   { name: '얼음 과일', moves: 16, colors: 5, intro: 'ice',
     layout: ['...##...', '..####..', '.##ii##.', '##i##i##', '##i##i##', '.##ii##.', '..####..', '...##...'],
@@ -1977,15 +1977,19 @@ const Store = NATIVE ? Capacitor.Plugins.FirebaseFirestore : null;
 // 분석 로그: 앱에서만 Firebase Analytics 로 보낸다. 판 도중에 생기는 부스터 기록은 쌓아 두었다가
 // 판이 끝나거나 앱이 가려질 때 보낸다. 로그가 실패해도 게임은 멈추지 않는다
 const Analytics = NATIVE ? Capacitor.Plugins.FirebaseAnalytics : null;
+// 토스판: 토스 번들(toss/build.mjs)이 게임보다 먼저 싣는 다리(toss/bridge). 토스 웹뷰 안일 때만 쓴다.
+// 로그는 토스 Analytics.log 로, 광고는 토스 보상형·전면, 뒤로가기는 토스 backEvent
+const TOSS = !NATIVE && window.Toss && window.Toss.inToss ? window.Toss : null;
 const trackQueue = [];
 function track(name, params = {}) {
-  if (!Analytics || SIM || TEST) return;
+  if ((!Analytics && !TOSS) || SIM || TEST) return;
   trackQueue.push([name, params]);
   if (name !== 'booster_used') flushTrack();
 }
 function flushTrack() {
   while (trackQueue.length) {
     const [name, params] = trackQueue.shift();
+    if (TOSS) { TOSS.track(name, params); continue; }
     try { Analytics.logEvent({ name, params }).catch(() => {}); } catch (e) {}
   }
 }
@@ -2015,10 +2019,33 @@ if (AdMob) AdMob.initialize({ initializeForTesting: AD_TEST_DEVICES.length > 0, 
 const OS_REWARD_ID = 'xAE7F-4B67-GF3D-HQ4Q';   // 리워드 비디오 상용 ID (2026-10-27 발급)
 const osSdk = () => window.ONESTORE_SDK || null;
 const adAvailable = () => NATIVE ? adReady
+  : TOSS ? TOSS.ads.hasReward
   : osSdk() ? !!OS_REWARD_ID && osSdk().ads.isSupported('rewarded')
   : TEST;
+// 토스 광고가 떠 있는 동안 음악·효과음을 멈춘다 (토스 웹뷰는 광고 중에 visibilitychange 를 안 준다)
+const hush = on => { BGM.duck = on ? 0 : 1; setMusic(); if (audio.ctx) audio.ctx[on ? 'suspend' : 'resume']().catch(() => {}); };
+let adLast = 0, adEnds = 0;
+// 토스판 판 끝 전면: 6레벨부터, 판이 세 번 끝날 때마다, 앞 광고(보상형 포함)에서 2분이 지났을 때만. 결과 창을 떠날 때 띄운다.
+// 미리 불러 둔 광고가 없으면 띄우지 않고 다음 편만 불러 둔다
+function adBetweenLevels() {
+  if (!TOSS || !TOSS.ads.hasInterstitial || S.levelIdx < 5) return;
+  if (++adEnds % 3 || Date.now() - adLast < 120000) return;
+  hush(true);
+  TOSS.ads.showInterstitial().then(shown => {
+    hush(false);
+    if (shown) { adLast = Date.now(); track('ad_interstitial', { level: S.levelIdx + 1 }); }
+  });
+}
 // 끝까지 봤으면 true, 안 보고 닫으면 false, 띄울 광고가 없으면 null
 async function adRewarded() {
+  if (TOSS) {
+    hush(true);
+    const r = await TOSS.ads.showReward();
+    hush(false);
+    if (r !== null) adLast = Date.now();
+    track('ad_rewarded', { earned: r ? 1 : 0, level: S.levelIdx + 1 });
+    return r;
+  }
   if (!NATIVE && osSdk()) {
     // 이 게임의 보상(이동 5번·부스터 1개)은 그 판 안에서 끝나고 서버에 남는 재화가 없어 앱 안에서 바로 준다
     if (!OS_REWARD_ID) return null;
@@ -2282,9 +2309,10 @@ const TEST = new URLSearchParams(location.search).has('test');
 const SHOT = new URLSearchParams(location.search).has('shot');
 // 만든 곳 표시가 다 사라지면 치운다. 움직임 줄이기 설정이면 애니메이션이 없으니 시간으로 치운다. 테스트·봇에서는 바로 치운다
 {
-  const brand = document.getElementById('brand');
+  const brand = document.getElementById('brand');   // 토스판에는 없다 (토스가 먼저 자기 시작 화면을 띄운다)
   const off = () => brand.remove();
-  if (SIM || TEST || SHOT) off();
+  if (!brand) {}
+  else if (SIM || TEST || SHOT) off();
   else { brand.addEventListener('animationend', e => { if (e.target === brand) off(); }); setTimeout(() => brand.isConnected && off(), 1700); }
 }
 
@@ -5215,6 +5243,7 @@ overlay.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   initAudio();
   const act = b.dataset.act;
+  if (S.over && (act === 'retry' || act === 'next' || act === 'map')) adBetweenLevels();
   // 판 도중에 설정에서 다시 하기·레벨 끝내기를 누르면 포기한 것으로 남긴다
   if ((act === 'retry' || act === 'map') && S.level && !S.over && $('map').hidden) {
     S.over = true;
@@ -5236,7 +5265,7 @@ overlay.addEventListener('click', e => {
     showOverlay(optionsHTML());
     overlay.querySelector('.opt-panel').classList.add('still');
   }
-  else if (act === 'exit') { flushTrack(); Capacitor.Plugins.App.exitApp(); }
+  else if (act === 'exit') { flushTrack(); TOSS ? TOSS.close() : Capacitor.Plugins.App.exitApp(); }
   else if (act === 'help') showHelp();
   else if (act === 'opt') showOverlay(optionsHTML());
   else if (act === 'opt-sfx' || act === 'opt-music' || act === 'opt-vibe') {
@@ -5342,6 +5371,8 @@ function askExit() {
     </div>`);
 }
 if (NATIVE) Capacitor.Plugins.App.addListener('backButton', () => { if (!backPop()) askExit(); });
+// 토스는 뒤로가기를 받는 동안 자기 종료 팝업을 띄우지 않는다 → 안드로이드와 같이 닫을 게 없으면 우리가 묻고 closeView 로 끈다
+if (TOSS) TOSS.back.listen(() => { if (!backPop()) askExit(); });
 // 지도에서 아무 곳이나 처음 눌러도 음악이 시작되게 한다
 $('map').addEventListener('pointerdown', () => initAudio(), { once: true });
 $('mapPath').addEventListener('click', e => {
