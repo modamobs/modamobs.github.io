@@ -19,6 +19,8 @@
                 다른 곳에 올렸으면 "https://..." 전체 주소도 됩니다.
      about    : 소개 페이지 주소 (선택)
      store    : Google Play 주소 (선택)
+     itch     : itch.io 주소 (선택, 비워 두면 버튼이 안 나옵니다)
+     onestore : 원스토어 주소 (선택, 비워 두면 버튼이 안 나옵니다)
      thumb    : 썸네일 (선택, 없으면 이니셜 썸네일이 나옵니다)
      accent   : 카드 포인트 색 (선택, 게임 테마색)
      portrait : true면 세로 화면 게임 — 플레이어가 세로 비율로 띄웁니다
@@ -35,6 +37,8 @@ const GAMES = [
     play: "/sudoku/play/",
     about: "/sudoku/",
     store: "https://play.google.com/store/apps/details?id=com.mobs.sudoku",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/sudoku.png",
     accent: "#7dd3fc",
     portrait: true
@@ -49,6 +53,8 @@ const GAMES = [
     play: "/mathcross/play/",
     about: "/mathcross/",
     store: "https://play.google.com/store/apps/details?id=com.mobs.mathcross",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/mathcross.png",
     accent: "#4f83ff",
     portrait: true
@@ -62,6 +68,8 @@ const GAMES = [
     playable: true,
     play: "/erasersums/play/",
     store: "https://play.google.com/store/apps/details?id=com.mobs.erasersums",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/erasersums.png",
     accent: "#2b55e6",
     portrait: true
@@ -74,6 +82,8 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/ibexjump/play/",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/ibexjump.png",
     accent: "#ec8a3c",
     portrait: true
@@ -86,6 +96,9 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/minesweeper/play/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.minesweeper",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/minesweeper.png",
     accent: "#2f6fd8",
     portrait: true
@@ -98,6 +111,8 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/applegame/play/",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/applegame.png",
     accent: "#de3b2b",
     portrait: true
@@ -110,6 +125,8 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/fruitgame/play/",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/fruitgame.png",
     accent: "#ef4b2e",
     portrait: true
@@ -123,6 +140,9 @@ const GAMES = [
     playable: true,
     play: "/arrow-box/play/",
     about: "/arrow-box/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.arrowbox",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/arrow-box.png",
     accent: "#fbbf24",
     portrait: true
@@ -136,6 +156,9 @@ const GAMES = [
     playable: true,
     play: "/mergecity/play/",
     about: "/mergecity/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.civilization2048",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/mergecity.png",
     accent: "#6fd0ef",
     portrait: true
@@ -149,6 +172,9 @@ const GAMES = [
     playable: true,
     play: "/tilefeast/play/",
     about: "/tilefeast/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.tilefeast",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/tilefeast.png",
     accent: "#2a9df4",
     portrait: true
@@ -162,6 +188,8 @@ const GAMES = [
     playable: true,
     play: "/hiddenfind/play/",
     about: "/hiddenfind/",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/hiddenfind.png",
     accent: "#bfe7ff",
     portrait: true
@@ -175,6 +203,9 @@ const GAMES = [
     playable: true,
     play: "/rocketescape/play/",
     about: "/rocketescape/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.rocketescape",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/rocketescape.png",
     accent: "#38e8ff",
     portrait: true
@@ -187,6 +218,9 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/gusul/play/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.gusul",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/gusul.png",
     accent: "#38b6f5",
     portrait: true
@@ -199,6 +233,9 @@ const GAMES = [
     status: "web",
     playable: true,
     play: "/bookanswer/play/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.bookanswer",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/bookanswer.png",
     accent: "#f1c77a",
     portrait: true
@@ -213,6 +250,8 @@ const GAMES = [
     play: "/crosssum/play/",
     about: "/crosssum/",
     store: "https://play.google.com/store/apps/details?id=com.mobs.crosssum",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/crosssum.png",
     accent: "#a78bfa",
     portrait: true
@@ -228,6 +267,9 @@ const GAMES = [
     playable: true,
     play: "/dailyfarm/play/",
     about: "/dailyfarm/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.dailyfarm",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/dailyfarm.png",
     accent: "#86efac",
     portrait: true
@@ -237,10 +279,13 @@ const GAMES = [
     title: "릴 던전",
     desc: "5×4 릴을 굴려 페이라인이 서면 보스를 때리는 슬롯머신 로그라이크.",
     genres: ["로그라이크"],
-    status: "web",
+    status: "app",
     playable: false,
     play: "/reeldungeon/play/",
     about: "/reeldungeon/",
+    store: "https://play.google.com/store/apps/details?id=com.mobs.reel_dungeon",
+    itch: "",
+    onestore: "",
     thumb: "/assets/images/reeldungeon.png",
     accent: "#f472b6",
     portrait: true
@@ -252,6 +297,8 @@ const GAMES = [
     genres: ["방치형", "RPG"],
     status: "soon",
     about: "/swordgirl/",
+    itch: "",
+    onestore: "",
     thumb: "",
     accent: "#fb7185"
   },
@@ -262,6 +309,8 @@ const GAMES = [
     genres: ["캐주얼", "강화"],
     status: "soon",
     about: "/upgradekim/",
+    itch: "",
+    onestore: "",
     thumb: "",
     accent: "#fca5a5"
   }

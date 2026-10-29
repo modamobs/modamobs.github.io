@@ -96,6 +96,8 @@
     const links = [];
     if (game.about) links.push(`<a href="${game.about}">소개</a>`);
     if (game.store) links.push(`<a href="${game.store}" target="_blank" rel="noopener noreferrer">Google Play</a>`);
+    if (game.itch) links.push(`<a href="${game.itch}" target="_blank" rel="noopener noreferrer">itch.io</a>`);
+    if (game.onestore) links.push(`<a href="${game.onestore}" target="_blank" rel="noopener noreferrer">원스토어</a>`);
 
     li.innerHTML = `
       <div class="card-thumb">
