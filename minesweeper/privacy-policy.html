@@ -35,26 +35,36 @@
 <body>
 
 <h1>무한 지뢰찾기 개인정보 처리방침</h1>
-<p class="meta">시행일: 2026년 10월 18일</p>
+<p class="meta">시행일: 2026년 10월 29일 (이전 판: 2026년 10월 18일)</p>
 
-<p>무한 지뢰찾기(패키지 <code>com.mobs.minesweeper</code>, 이하 "본 게임")는 가입이나 로그인 없이 바로 시작합니다.
-본 게임에는 개발자가 운영하는 서버가 없고, 사용 통계·오류 보고 도구도 쓰지 않습니다.
-안드로이드 앱의 광고는 Google AdMob이, 토스 미니앱의 광고는 토스(비바리퍼블리카)가 처리합니다.</p>
+<p>무한 지뢰찾기(패키지 <code>com.mobs.minesweeper</code>, 이하 "본 게임")는 가입 없이 바로 시작합니다.
+모두가 함께 쓰는 순위표와, 안드로이드에서 폰을 바꿔도 기록을 이어 가는 「기록 지키기」를 위해 Google Firebase(Authentication, Cloud Firestore)를 씁니다.
+안드로이드 앱의 광고는 Google AdMob이, 토스 미니앱의 광고는 토스(비바리퍼블리카)가 처리합니다.
+본 게임은 오류 보고 도구를 쓰지 않습니다.</p>
 
-<h2>1. 개발자가 수집하는 정보</h2>
-<p>없습니다. 이름, 이메일, 전화번호, 계정, 위치, 연락처, 사진, 카메라, 마이크 정보를 받거나 서버로 보내지 않습니다.</p>
-
-<h2>2. 기기 안에만 저장되는 것</h2>
-<p>게임 진행은 기기 안(웹 버전은 브라우저 저장소)에만 저장되고 다른 곳으로 보내지 않습니다.</p>
+<h2>1. 계정 (Firebase Authentication)</h2>
 <ul>
-  <li>무한 모드의 지도 시드, 칸 상태(열림·깃발), 섹터 상태(풀림·잠김), 화면 위치</li>
-  <li>보석 수, 밟은 지뢰 수</li>
-  <li>그림 퍼즐의 완성 목록과 풀던 퍼즐의 칸 상태</li>
+  <li><strong>익명 계정</strong>: 순위표에 기록을 올리기 위해 처음 실행할 때 이름·이메일 없이 익명 계정 번호(UID)를 자동으로 만듭니다. 토스·안드로이드·웹 모두 해당합니다.</li>
+  <li><strong>Google 계정(안드로이드, 선택)</strong>: 옵션(⚙) → 「기록 지키기」에서 Google로 로그인하면 계정 번호와 함께 Google 계정의 이름과 이메일 주소가
+    Firebase Authentication에 저장됩니다. 이름과 이메일은 어느 계정으로 로그인했는지 화면에 보여 주는 데만 씁니다.</li>
 </ul>
-<p>앱을 삭제하거나 브라우저 사이트 데이터를 지우면 함께 지워집니다. 게임 안의 보석은 현금 가치가 없으며 판매하지 않습니다.</p>
 
-<h2>3. 광고(Google AdMob, 안드로이드 앱)가 수집하는 정보</h2>
-<p>안드로이드 앱은 지뢰를 밟았을 때 "광고 보고 다시 도전"을 누르면 Google AdMob의 보상형 광고를 표시합니다.
+<h2>2. 서버(Cloud Firestore)에 저장하는 정보</h2>
+<div class="wrap"><table>
+  <tr><th>무엇을</th><th>누구</th><th>정보</th><th>목적·공개 범위</th></tr>
+  <tr><td>순위표</td><td>모든 이용자</td><td>순위표 이름, 무한 판에서 푼 섹터 수(누적·이번 주), 플랫폼(토스·안드로이드·웹), 갱신 시각</td><td>순위표 표시. <strong>순위표 이름과 점수는 다른 이용자에게 공개됩니다.</strong></td></tr>
+  <tr><td>기록 지키기</td><td>Google로 로그인한 안드로이드 이용자</td><td>무한 판, 그림 퍼즐, 클래식, 오늘의 미션, 순위 진행 기록과 보석 수</td><td>다른 기기에서 이어 하기. 본인만 읽을 수 있습니다.</td></tr>
+</table></div>
+<p>순위표 이름은 토스에서는 토스 게임센터 닉네임을, 그 밖에는 「탐험가1234」 같은 자동 이름을 쓰며, 순위 화면에서 12자까지 직접 바꿀 수 있습니다.
+실명을 쓰지 않는 것을 권합니다. 서버의 정보는 이용자가 삭제할 때까지 보관합니다(7항).</p>
+
+<h2>3. 기기 안에 저장되는 것</h2>
+<p>게임 진행은 먼저 기기 안(웹 버전은 브라우저 저장소)에 저장됩니다: 무한 판의 지도 시드·칸 상태·섹터 상태·화면 위치, 보석 수, 밟은 지뢰 수,
+그림 퍼즐·클래식·오늘의 미션 진행, 설정(진동·언어). 앱을 삭제하거나 브라우저 사이트 데이터를 지우면 함께 지워집니다.
+게임 안의 보석은 현금 가치가 없으며 판매하지 않습니다.</p>
+
+<h2>4. 광고(Google AdMob, 안드로이드 앱)가 수집하는 정보</h2>
+<p>안드로이드 앱은 지뢰를 밟은 뒤 "광고 보고 다시 도전"을 누르면 Google AdMob의 보상형 광고를 표시합니다.
 광고를 위해 Google이 아래 정보를 수집·처리할 수 있습니다. 개발자는 이 정보를 받지 않습니다.</p>
 <div class="wrap"><table>
   <tr><th>정보</th><th>목적</th></tr>
@@ -65,49 +75,75 @@
 </table></div>
 <p>유럽경제지역·영국 이용자에게는 광고 전에 Google의 동의 화면이 표시됩니다.
 자세한 내용은 <a href="https://policies.google.com/technologies/partner-sites">Google 파트너 사이트·앱에서의 데이터 사용</a>에서
-확인할 수 있습니다. 광고 ID는 기기 설정(Google → 광고 또는 개인정보 보호 → 광고)에서 재설정하거나 삭제할 수 있습니다.
-정보는 암호화된 네트워크(TLS)로 전송됩니다.</p>
+확인할 수 있습니다. 광고 ID는 기기 설정(Google → 광고 또는 개인정보 보호 → 광고)에서 재설정하거나 삭제할 수 있습니다.</p>
 
-<h2>4. 토스 미니앱</h2>
-<p>토스 앱 안에서 실행할 때 보상형 광고는 토스가 표시하며, 광고와 관련된 정보는
-<a href="https://toss.im/privacy">토스 개인정보처리방침</a>에 따라 처리됩니다. 본 게임은 토스 계정 정보를 받지 않습니다.</p>
+<h2>5. 토스 미니앱</h2>
+<ul>
+  <li>보상형·전면 광고는 토스가 표시하며, 광고와 관련된 정보는 <a href="https://toss.im/privacy">토스 개인정보처리방침</a>에 따라 처리됩니다.</li>
+  <li>순위표 이름으로 토스가 제공하는 <strong>토스 게임센터 닉네임</strong>을 받아 씁니다. 그 밖의 토스 계정 정보(이름, 전화번호 등)는 받지 않습니다.</li>
+  <li>섹터를 푼 횟수, 퍼즐 완성 같은 게임 이용 이벤트를 토스의 분석 도구에 기록해 서비스 개선에 씁니다. 이 기록은 토스가 처리하며 개인을 알아볼 수 있는 정보는 넣지 않습니다.</li>
+</ul>
 
-<h2>5. 웹 버전</h2>
-<p>modamobs.github.io의 웹 버전에는 실제 광고와 결제가 없습니다("테스트 광고"는 아무 정보도 보내지 않는 안내 화면입니다).
+<h2>6. 웹 버전</h2>
+<p>modamobs.github.io의 웹 버전에는 실제 광고와 결제가 없습니다("테스트 광고"는 아무 정보도 보내지 않는 안내 화면입니다). 순위표는 1·2항과 같이 익명 계정으로 씁니다.
 페이지는 GitHub Pages가 제공하며, 이모지 글꼴을 jsDelivr(cdn.jsdelivr.net)에서 받습니다.
 이 과정에서 각 회사는 일반적인 웹 접속처럼 IP 주소와 브라우저 정보를 받을 수 있습니다.</p>
 
-<h2>6. 앱 권한</h2>
-<p>안드로이드 앱은 인터넷·네트워크 상태 확인, 진동, 광고 ID와 Android 광고 서비스(Privacy Sandbox) 권한, 그리고 광고 SDK가 쓰는 백그라운드 작업 권한(포그라운드 서비스·절전 방지)만 사용합니다.
-위치, 연락처, 사진·파일, 카메라, 마이크 권한은 요청하지 않습니다.</p>
+<h2 id="delete">7. 계정과 데이터 삭제</h2>
+<ul>
+  <li><strong>앱에서 바로 삭제(Google로 로그인한 경우)</strong>: 옵션(⚙) → 「기록 지키기」 → <strong>계정 삭제</strong>를 누르면
+    서버의 기록 지키기 저장본과 순위표 기록, Firebase 계정이 곧바로 지워집니다. 이 기기 안의 게임은 남고 익명으로 돌아갑니다.</li>
+  <li><strong>이메일로 요청</strong>: 로그인하지 않았거나 앱을 지운 뒤라면 <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a>으로
+    제목 "무한 지뢰찾기 데이터 삭제"와 함께 순위표 이름(또는 로그인했던 Google 이메일)을 보내 주세요. 7일 안에 서버의 기록과 계정을 지우고 답장합니다.</li>
+  <li><strong>기기 안의 기록</strong>: 앱을 삭제하거나 브라우저 사이트 데이터를 지우면 지워집니다.</li>
+</ul>
 
-<h2>7. 아동</h2>
+<h2>8. 앱 권한과 보안</h2>
+<p>안드로이드 앱은 인터넷·네트워크 상태 확인, 진동, 광고 ID와 Android 광고 서비스(Privacy Sandbox) 권한, 그리고 광고 SDK가 쓰는 백그라운드 작업 권한(포그라운드 서비스·절전 방지)만 사용합니다.
+위치, 연락처, 사진·파일, 카메라, 마이크 권한은 요청하지 않습니다.
+Firebase·AdMob과의 통신은 모두 암호화(TLS)되어 이루어지고, 서버의 기록은 접근 규칙으로 본인 것만 고칠 수 있게 막혀 있습니다.</p>
+
+<h2>9. 아동</h2>
 <p>본 게임은 만 13세 이상을 대상으로 하며 아동을 대상으로 만들어지지 않았습니다.</p>
 
-<h2>8. 방침의 변경</h2>
+<h2>10. 방침의 변경</h2>
 <p>내용이 바뀌면 이 페이지를 갱신하고 시행일을 고칩니다.</p>
 
-<h2>9. 문의 (개인정보 보호 책임자)</h2>
+<h2>11. 문의 (개인정보 보호 책임자)</h2>
 <p>Smart it · 이메일: <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
 
 <hr>
 
 <h1>Infinite Minesweeper Privacy Policy</h1>
-<p class="meta">Effective: October 18, 2026</p>
+<p class="meta">Effective: October 29, 2026 (previous version: October 18, 2026)</p>
 
-<p>Infinite Minesweeper (package <code>com.mobs.minesweeper</code>, "the Game") needs no sign-up or login.
-The Game has no developer-operated server and uses no analytics or crash-reporting tools.
-Ads in the Android app are served by Google AdMob; ads in the Toss mini-app are served by Toss (Viva Republica).</p>
+<p>Infinite Minesweeper (package <code>com.mobs.minesweeper</code>, "the Game") starts without sign-up.
+It uses Google Firebase (Authentication, Cloud Firestore) for a shared leaderboard and, on Android, for "Save progress", which keeps your progress when you change phones.
+Ads in the Android app are served by Google AdMob; ads in the Toss mini-app are served by Toss (Viva Republica).
+The Game uses no crash-reporting tools.</p>
 
-<h2>1. Data the developer collects</h2>
-<p>None. We do not receive or send to any server your name, e-mail, phone number, account, location, contacts, photos, camera or microphone data.</p>
+<h2>1. Accounts (Firebase Authentication)</h2>
+<ul>
+  <li><strong>Anonymous account</strong>: to post your score to the leaderboard, an anonymous account ID (UID) with no name or e-mail is created on first launch. This applies to Toss, Android and web.</li>
+  <li><strong>Google account (Android, optional)</strong>: if you sign in with Google under Options (⚙) → "Save progress", your Google account name and e-mail address
+    are stored in Firebase Authentication with your UID. They are only used to show which account you are signed in with.</li>
+</ul>
 
-<h2>2. Data stored only on your device</h2>
-<p>Game progress is stored only on the device (browser storage for the web version) and never sent anywhere:
-the map seed, cell states (opened/flagged), sector states, view position, gem count, mines stepped on, finished picture puzzles and the cells of a puzzle in progress.
-It is deleted when you uninstall the app or clear the site data. Gems have no cash value and are not sold.</p>
+<h2>2. Data stored on the server (Cloud Firestore)</h2>
+<div class="wrap"><table>
+  <tr><th>What</th><th>Who</th><th>Data</th><th>Purpose and visibility</th></tr>
+  <tr><td>Leaderboard</td><td>All users</td><td>Leaderboard name, sectors cleared on the endless board (all-time and this week), platform (Toss, Android, web), last update time</td><td>Showing the leaderboard. <strong>Your leaderboard name and score are visible to other users.</strong></td></tr>
+  <tr><td>Save progress</td><td>Android users signed in with Google</td><td>Progress for the endless board, picture puzzles, classic, daily missions and leaderboard, and gem count</td><td>Continuing on another device. Only you can read it.</td></tr>
+</table></div>
+<p>The leaderboard name is your Toss Game Center nickname in Toss, or an automatic name such as "Explorer1234" elsewhere; you can change it (up to 12 characters) on the leaderboard screen.
+We recommend not using your real name. Server data is kept until you delete it (section 7).</p>
 
-<h2>3. Data collected by ads (Google AdMob, Android app)</h2>
+<h2>3. Data stored on your device</h2>
+<p>Game progress is first stored on the device (browser storage for the web version): the endless board's map seed, cell and sector states and view position, gem count, mines stepped on,
+picture puzzle, classic and daily mission progress, and settings (vibration, language). It is deleted when you uninstall the app or clear the site data.
+Gems have no cash value and are not sold.</p>
+
+<h2>4. Data collected by ads (Google AdMob, Android app)</h2>
 <p>When you tap "Watch an ad to retry" after stepping on a mine, the Android app shows a Google AdMob rewarded ad.
 For ads, Google may collect and process the following. The developer does not receive this data.</p>
 <div class="wrap"><table>
@@ -119,26 +155,40 @@ For ads, Google may collect and process the following. The developer does not re
 </table></div>
 <p>Users in the EEA and UK see Google's consent form before ads. See
 <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps that use its services</a>.
-You can reset or delete the Advertising ID in device settings. Data is transmitted over encrypted connections (TLS).</p>
+You can reset or delete the Advertising ID in device settings.</p>
 
-<h2>4. Toss mini-app</h2>
-<p>When run inside the Toss app, rewarded ads are shown by Toss and ad-related data is handled under the
-<a href="https://toss.im/privacy">Toss privacy policy</a>. The Game does not receive Toss account information.</p>
+<h2>5. Toss mini-app</h2>
+<ul>
+  <li>Rewarded and interstitial ads are shown by Toss, and ad-related data is handled under the <a href="https://toss.im/privacy">Toss privacy policy</a>.</li>
+  <li>The Game receives your <strong>Toss Game Center nickname</strong> from Toss to use as your leaderboard name. It receives no other Toss account information (name, phone number, etc.).</li>
+  <li>Gameplay events such as sectors cleared and puzzles completed are logged to Toss's analytics tool to improve the service. Toss handles these logs, and they contain no information that identifies you.</li>
+</ul>
 
-<h2>5. Web version</h2>
-<p>The web version on modamobs.github.io has no real ads or payments (the "test ad" is a notice screen that sends no data).
+<h2>6. Web version</h2>
+<p>The web version on modamobs.github.io has no real ads or payments (the "test ad" is a notice screen that sends no data). The leaderboard uses an anonymous account as in sections 1 and 2.
 Pages are served by GitHub Pages and an emoji font is loaded from jsDelivr (cdn.jsdelivr.net); like any web request, these companies may receive your IP address and browser information.</p>
 
-<h2>6. App permissions</h2>
-<p>The Android app uses only internet/network state, vibration, Advertising ID and Android Ad Services (Privacy Sandbox) permissions, plus background-work permissions used by the ads SDK (foreground service, wake lock). It does not request location, contacts, photos/files, camera or microphone.</p>
+<h2 id="delete-en">7. Deleting your account and data</h2>
+<ul>
+  <li><strong>In the app (if signed in with Google)</strong>: open Options (⚙) → "Save progress" → <strong>Delete account</strong>.
+    Your saved progress, leaderboard entry and Firebase account are deleted from the server right away. The game on this device stays and returns to an anonymous account.</li>
+  <li><strong>By e-mail</strong>: if you never signed in or have already uninstalled the app, e-mail <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a>
+    with the subject "Infinite Minesweeper data deletion" and your leaderboard name (or the Google e-mail you signed in with). We delete your server data and account within 7 days and reply.</li>
+  <li><strong>On-device data</strong>: deleted when you uninstall the app or clear the site data.</li>
+</ul>
 
-<h2>7. Children</h2>
+<h2>8. App permissions and security</h2>
+<p>The Android app uses only internet/network state, vibration, Advertising ID and Android Ad Services (Privacy Sandbox) permissions, plus background-work permissions used by the ads SDK (foreground service, wake lock).
+It does not request location, contacts, photos/files, camera or microphone.
+All communication with Firebase and AdMob is encrypted (TLS), and server access rules only let you change your own records.</p>
+
+<h2>9. Children</h2>
 <p>The Game is intended for users aged 13 and over and is not directed at children.</p>
 
-<h2>8. Changes</h2>
+<h2>10. Changes</h2>
 <p>If this policy changes, we update this page and its effective date.</p>
 
-<h2>9. Contact</h2>
+<h2>11. Contact</h2>
 <p>Smart it · E-mail: <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a></p>
 
 </body>
