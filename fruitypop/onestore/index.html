@@ -861,6 +861,11 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .map-rank[hidden] { display: none; }
 .map:has(.map-rank:not([hidden])) .map-path { margin-bottom: 64px; }
 .boosters.daily .boost { visibility: hidden; }
+/* 랭킹 판: 목표·별 게이지 없이 점수만 크게 */
+.hud.daily .bar, .hud.daily .goal-pill, .hud.daily .hud-name { display: none; }
+.hud.daily .hud-mid { justify-content: center; }
+.hud.daily .hud-score { font-size: 13px; }
+.hud.daily .hud-score span:first-child { font-size: 28px; }
 .rank-rule { word-break: keep-all; text-wrap: balance; }
 .rank-box { min-height: 60px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
 .rank-list { list-style: none; margin: 0; padding: 0; max-height: min(40vh, 300px); overflow: auto; text-align: left; }
@@ -1034,7 +1039,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
     <div class="hud-mid">
       <div class="bar" id="bar"><div class="bar-fill" id="barFill"></div></div>
       <div class="goal-pill"><div class="goal-list" id="goals"></div></div>
-      <div class="hud-score"><span id="score" aria-live="polite">0</span> · <span id="levelName"></span></div>
+      <div class="hud-score"><span id="score" aria-live="polite">0</span><span class="hud-name"> · <span id="levelName"></span></span></div>
     </div>
     <div class="hud-badge" aria-hidden="true"><span class="rig m-idle" id="mascot"></span></div>
   </header>
@@ -3808,7 +3813,8 @@ function toast(text) {
 // 둔 수(S.log)도 같이 보내 나중에 서버가 다시 두어 볼 수 있게 한다. 게임 결과에 현금성 보상을 붙이면 안 된다 (토스 정책)
 const RANK_API = 'https://fruitypop-rank.matgo-cert.workers.dev';
 const DAILY_AT = 10;
-const DAILY = { name: '오늘의 랭킹', daily: true, moves: 50, colors: 5, layout: FULL, goals: [], stars: [50000, 75000, 100000] };   // 봇 50수: 아무렇게나 3.5만~10.7만(가운데 6.1만), 아래부터 8만 (2026-10-31)
+// stars 는 화면에 안 나온다(랭킹 판은 별·게이지를 숨긴다). 봇 50수: 아무렇게나 3.5만~10.7만(가운데 6.1만), 아래부터 8만 (2026-10-31)
+const DAILY = { name: '오늘의 랭킹', daily: true, moves: 50, colors: 5, layout: FULL, goals: [], stars: [50000, 75000, 100000] };
 const dailyOpen = () => TEST || !!save.stars[DAILY_AT - 1];
 const rankPlat = () => TOSS ? 'toss' : NATIVE ? 'android' : osSdk() ? 'onestore' : 'web';
 const RANK_UID = /^[tgd]:[A-Za-z0-9_\-+/=.]{8,128}$/;
@@ -5746,6 +5752,7 @@ async function startLevel(i) {
   useSeed(daily ? 'fp1:' + (S.dailyDay = kst()) : null);
   S.log = [];
   document.querySelector('.boosters').classList.toggle('daily', daily);
+  document.querySelector('.hud').classList.toggle('daily', daily);
   setZoneBg(zoneAt(S.levelIdx));
   parseLayout(S.level.layout);
   S.moves = S.level.moves; S.score = 0; S.collected = {}; S.combo = 0;
