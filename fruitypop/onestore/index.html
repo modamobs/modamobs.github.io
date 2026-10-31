@@ -247,6 +247,21 @@ body::before {
   text-align: center;
   pointer-events: none;
 }
+/* 첫 판 안내: 손가락 자리(동그라미)가 과일 하나를 옆 칸으로 미는 모습을 되풀이한다 */
+.tut { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.tut-dot {
+  position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%;
+  background: rgba(255, 255, 255, .55); border: 3px solid #fff; box-shadow: 0 2px 10px rgba(38, 33, 58, .45);
+  animation: tutSwipe 1.8s ease-in-out infinite;
+}
+@keyframes tutSwipe {
+  0%, 15% { transform: translate(0, 0) scale(1.15); opacity: 0; }
+  25% { transform: translate(0, 0) scale(1); opacity: 1; }
+  65% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 1; }
+  80%, 100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; }
+}
+.tut-say { top: auto; bottom: 10px; width: max-content; word-break: keep-all; text-wrap: balance; }
+.tut-say.up { top: 10px; bottom: auto; }
 /* 콤보: 보드가 툭 튀고 테두리가 빛나며, 배지가 단계별로 색이 바뀐다 */
 .board-wrap.combo-glow #board {
   box-shadow: 0 0 calc(10px + 28px * var(--glow, .3)) calc(2px + 8px * var(--glow, .3)) hsl(var(--hue, 330) 100% 68% / .9);
@@ -629,6 +644,14 @@ button {
 .opt-account span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .opt-link { min-height: 0; padding: 6px 12px; font-size: 13px; border-width: 2px; box-shadow: 0 2px 0 var(--accent-dark); }
 /* 계정 삭제: 눈에 덜 띄는 밑줄 글씨 */
+.opt-hint { margin: -6px 0 0; text-align: center; font-size: 11px; color: var(--ink-soft); }
+.toast {
+  position: fixed; left: 50%; top: calc(max(env(safe-area-inset-top, 0px), var(--os-top, 0px)) + 64px); z-index: 70;
+  max-width: calc(100% - 32px); padding: 10px 18px; border-radius: 999px;
+  background: rgba(60, 40, 30, .9); color: #fff; font-size: 14px; text-align: center;
+  opacity: 0; transform: translate(-50%, -8px); transition: opacity .25s, transform .25s; pointer-events: none;
+}
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
 .opt-del { align-self: center; min-height: 0; padding: 2px 8px; border: 0; background: none; box-shadow: none; font-size: 12px; color: var(--ink-soft); text-decoration: underline; }
 /* 언어 고르기: 작은 펠트 칩. 고른 칩만 분홍으로 채운다 */
 .opt-lang { display: flex; flex-direction: column; gap: 6px; padding: 2px 4px 8px; border-bottom: 2px dashed rgba(236, 90, 150, .35); font-size: 14px; color: var(--hud-ink); }
@@ -1888,6 +1911,13 @@ const STR = {
   'opt.signout': ['로그아웃', 'Sign out', 'ログアウト', '退出登录'],
   'opt.quit': ['레벨 끝내기', 'Quit level', 'レベルをやめる', '退出本关'],
   'opt.delete': ['계정 삭제', 'Delete account', 'アカウント削除', '删除账号'],
+  'opt.privacy': ['광고 개인정보 설정', 'Ad privacy settings', '広告のプライバシー設定', '广告隐私设置'],
+  'opt.rate': ['별점 남기기', 'Rate this game', 'レビューを書く', '给游戏评分'],
+  'opt.rateHint': ['안 열리면 오른쪽 위 ··· → 이용 후기 남기기', 'If nothing opens: ··· at top right → Write a review', '開かない場合は右上の ··· → レビューを書く', '如果没有打开：右上角 ··· → 写评价'],
+  'tut.swipe': ['과일을 옆으로 밀어 같은 색 3개를 맞춰요', 'Swipe a fruit to line up 3 of the same color', '果物をとなりに動かして同じ色を3つそろえよう', '把水果滑向旁边，凑齐 3 个同色'],
+  'promo.first': ['한 판 하면 토스포인트 {n}원을 받아요', 'Play one level to get {n} Toss Points', '1回遊ぶと Toss ポイント {n} ウォンもらえます', '玩一局即可获得 {n} 韩元 Toss 积分'],
+  'promo.streak': ['출석 {k}/{d}일 — {d}일 연속 오면 토스포인트 {n}원을 받아요', 'Day {k} of {d} — come {d} days in a row to get {n} Toss Points', '出席 {k}/{d}日 — {d}日連続で Toss ポイント {n} ウォン', '签到 {k}/{d} 天 — 连续 {d} 天可获得 {n} 韩元 Toss 积分'],
+  'promo.got': ['토스포인트 {n}원을 받았어요', 'You got {n} Toss Points', 'Toss ポイント {n} ウォンを受け取りました', '已获得 {n} 韩元 Toss 积分'],
   'del.title': ['계정을 지울까요?', 'Delete your account?', 'アカウントを削除する？', '要删除账号吗？'],
   'del.text': ['별·점수 같은 기록과 계정이 서버에서 모두 지워지고, 되돌릴 수 없어요.', "Your stars, scores and account will be erased from our server. This can't be undone.", '星やスコアなどの記録とアカウントがサーバーから全部消えて、元に戻せないよ。', '星星、分数等记录和账号将从服务器上全部删除，且无法恢复。'],
   'del.ok': ['지우기', 'Delete', '削除する', '删除'],
@@ -2011,9 +2041,21 @@ function adPrime() {
   job.then(ok => { if (!ok) adLoaded = null; });
   return job;
 }
+// 유럽(EEA)·영국·스위스는 구글 동의 창(UMP)을 먼저 띄운다 — 동의 없이 내보낸 광고는 구글이 막는다.
+// 창 내용은 애드몹 「개인 정보 보호 및 메시지 → 유럽 규정」 메시지. 그 밖의 나라는 NOT_REQUIRED 로 바로 지나간다.
+// adPrivacy: 동의를 다시 고를 수 있어야 하는 사용자면 설정 창에 「광고 개인정보 설정」을 보인다
+let adPrivacy = false;
+async function adConsent() {
+  try {
+    let info = await AdMob.requestConsentInfo();
+    if (info.isConsentFormAvailable && info.status === 'REQUIRED') info = await AdMob.showConsentForm();
+    adPrivacy = info.privacyOptionsRequirementStatus === 'REQUIRED';
+    return info.canRequestAds !== false;
+  } catch { return true; }   // 오프라인 등: SDK 가 이미 가진 동의로 간다
+}
 // 플러그인은 initializeForTesting 이 true 일 때만 testingDevices 를 읽는다. 목록에 든 기기만 테스트 광고를 받고 나머지는 진짜 광고
-if (AdMob) AdMob.initialize({ initializeForTesting: AD_TEST_DEVICES.length > 0, testingDevices: AD_TEST_DEVICES })
-  .then(() => { adReady = true; adPrime(); }).catch(() => {});
+if (AdMob) adConsent().then(ok => ok && AdMob.initialize({ initializeForTesting: AD_TEST_DEVICES.length > 0, testingDevices: AD_TEST_DEVICES })
+  .then(() => { adReady = true; adPrime(); })).catch(() => {});
 // 웹에서는 광고가 없다. ?test 미리보기에서만 광고를 본 셈 치고 화면 흐름을 확인한다
 // 원스토어 웹게임판: 원스토어 보상형 광고. 지면 ID 는 ONEconsole 수익화 > 인앱 광고에서 발급받아 넣는다 (비어 있으면 광고 버튼이 안 나온다)
 const OS_REWARD_ID = 'xAE7F-4B67-GF3D-HQ4Q';   // 리워드 비디오 상용 ID (2026-10-27 발급)
@@ -2025,11 +2067,11 @@ const adAvailable = () => NATIVE ? adReady
 // 토스 광고가 떠 있는 동안 음악·효과음을 멈춘다 (토스 웹뷰는 광고 중에 visibilitychange 를 안 준다)
 const hush = on => { BGM.duck = on ? 0 : 1; setMusic(); if (audio.ctx) audio.ctx[on ? 'suspend' : 'resume']().catch(() => {}); };
 let adLast = 0, adEnds = 0;
-// 토스판 판 끝 전면: 6레벨부터, 판이 세 번 끝날 때마다, 앞 광고(보상형 포함)에서 2분이 지났을 때만. 결과 창을 떠날 때 띄운다.
+// 토스판 판 끝 전면: 6레벨부터, 판이 두 번 끝날 때마다, 앞 광고(보상형 포함)에서 2분이 지났을 때만. 결과 창을 떠날 때 띄운다.
 // 미리 불러 둔 광고가 없으면 띄우지 않고 다음 편만 불러 둔다
 function adBetweenLevels() {
   if (!TOSS || !TOSS.ads.hasInterstitial || S.levelIdx < 5) return;
-  if (++adEnds % 3 || Date.now() - adLast < 120000) return;
+  if (++adEnds % 2 || Date.now() - adLast < 120000) return;
   hush(true);
   TOSS.ads.showInterstitial().then(shown => {
     hush(false);
@@ -2211,6 +2253,8 @@ async function authGate() {
     const { user } = await Auth.getCurrentUser();
     if (user) { await useAccount(user); return; }
   } catch (e) {}
+  // 처음 설치한 사람은 시작 화면 없이 게스트로 바로 들어간다. 구글 계정은 설정에서 연결하면 기록이 합쳐진다
+  if (newcomer()) try { const { user } = await Auth.signInAnonymously(); await useAccount(user); return; } catch (e) {}
   await showLogin();
 }
 async function linkGoogle() {
@@ -2678,6 +2722,34 @@ function findMove() {
   for (let r = 0; r < S.rows; r++) for (let c = 0; c < S.cols; c++)
     for (const [dr, dc] of [[0, 1], [1, 0]]) if (isMove(r, c, r + dr, c + dc)) return [[r, c], [r + dr, c + dc]];
   return null;
+}
+// 첫 판 안내: 1레벨을 처음 할 때(아직 별이 없을 때) 맞출 수 있는 과일 하나를 옆 칸으로 미는 손가락 자리를 보여 준다.
+// 한 번 맞추면 사라지고 save.tut 에 적는다. 판 모양이 바뀌면(맞춰서 과일이 떨어지면) 안내도 끝난다
+let tut = null;
+function tutorialStart() {
+  if (SIM || TEST || SHOT || S.levelIdx !== 0 || save.tut || save.stars[0]) return;
+  const m = findMove();
+  if (!m) return;
+  tut = document.createElement('div');
+  tut.className = 'tut';
+  tut.innerHTML = `<i class="tut-dot"></i><p class="boost-hint tut-say${m[0][0] >= S.rows / 2 ? ' up' : ''}">${T('tut.swipe')}</p>`;
+  tut.move = m;
+  document.querySelector('.board-wrap').appendChild(tut);
+  tutorialPlace();
+}
+function tutorialPlace() {
+  if (!tut) return;
+  const [[r1, c1], [r2, c2]] = tut.move, dot = tut.firstChild;
+  dot.style.left = canvas.offsetLeft + cx(c1) + 'px';
+  dot.style.top = canvas.offsetTop + cy(r1) + 'px';
+  dot.style.setProperty('--dx', (c2 - c1) * cell + 'px');
+  dot.style.setProperty('--dy', (r2 - r1) * cell + 'px');
+}
+function tutorialEnd(done) {
+  if (!tut) return;
+  tut.remove();
+  tut = null;
+  if (done) { save.tut = 1; persist(); track('tutorial_done'); }
 }
 function fillBoard() {
   for (let tries = 0; tries < 300; tries++) {
@@ -3410,6 +3482,7 @@ async function attemptSwap(a, b, free = false) {
     await specialCombo(a, b);
     await resolve(null, 1);
   } else if (findGroups().length) {
+    tutorialEnd(true);
     if (!free) useMove();
     await resolve([b, a]);
   } else if (free) {
@@ -3601,6 +3674,74 @@ async function win() {
   if (!overlay.classList.contains('prep')) return;
   overlay.classList.remove('prep');
   celebrate(stars);
+  if (!prevStars) askReview(i);
+  promoFirst();
+}
+// 별점 부탁: 6·15·30레벨을 처음 깨고 축하가 끝날 즈음 한 번. 창을 실제로 띄울지는 구글·토스가 정한다
+// (같은 사람에게 자주 안 띄우고, 이미 남긴 사람은 건너뛴다). 뜨든 안 뜨든 게임 흐름은 그대로다. 한 세션에 한 번만
+const REVIEW_AT = [5, 14, 29];
+const AppReview = NATIVE ? Capacitor.Plugins.AppReview : null;
+function askReview(i) {
+  if (askReview.done || TEST || SHOT || !REVIEW_AT.includes(i) || (!AppReview && !TOSS)) return;
+  askReview.done = true;
+  setTimeout(() => {
+    if (overlay.hidden) return;   // 벌써 다음 판으로 넘어갔으면 판 도중에 띄우지 않는다
+    track('review_ask', { level: i + 1 });
+    (TOSS ? TOSS.review() : AppReview.requestReview()).catch(() => {});
+  }, 1800);
+}
+// 토스포인트 프로모션 (2026-10-31 만듦, 2027-01-31 까지, 예산 각 2,000원). 비즈월렛에서 진짜 돈이 나간다 — 받았을 때만 save.promo 에 적는다.
+//   first  「프루티 팝 첫 판 해보기 리워드」 id 200165, 2원 — 첫 판이 끝나면(이기든 지든)
+//   streak 「프루티 팝 3일 연속 출석 리워드」 id 200169, 5원 — 한국 날짜로 사흘 잇달아 켜면 사흘째에
+// 승인 → 지급 시험 번들(PROMO_TEST, TEST_ 코드) → 이 코드가 든 번들 출시 → RUNNING 순서. 그 전에는 거절되고, 적지 않았으니 나중에 받는다
+const PROMO = {
+  first: { code: '01M67QPYT0W6ANQ0P8C0ANK27Z', amount: 2 },
+  streak: { code: '01M67QVM2C1SPXW7DVZGMJQT3V', amount: 5, days: 3 },
+};
+const kst = (ms = Date.now()) => new Date(ms + 9 * 3600000).toISOString().slice(0, 10);
+const promoOn = id => !!TOSS?.promo?.available && !TOSS.promo.test && !TEST && !SHOT && !save.promo?.[id];
+async function promoGrant(id) {
+  if (promoGrant[id] || !promoOn(id)) return;
+  promoGrant[id] = true;   // 한 번 켤 때 미션마다 한 번만 — 실패하는 지급을 판마다 두드리지 않게. 다음에 켜면 다시
+  const m = PROMO[id];
+  const r = await TOSS.promo.grant(m.code, m.amount);
+  track('toss_promo', { m: id, r });
+  if (r !== 'ok') return;
+  (save.promo = save.promo || {})[id] = Date.now();
+  persist();
+  toast(T('promo.got', { n: m.amount }));
+}
+function promoHint() {
+  if (promoHint.done || !promoOn('first')) return;
+  promoHint.done = true;
+  setTimeout(() => toast(T('promo.first', { n: PROMO.first.amount })), 900);
+}
+// 판이 끝날 때(이기든 지든). 결과 창이 뜬 다음에 알린다
+function promoFirst() {
+  if (promoOn('first')) setTimeout(() => promoGrant('first'), 1200);
+}
+// 출석: save.att = { d: 마지막으로 켠 날(한국 날짜), n: 그날까지 잇달아 켠 날 수 }. 켤 때 한 번 센다
+function promoAttend() {
+  if (!promoOn('streak')) return;
+  const today = kst(), a = save.att || {};
+  if (a.d !== today) {
+    save.att = { d: today, n: a.d === kst(Date.now() - 86400000) ? (a.n || 0) + 1 : 1 };
+    persist();
+  }
+  const n = Math.min(save.att.n, PROMO.streak.days);
+  setTimeout(() => n >= PROMO.streak.days ? promoGrant('streak')
+    : toast(T('promo.streak', { k: n, d: PROMO.streak.days, n: PROMO.streak.amount })), 2500);
+}
+// 화면 위쪽에 잠깐 뜨는 알림 (토스포인트 안내)
+function toast(text) {
+  document.querySelectorAll('.toast').forEach(e => e.remove());   // 겹치면 새 것만
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.setAttribute('role', 'status');
+  el.textContent = text;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('on'));
+  setTimeout(() => { el.classList.remove('on'); setTimeout(() => el.remove(), 400); }, 3200);
 }
 // 앱을 켜고 처음 뜨는 클리어 화면이 크게 끊겼다(GPU 가 그라데이션·글자·테두리 그림을 처음 준비하느라 130ms 남짓).
 // 그래서 첫 판을 시작할 때 같은 모양의 창을 거의 투명하게 잠깐 그려 두어 준비를 미리 끝낸다
@@ -3670,6 +3811,7 @@ async function lose(reason) {
       </div>
     </div>`);
   overlay.classList.add('gloomy');
+  promoFirst();
 }
 
 /* ---------- 마스코트 팝이 ---------- */
@@ -3828,6 +3970,7 @@ function animate(dur, fn) {
 function showMap(anim = null) {
   if (SIM) return;
   mapAnim = null;
+  tutorialEnd(false);
   S.over = true;
   hideOverlay();
   setBoost(null);
@@ -4484,6 +4627,7 @@ function layout() {
   render.fxEmpty = false;
   spriteCache = {};
   buildBoardLayer();
+  tutorialPlace();
 }
 function buildBoardLayer() {
   const c = document.createElement('canvas');
@@ -5282,6 +5426,13 @@ overlay.addEventListener('click', e => {
     linkGoogle().then(() => showOverlay(optionsHTML()), e => { b.disabled = false; b.textContent = loginError(e); });
   } else if (act === 'sign-out') signOut();
   else if (act === 'del-ask') askDeleteAccount();
+  else if (act === 'ad-privacy') AdMob.showPrivacyOptionsForm().catch(() => {});
+  // 안드로이드는 버튼으로 인앱 리뷰 창(requestReview)을 부르지 않는다 — 구글이 안 띄울 때가 많아 눌러도 아무 일이 없어 보인다. 스토어 페이지를 연다.
+  // 토스는 스토어 페이지가 없어 별점 창을 부른다. 이미 남겼거나 피로도로 막히면 안 뜨니 버튼 아래에 토스 ··· 메뉴 길을 적어 둔다
+  else if (act === 'rate') {
+    track('review_open');
+    (TOSS ? TOSS.review() : AppReview.openAppStore({ androidStorePackageName: 'com.android.vending' })).catch(() => {});
+  }
   else if (act === 'del-yes') {
     b.disabled = true;
     deleteAccount().then(ok => { if (!ok) { b.disabled = false; $('delErr').textContent = T('del.fail'); } });
@@ -5318,6 +5469,9 @@ function optionsHTML() {
         <button type="button" class="opt-link" data-act="${account.guest ? 'link-google' : 'sign-out'}">${T(account.guest ? 'opt.link' : 'opt.signout')}</button>
       </div>
       <button type="button" class="opt-del" data-act="del-ask">${T('opt.delete')}</button>` : ''}
+      ${AppReview || TOSS?.inToss ? `<button type="button" class="opt-del" data-act="rate">${T('opt.rate')}</button>` : ''}
+      ${TOSS?.inToss ? `<p class="opt-hint">${T('opt.rateHint')}</p>` : ''}
+      ${adPrivacy ? `<button type="button" class="opt-del" data-act="ad-privacy">${T('opt.privacy')}</button>` : ''}
       ${$('map').hidden ? `<div class="opt-list">
         <button type="button" data-act="retry">${T('btn.retry')}</button>
         <button type="button" class="primary" data-act="map">${T('opt.quit')}</button>
@@ -5372,6 +5526,25 @@ function askExit() {
 }
 if (NATIVE) Capacitor.Plugins.App.addListener('backButton', () => { if (!backPop()) askExit(); });
 // 토스는 뒤로가기를 받는 동안 자기 종료 팝업을 띄우지 않는다 → 안드로이드와 같이 닫을 게 없으면 우리가 묻고 closeView 로 끈다
+// 지급 시험 번들(PROMO_TEST): 켜고 3초 뒤 TEST_ 코드로 한 번 부르고 결과를 띄운다. 예산은 안 쓴다. 누르면 닫힌다.
+// 결과 상자는 부르기 전에 띄운다 — 끝나고 띄우면 "코드가 안 돌았다" 와 "지급이 멈췄다" 를 못 가린다
+if (TOSS?.promo?.test) {
+  const box = document.createElement('pre');
+  box.style.cssText = 'position:fixed;left:12px;right:12px;top:40%;z-index:99;margin:0;padding:14px;border:2px solid #d33;' +
+    'border-radius:12px;background:#fff;color:#111;font:14px monospace;white-space:pre-wrap';
+  box.textContent = 'PROMO TEST — 3초 뒤 부름';
+  box.addEventListener('click', () => box.remove());
+  document.body.appendChild(box);
+  setTimeout(async () => {
+    const lines = ['PROMO TEST'];
+    for (const [id, m] of Object.entries(PROMO)) {
+      const r = await TOSS.promo.grant('TEST_' + m.code, m.amount);
+      lines.push(`${id} TEST_${m.code} ${m.amount}원: ${r}`);
+      box.textContent = lines.join('\n');
+    }
+  }, 3000);
+}
+promoAttend();
 if (TOSS) TOSS.back.listen(() => { if (!backPop()) askExit(); });
 // 지도에서 아무 곳이나 처음 눌러도 음악이 시작되게 한다
 $('map').addEventListener('pointerdown', () => initAudio(), { once: true });
@@ -5390,6 +5563,7 @@ window.addEventListener('resize', () => {
 /* ---------- 레벨 시작 ---------- */
 async function startLevel(i) {
   mapAnim = null;
+  tutorialEnd(false);
   tweens = []; fx = []; particles = []; texts = []; dying = [];
   flashAmt = 0; shakeAmt = 0;
   $('map').hidden = true;
@@ -5422,6 +5596,7 @@ async function startLevel(i) {
   save.tries[S.levelIdx] = (save.tries[S.levelIdx] || 0) + 1;
   persist();
   track('level_start', { level: S.levelIdx + 1, attempt: save.tries[S.levelIdx] });
+  promoHint();
   S.busy = true;
   const anims = [];
   let landed = 0, lastPlop = 0;
@@ -5452,16 +5627,20 @@ async function startLevel(i) {
   S.busy = false;
   S.hintAt = now + 6000;
   bigWord(S.level.name, cell * .75);
+  tutorialStart();
 }
 
+// 처음 하는 사람(아직 깬 레벨이 없음)은 지도를 건너뛰고 바로 1레벨로 들어간다
+const newcomer = () => !Object.keys(save.stars).length;
+function home() { newcomer() ? startLevel(0) : showMap(); }
 function boot(data) {
   if (save.musicOff) setMusicOn(false);
   if (save.sfxOff) audio.on = false;
   window.claude?.hot?.snapshot?.(() => ({ level: S.levelIdx }));
   if (SIM) startLevel(0);
   else if (Number.isInteger(data && data.level)) startLevel(data.level);
-  else if (NATIVE) { authGate().then(() => showMap()); checkUpdate(); }
-  else showMap();
+  else if (NATIVE) { authGate().then(home); checkUpdate(); }
+  else home();
   requestAnimationFrame(t => { last = t; frame(t); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if ($('map').hidden && S.mask.length) { layout(); buildGoals(); updateHUD(); } });
 }
