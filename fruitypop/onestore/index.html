@@ -850,6 +850,35 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .lv-stars { font-size: 14px; letter-spacing: 1px; color: var(--gold); }
 .lv.cur .lv-stars { color: var(--panel); }
 .goal-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 14px; }
+/* 오늘의 랭킹 */
+.map-rank {
+  position: fixed; z-index: 3;
+  bottom: calc(18px + max(env(safe-area-inset-bottom, 0px), var(--os-bottom, 0px))); left: 50%;
+  transform: translateX(-50%);
+  padding: 11px 26px; font-size: 19px; white-space: nowrap;
+}
+.map-rank:active { transform: translate(-50%, 3px); }
+.map-rank[hidden] { display: none; }
+.map:has(.map-rank:not([hidden])) .map-path { margin-bottom: 64px; }
+.boosters.daily .boost { visibility: hidden; }
+.rank-rule { word-break: keep-all; text-wrap: balance; }
+.rank-box { min-height: 60px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.rank-list { list-style: none; margin: 0; padding: 0; max-height: min(40vh, 300px); overflow: auto; text-align: left; }
+.rank-list li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 12px; font-size: 15px; color: var(--ink); }
+.rank-list li:nth-child(odd) { background: rgba(255, 193, 218, .28); }
+.rank-list li.me { background: #ffe9a8; }
+.rank-list b { font-family: var(--font-num); font-weight: normal; font-size: 17px; color: var(--hud-ink); text-align: center; }
+.rank-list li:nth-child(-n+3) b { color: #e08a00; }
+.rank-list span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-list em { font-style: normal; font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--hud-ink); }
+.rank-name { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.rank-name button { padding: 4px 12px; font-size: 13px; }
+.name-in {
+  box-sizing: border-box; width: 100%; padding: 10px 14px;
+  font: 18px var(--font-body); color: var(--ink); text-align: center;
+  border: 3px solid #ffc1da; border-radius: 14px; background: #fff;
+}
+.name-in:focus { outline: none; border-color: var(--accent); }
 @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .overlay { overflow: hidden; }
 .overlay .panel { position: relative; z-index: 1; }
@@ -990,6 +1019,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
     <p class="map-stars" aria-live="polite"><img src="assets/star_on.png" alt="별" data-t-alt="star"> <b id="mapStars">0</b> / <b id="mapStarsMax">600</b></p>
   </header>
   <div class="map-path" id="mapPath"></div>
+  <button type="button" id="mapRank" class="map-rank primary" hidden data-t="daily.name">오늘의 랭킹</button>
   <p class="zone-title" id="zoneTitle" aria-live="polite"></p>
 </section>
 <div id="zoneFade" aria-hidden="true"></div>
@@ -1918,6 +1948,21 @@ const STR = {
   'promo.first': ['한 판 하면 토스포인트 {n}원을 받아요', 'Play one level to get {n} Toss Points', '1回遊ぶと Toss ポイント {n} ウォンもらえます', '玩一局即可获得 {n} 韩元 Toss 积分'],
   'promo.streak': ['출석 {k}/{d}일 — {d}일 연속 오면 토스포인트 {n}원을 받아요', 'Day {k} of {d} — come {d} days in a row to get {n} Toss Points', '出席 {k}/{d}日 — {d}日連続で Toss ポイント {n} ウォン', '签到 {k}/{d} 天 — 连续 {d} 天可获得 {n} 韩元 Toss 积分'],
   'promo.got': ['토스포인트 {n}원을 받았어요', 'You got {n} Toss Points', 'Toss ポイント {n} ウォンを受け取りました', '已获得 {n} 韩元 Toss 积分'],
+  'daily.name': ['오늘의 랭킹', 'Daily Ranking', '今日のランキング', '今日排行'],
+  'daily.rule': ['오늘은 모두 같은 판 · 100수 · 부스터 없이', 'Same board for everyone today · 100 moves · no boosters', '今日はみんな同じ盤面 · 100手 · ブースターなし', '今天大家同一盘 · 100 步 · 无道具'],
+  'daily.done': ['100수 끝!', '100 moves done!', '100手 終了！', '100 步结束！'],
+  'daily.best': ['오늘 내 최고 {n}', 'Your best today: {n}', '今日のベスト {n}', '今日最佳 {n}'],
+  'daily.again': ['한 번 더', 'Again', 'もう一回', '再来一次'],
+  'rank.me': ['내 순위 {r}위 · {t}명 중', 'You are #{r} of {t}', '{t}人中 {r}位', '{t} 人中第 {r} 名'],
+  'rank.none': ['아직 기록이 없어요. 첫 기록을 남겨 보세요', 'No scores yet — be the first!', 'まだ記録がありません。一番乗りしよう', '还没有记录，来当第一个吧'],
+  'rank.off': ['순위를 불러오지 못했어요', "Couldn't load the ranking", 'ランキングを読み込めませんでした', '无法加载排行'],
+  'rank.loading': ['순위 불러오는 중…', 'Loading ranking…', 'ランキングを読み込み中…', '正在加载排行…'],
+  'rank.play': ['도전하기', 'Play', '挑戦する', '挑战'],
+  'rank.myName': ['내 이름: {n}', 'Name: {n}', '名前：{n}', '名字：{n}'],
+  'rank.rename': ['이름 바꾸기', 'Change name', '名前を変える', '改名'],
+  'rank.namePh': ['2~10자, 글자·숫자만', '2–10 letters or numbers', '2〜10文字（文字・数字）', '2–10 个字（文字或数字）'],
+  'rank.nameBad': ['쓸 수 없는 이름이에요', "That name can't be used", 'その名前は使えません', '该名字不可用'],
+  'rank.save': ['저장', 'Save', '保存', '保存'],
   'del.title': ['계정을 지울까요?', 'Delete your account?', 'アカウントを削除する？', '要删除账号吗？'],
   'del.text': ['별·점수 같은 기록과 계정이 서버에서 모두 지워지고, 되돌릴 수 없어요.', "Your stars, scores and account will be erased from our server. This can't be undone.", '星やスコアなどの記録とアカウントがサーバーから全部消えて、元に戻せないよ。', '星星、分数等记录和账号将从服务器上全部删除，且无法恢复。'],
   'del.ok': ['지우기', 'Delete', '削除する', '删除'],
@@ -2276,6 +2321,8 @@ async function linkGoogle() {
 async function deleteAccount() {
   if (!account) return false;
   try { await Store.deleteDocument({ reference: `users/${account.uid}` }); } catch (e) {}
+  // 오늘의 랭킹 기록(닉네임·점수)도 지운다 — 이 계정으로 쓴 것과 이 기기 아이디로 쓴 것 둘 다
+  await Promise.all(['g:' + account.uid, save.rid && 'd:' + save.rid].filter(Boolean).map(uid => rankFetch('/forget', { uid })));
   try { await Auth.deleteUser(); }
   catch (e) {
     if (account.guest) return false;
@@ -2547,7 +2594,19 @@ const open = (r, c) => playable(r, c) && !S.choco[r][c] && !S.box[r][c] && !S.me
 const at = (r, c) => open(r, c) ? S.grid[r][c] : null;
 const NEIGH = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 const key = (r, c) => r * S.cols + c;
-const randColor = () => Math.floor(Math.random() * S.level.colors);
+// 판에 영향을 주는 무작위는 rnd 로만 뽑는다 (반짝이·소리는 그대로 Math.random). 오늘의 랭킹은 날짜로 정한 씨앗을 써서
+// 같은 날엔 모두 같은 판이 되고, 같은 수를 두면 같은 결과가 난다. 위에서 떨어지는 과일은 줄마다 따로 뽑아(colRnd)
+// 한 줄에서 일어난 일이 다른 줄로 번지지 않게 한다
+function seeded(a) {
+  return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const strSeed = s => [...s].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261) >>> 0;
+let rnd = Math.random, colRnd = null;
+function useSeed(s) {
+  rnd = s == null ? Math.random : seeded(strSeed(s));
+  colRnd = s == null ? null : Array.from({ length: 12 }, (_, c) => seeded(strSeed(s + '/' + c)));
+}
+const randColor = c => Math.floor((colRnd && c != null ? colRnd[c] : rnd)() * S.level.colors);
 const cx = c => pad + (c + .5) * cell;
 const cy = r => pad + (r + .5) * cell;
 const fmt = n => Math.round(n).toLocaleString('ko-KR');
@@ -2574,7 +2633,7 @@ function countPieces(test) { let n = 0; forEachPiece(p => { if (test(p)) n++; })
 // 병아리 알은 각 줄의 가장 아래 열린 칸(둥지)에 닿으면 깨어나 날아간다
 // 포털로 들어가는 칸이 맨 아래면 그 줄엔 둥지가 없다 (알은 포털을 타고 건너간다)
 function exitRow(c) { for (let r = S.rows - 1; r >= 0; r--) if (open(r, c)) return S.portalIn && S.portalIn.has(key(r, c)) ? -1 : r; return -1; }
-function makeIng(r, c) { const p = makePiece(-2, null, r, c); p.ing = Math.random() < .5 ? 'egg1' : 'egg2'; return p; }
+function makeIng(r, c) { const p = makePiece(-2, null, r, c); p.ing = rnd() < .5 ? 'egg1' : 'egg2'; return p; }
 const boxLeft = () => countCells(S.box);
 function iceLeft() { let n = 0; forEachPiece(p => { n += p.ice; }); return n; }
 function keysOnBoard() { let n = 0; forEachPiece(p => { if (p.key) n++; }); return n; }
@@ -2727,7 +2786,7 @@ function findMove() {
 // 한 번 맞추면 사라지고 save.tut 에 적는다. 판 모양이 바뀌면(맞춰서 과일이 떨어지면) 안내도 끝난다
 let tut = null;
 function tutorialStart() {
-  if (SIM || TEST || SHOT || S.levelIdx !== 0 || save.tut || save.stars[0]) return;
+  if (SIM || TEST || SHOT || S.daily || S.levelIdx !== 0 || save.tut || save.stars[0]) return;
   const m = findMove();
   if (!m) return;
   tut = document.createElement('div');
@@ -2771,7 +2830,7 @@ function fillBoard() {
   // 상자가 있으면 처음부터 열쇠 과일을 몇 개 둔다
   const want = Math.min(2, boxLeft()), cands = [];
   forEachPiece((p, r, c) => { if (!p.ice && r < S.rows / 2) cands.push(p); });
-  for (let i = 0; i < want && cands.length; i++) cands.splice(Math.floor(Math.random() * cands.length), 1)[0].key = true;
+  for (let i = 0; i < want && cands.length; i++) cands.splice(Math.floor(rnd() * cands.length), 1)[0].key = true;
   // 재료: 처음에 맨 윗줄에 몇 개 올려 둔다
   S.ingTotal = S.level.ingredients || 0; S.ingGot = 0; S.honeyGot = 0; S.hiveShake.clear();
   const firstIng = Math.min(2, S.ingTotal), tops = [];
@@ -2780,7 +2839,7 @@ function fillBoard() {
     for (let r = 0; r < S.rows; r++) if (open(r, c)) { if (!S.grid[r][c].ice) tops.push([r, c]); break; }
   }
   for (let i = 0; i < firstIng && tops.length; i++) {
-    const [r, c] = tops.splice(Math.floor(Math.random() * tops.length), 1)[0];
+    const [r, c] = tops.splice(Math.floor(rnd() * tops.length), 1)[0];
     S.grid[r][c] = makeIng(r, c);
   }
   S.ingQueue = S.ingTotal - firstIng;
@@ -2789,7 +2848,7 @@ function fillBoard() {
   if (T) {
     const pool = [];
     forEachPiece(q => { if (!q.ice && !q.key && !q.ing && q.color >= 0) pool.push(q); });
-    for (let i = 0; i < T.count && pool.length; i++) pool.splice(Math.floor(Math.random() * pool.length), 1)[0].timer = T.start;
+    for (let i = 0; i < T.count && pool.length; i++) pool.splice(Math.floor(rnd() * pool.length), 1)[0].timer = T.start;
   }
 }
 
@@ -2977,7 +3036,7 @@ function pickFlyTarget(r0, c0, piecesOnly = false, skip = new Set()) {
     const q = at(r, c);
     if (q && !q.ing) v = Math.max(v, 1 + (q.timer ? 30 - q.timer : 0) + S.jelly[r][c] * 5 + (q.ice ? 6 : 0) + (q.key ? 8 : 0) + (want.has(q.color) ? 3 : 0));
     if (v < 0) continue;
-    v += Math.random();
+    v += rnd();
     if (v > bestV) { bestV = v; best = [r, c]; }
   }
   return best;
@@ -3113,7 +3172,7 @@ async function clearCells(initial, created, extraEffects = []) {
     const boxes = [];
     for (let rr = 0; rr < S.rows; rr++) for (let cc = 0; cc < S.cols; cc++) if (S.box[rr][cc]) boxes.push([rr, cc]);
     if (!boxes.length) break;
-    const [br, bc] = boxes[Math.floor(Math.random() * boxes.length)];
+    const [br, bc] = boxes[Math.floor(rnd() * boxes.length)];
     pts += 500;
     anims.push(openBox(r, c, br, bc));
   }
@@ -3149,7 +3208,7 @@ async function openBox(r, c, br, bc) {
   fx.push({ type: 'keyFly', r, c, r2: br, c2: bc, life: 0, max: 520 });
   await wait(520);
   S.boxOpening.delete(k);
-  const sp = ['h', 'v', 'wrap'][Math.floor(Math.random() * 3)];
+  const sp = ['h', 'v', 'wrap'][Math.floor(rnd() * 3)];
   const p = makePiece(randColor(), sp, br, bc);
   p.sx = p.sy = .2;
   S.grid[br][bc] = p;
@@ -3181,11 +3240,11 @@ async function gravityAndRefill() {
     let p;
     // 발사대가 맡은 종류는 그 열에서만 나온다 (확률은 그만큼 높인다)
     const chance = (k, base, boosted) => dispKinds(k) ? (dispAt(c, k) ? boosted : 0) : base;
-    if (S.ingQueue > 0 && ings < 2 && Math.random() < chance('egg', .2, .45)) { p = makeIng(y, c); S.ingQueue--; ings++; }
+    if (S.ingQueue > 0 && ings < 2 && rnd() < chance('egg', .2, .45)) { p = makeIng(y, c); S.ingQueue--; ings++; }
     else {
-      p = makePiece(randColor(), null, y, c);
-      if (keys < keyCap && Math.random() < chance('key', .15, .4)) { p.key = true; keys++; }
-      else if (T && timers < T.count && Math.random() < chance('timer', .06, .25)) { p.timer = T.start; timers++; }
+      p = makePiece(randColor(c), null, y, c);
+      if (keys < keyCap && rnd() < chance('key', .15, .4)) { p.key = true; keys++; }
+      else if (T && timers < T.count && rnd() < chance('timer', .06, .25)) { p.timer = T.start; timers++; }
     }
     return p;
   };
@@ -3225,7 +3284,7 @@ async function gravityAndRefill() {
     let slid = false;
     for (let r = S.rows - 1; r >= 1 && !slid; r--) for (let c = 0; c < S.cols && !slid; c++) {
       if (!open(r, c) || S.grid[r][c] || reachableFromTop(r, c) || S.portalOut.has(key(r, c))) continue;
-      const sides = Math.random() < .5 ? [-1, 1] : [1, -1];
+      const sides = rnd() < .5 ? [-1, 1] : [1, -1];
       for (const dc of sides) {
         const c2 = c + dc, q = at(r - 1, c2);
         if (!q) continue;
@@ -3381,7 +3440,7 @@ async function specialCombo(a, b) {
       for (let i = 0; i < targets.length; i++) {
         const [rr, cc] = targets[i], q = S.grid[rr][cc];
         fx.push({ type: 'zap', r: bPos[0], c: bPos[1], r2: rr, c2: cc, color: CANDY[X.color], life: 0, max: 420 });
-        q.special = X.special === 'wrap' || X.special === 'fly' ? X.special : (Math.random() < .5 ? 'h' : 'v');
+        q.special = X.special === 'wrap' || X.special === 'fly' ? X.special : (rnd() < .5 ? 'h' : 'v');
         q.consumed = false;
         q.sx = q.sy = 1.6;
         tween(q, { sx: 1, sy: 1 }, 260, easeOutBack);
@@ -3406,7 +3465,7 @@ async function specialCombo(a, b) {
       const t = pickFlyTarget(r, c, true, skip); if (!t) break;
       skip.add(key(...t));
       const tp = S.grid[t[0]][t[1]];
-      if (other !== 'fly') { tp.special = other === 'wrap' ? 'wrap' : (Math.random() < .5 ? 'h' : 'v'); tp.consumed = false; }
+      if (other !== 'fly') { tp.special = other === 'wrap' ? 'wrap' : (rnd() < .5 ? 'h' : 'v'); tp.consumed = false; }
       fx.push({ type: 'flyer', r, c, r2: t[0], c2: t[1], color: P.special === 'fly' ? P.color : Q.color, life: 0, max: 420 });
       initial.push(t);
     }
@@ -3462,7 +3521,7 @@ function goalLeft(g) {
   }
   return 0;
 }
-const goalsMet = () => S.level.goals.every(g => goalLeft(g) === 0);
+const goalsMet = () => !S.daily && S.level.goals.every(g => goalLeft(g) === 0);
 function useMove() {
   S.moves--;
   updateHUD();
@@ -3493,6 +3552,7 @@ async function attemptSwap(a, b, free = false) {
     shake(3);
     await animSwap(a, b);
   }
+  if (acted && !free) S.log.push(a[0], a[1], b[0], b[1]);   // 오늘의 랭킹 기록용: 한 수에 숫자 4개
   await afterTurn(acted && !free);
   S.busy = false;
   S.hintAt = now + 5000;
@@ -3515,7 +3575,7 @@ async function spreadChocolate() {
     }
   }
   if (!cands.length) return;
-  const [r, c] = cands[Math.floor(Math.random() * cands.length)];
+  const [r, c] = cands[Math.floor(rnd() * cands.length)];
   const p = S.grid[r][c];
   S.grid[r][c] = null;
   S.choco[r][c] = 1;
@@ -3543,7 +3603,7 @@ async function afterTurn(spread = false) {
   if (S.moves <= 0) {
     S.over = true;
     await wait(350);
-    return goalsMet() ? win() : lose();
+    return S.daily ? dailyEnd() : goalsMet() ? win() : lose();
   }
   if (spread && tickTimers()) {
     S.over = true;
@@ -3580,9 +3640,9 @@ async function bonusTime() {
     const cands = [];
     forEachPiece((p, r, c) => { if (!p.special && p.color >= 0) cands.push([r, c]); });
     if (!cands.length) break;
-    const [r, c] = cands[Math.floor(Math.random() * cands.length)];
+    const [r, c] = cands[Math.floor(rnd() * cands.length)];
     const p = S.grid[r][c];
-    p.special = Math.random() < .5 ? 'h' : 'v';
+    p.special = rnd() < .5 ? 'h' : 'v';
     p.sx = p.sy = 1.5;
     tween(p, { sx: 1, sy: 1 }, 260, easeOutBack);
     burst(cx(c), cy(r), '#ffe27a', 10);
@@ -3599,7 +3659,7 @@ async function bonusTime() {
     forEachPiece((p, r, c) => { if (p.special) sp.push([r, c]); });
     if (!sp.length) break;
     S.combo = 1;
-    await clearCells(sp.sort(() => Math.random() - .5).slice(0, 3), null);
+    await clearCells(sp.sort(() => rnd() - .5).slice(0, 3), null);
     await gravityAndRefill();
     await resolve(null, 1);
   }
@@ -3614,7 +3674,7 @@ async function shuffle(fromBooster = false) {
   const pieces = cells.map(([r, c]) => S.grid[r][c]);
   let ok = false;
   for (let t = 0; t < 200 && !ok; t++) {
-    for (let i = pieces.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pieces[i], pieces[j]] = [pieces[j], pieces[i]]; }
+    for (let i = pieces.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pieces[i], pieces[j]] = [pieces[j], pieces[i]]; }
     cells.forEach(([r, c], i) => S.grid[r][c] = pieces[i]);
     ok = !findGroups().length && !!findMove();
   }
@@ -3742,6 +3802,106 @@ function toast(text) {
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('on'));
   setTimeout(() => { el.classList.remove('on'); setTimeout(() => el.remove(), 400); }, 3200);
+}
+// 오늘의 랭킹: 날짜로 정한 같은 판(useSeed)을 100수 두고 점수로 겨룬다. 부스터·광고 이어하기 없음. 10레벨을 깨면 지도에 버튼이 생긴다.
+// 순위는 우리 서버(E:/match3/rank-server, Cloudflare Worker + D1)에 모아 토스·안드로이드·원스토어가 한 순위표를 쓴다.
+// 둔 수(S.log)도 같이 보내 나중에 서버가 다시 두어 볼 수 있게 한다. 게임 결과에 현금성 보상을 붙이면 안 된다 (토스 정책)
+const RANK_API = 'https://fruitypop-rank.matgo-cert.workers.dev';
+const DAILY_AT = 10;
+const DAILY = { name: '오늘의 랭킹', daily: true, moves: 100, colors: 5, layout: FULL, goals: [], stars: [100000, 150000, 200000] };   // 봇 100수: 아무렇게나 9.6만~13만, 아래부터 17만 (2026-10-31)
+const dailyOpen = () => TEST || !!save.stars[DAILY_AT - 1];
+const rankPlat = () => TOSS ? 'toss' : NATIVE ? 'android' : osSdk() ? 'onestore' : 'web';
+const RANK_UID = /^[tgd]:[A-Za-z0-9_\-+/=.]{8,128}$/;
+// 토스는 게임 사용자 키, 안드로이드는 Firebase 계정, 둘 다 없으면 이 기기에서 만든 아이디 (안드로이드는 클라우드 저장으로 따라간다)
+async function rankUid() {
+  if (TOSS?.userKey) { const k = 't:' + (await TOSS.userKey()); if (RANK_UID.test(k)) return k; }
+  if (account && RANK_UID.test('g:' + account.uid)) return 'g:' + account.uid;
+  if (!save.rid) { save.rid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join(''); persist(); }
+  return 'd:' + save.rid;
+}
+// 처음 이름은 「과일 #1234」. 서버는 처음 기록할 때만 이 이름을 받고, 그 뒤로는 이름 바꾸기로만 바뀐다
+function rankName() {
+  if (!save.rname) { const n = Math.floor(Math.random() * 60000); save.rname = T('fruit.' + n % 6) + ' #' + String(n % 10000).padStart(4, '0'); persist(); }
+  return save.rname;
+}
+async function rankFetch(path, body) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch(RANK_API + path, body
+      ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal }
+      : { signal: ctl.signal });
+    return await r.json();
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+function rankHTML(b) {
+  if (!b || b.error) return `<p class="sub">${T('rank.off')}</p>`;
+  if (!b.top.length) return `<p class="sub">${T('rank.none')}</p>`;
+  const row = e => `<li class="${e.me ? 'me' : ''}"><b>${e.rank}</b><span>${escapeHtml(e.name)}</span><em>${fmt(e.score)}</em></li>`;
+  const meOut = b.me?.rank && !b.top.some(e => e.me) ? row({ ...b.me, me: true }) : '';
+  return `<ol class="rank-list">${b.top.map(row).join('')}${meOut}</ol>`
+    + (b.me?.rank ? `<p class="sub">${T('rank.me', { r: b.me.rank, t: b.total })}</p>` : '');
+}
+function fillRank(b) {
+  const box = overlay.querySelector('#rankBox');
+  if (!box) return;
+  box.innerHTML = rankHTML(b);
+  box.querySelector('.me')?.scrollIntoView({ block: 'nearest' });
+}
+async function showRank() {
+  showOverlay(`
+    <div class="panel wide" role="dialog" aria-labelledby="ovTitle">
+      <h2 id="ovTitle">${T('daily.name')}</h2>
+      <p class="sub rank-rule">${T('daily.rule')}</p>
+      <div class="rank-box" id="rankBox"><p class="sub">${T('rank.loading')}</p></div>
+      <p class="sub rank-name">${T('rank.myName', { n: escapeHtml(rankName()) })}<button type="button" data-act="rank-rename">${T('rank.rename')}</button></p>
+      <div class="row"><button type="button" data-act="close">${T('close')}</button><button type="button" class="primary" data-act="daily">${T('rank.play')}</button></div>
+    </div>`);
+  const uid = await rankUid();
+  fillRank(await rankFetch(`/board?day=${kst()}&uid=${encodeURIComponent(uid)}${TEST ? '&dev=1' : ''}`));
+}
+function showRename() {
+  showOverlay(`
+    <div class="panel" role="dialog" aria-labelledby="ovTitle">
+      <h2 id="ovTitle">${T('rank.rename')}</h2>
+      <input class="name-in" id="nameIn" maxlength="10" autocomplete="off" value="${escapeHtml(rankName())}" aria-label="${T('rank.rename')}">
+      <p class="sub" id="nameErr">${T('rank.namePh')}</p>
+      <div class="row"><button type="button" data-act="rank">${T('btn.cancel')}</button><button type="button" class="primary" data-act="rank-name-save">${T('rank.save')}</button></div>
+    </div>`);
+  $('nameIn').focus();
+}
+async function saveName(btn) {
+  const name = $('nameIn').value.replace(/\s+/g, ' ').trim();
+  btn.disabled = true;
+  let r = await rankFetch('/name', { uid: await rankUid(), name });
+  // 아직 한 판도 안 해 서버에 없는 사람은 이름만 기억해 두었다가 첫 기록 때 그 이름으로 만든다 (서버가 한 번 더 거른다)
+  if (r?.error === 'player') r = /^[\p{L}\p{N} #]{2,10}$/u.test(name) ? { ok: true, name } : { error: 'name' };
+  if (r?.ok) { save.rname = r.name; persist(); showRank(); return; }
+  btn.disabled = false;
+  $('nameErr').textContent = T(r ? 'rank.nameBad' : 'rank.off');
+}
+async function dailyEnd() {
+  if (SIM) { S.result = 'daily'; return; }
+  const day = S.dailyDay, prev = save.daily?.d === day ? save.daily.best : 0;
+  if (S.score > prev) { save.daily = { d: day, best: S.score }; persist(); }
+  track('daily_end', { score: S.score, best: Math.max(prev, S.score) });
+  sfx.win();
+  duckMusic(3000);
+  mascotMood('cheer');
+  await wait(600);
+  showOverlay(`
+    <div class="panel wide" role="dialog" aria-labelledby="ovTitle">
+      <p class="eyebrow">${T('daily.name')} · ${day}</p>
+      <h2 id="ovTitle">${T('daily.done')}</h2>
+      <p class="final">${pts(S.score)}</p>
+      <p class="sub">${S.score > prev ? `<span class="record">${T('win.record')}</span>` : T('daily.best', { n: pts(prev) })}</p>
+      <div class="rank-box" id="rankBox"><p class="sub">${T('rank.loading')}</p></div>
+      <div class="row"><button type="button" data-act="map">${T('btn.map')}</button><button type="button" class="primary" data-act="retry">${T('daily.again')}</button></div>
+    </div>`);
+  fillRank(await rankFetch('/score', { uid: await rankUid(), plat: rankPlat(), name: rankName(), day, score: S.score, moves: S.log.join(''), dev: TEST || undefined }));
 }
 // 앱을 켜고 처음 뜨는 클리어 화면이 크게 끊겼다(GPU 가 그라데이션·글자·테두리 그림을 처음 준비하느라 130ms 남짓).
 // 그래서 첫 판을 시작할 때 같은 모양의 창을 거의 투명하게 잠깐 그려 두어 준비를 미리 끝낸다
@@ -3889,7 +4049,8 @@ function buildGoals() {
 }
 function updateHUD() {
   $('levelNum').textContent = S.levelIdx + 1;
-  $('levelName').textContent = levelTitle(S.levelIdx);
+  document.querySelector('.hud-lv').style.visibility = S.daily ? 'hidden' : '';
+  $('levelName').textContent = S.daily ? T('daily.name') : levelTitle(S.levelIdx);
   $('moves').textContent = Math.max(0, S.moves);
   $('movesCard').classList.toggle('low', S.moves <= 5 && !S.over);
   $('score').textContent = pts(S.score);
@@ -3996,6 +4157,7 @@ function showMap(anim = null) {
   if (TEST && !head.querySelector('.test-badge')) head.insertAdjacentHTML('beforeend', '<span class="test-badge">테스트 모드 · 모든 레벨 열림</span>');
   $('mapStars').textContent = total;
   $('mapStarsMax').textContent = N * 3;
+  $('mapRank').hidden = !dailyOpen();
   const box = $('mapPath');
   box.style.width = w + 'px';
   box.style.height = h + 'px';
@@ -5218,7 +5380,7 @@ function flyIcon(kind, r, c) {
   return wait(340);
 }
 async function pressBooster(k) {
-  if (S.busy || S.over) return;
+  if (S.busy || S.over || S.daily) return;
   if (!boosterOpen(k)) {
     sfx.bad();
     const btn = document.querySelector(`.boost[data-boost="${k}"]`);
@@ -5391,9 +5553,13 @@ overlay.addEventListener('click', e => {
   // 판 도중에 설정에서 다시 하기·레벨 끝내기를 누르면 포기한 것으로 남긴다
   if ((act === 'retry' || act === 'map') && S.level && !S.over && $('map').hidden) {
     S.over = true;
-    track('level_quit', { level: S.levelIdx + 1, via: act, progress: goalProgress(), moves_used: S.level.moves - S.moves });
+    track(S.daily ? 'daily_quit' : 'level_quit', { level: S.levelIdx + 1, via: act, progress: S.daily ? 0 : goalProgress(), moves_used: S.level.moves - S.moves });
   }
-  if (act === 'retry') startLevel(S.levelIdx);
+  if (act === 'retry') startLevel(S.daily ? 'daily' : S.levelIdx);
+  else if (act === 'daily') startLevel('daily');
+  else if (act === 'rank') showRank();
+  else if (act === 'rank-rename') showRename();
+  else if (act === 'rank-name-save') saveName(b);
   else if (act === 'next') mapAnim ? showMap({ ...mapAnim, play: true }) : startLevel(Math.min(LEVELS.length - 1, S.levelIdx + 1));
   else if (act === 'map') showMap(mapAnim);
   else if (act === 'close') hideOverlay();
@@ -5500,6 +5666,8 @@ function showHelp() {
 }
 $('btnOptions').addEventListener('click', () => { initAudio(); showOverlay(optionsHTML()); });
 $('mapOptions').addEventListener('click', () => { initAudio(); showOverlay(optionsHTML()); });
+$('mapRank').addEventListener('click', () => { if (mapBusy) return; initAudio(); showRank(); });
+overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'nameIn') overlay.querySelector('[data-act="rank-name-save"]').click(); });
 
 /* ---------- 뒤로가기 (안드로이드 앱) ---------- */
 // 아무것도 안 붙이면 한 번에 앱이 꺼진다. 다른 게임(지우개 셈)과 같이 두 단계로 받는다:
@@ -5508,7 +5676,7 @@ $('mapOptions').addEventListener('click', () => { initAudio(); showOverlay(optio
 function backPop() {
   if (!overlay.hidden) {
     // 도움말은 설정으로 돌아가고, 결과 창은 지도로, 안내 창은 확인으로 닫는다
-    const b = ['opt', 'close', 'intro', 'map'].map(a => overlay.querySelector(`[data-act="${a}"]`)).find(Boolean);
+    const b = ['opt', 'close', 'intro', 'map', 'rank'].map(a => overlay.querySelector(`[data-act="${a}"]`)).find(Boolean);
     if (b) b.click();
     return true;
   }
@@ -5562,6 +5730,7 @@ window.addEventListener('resize', () => {
 
 /* ---------- 레벨 시작 ---------- */
 async function startLevel(i) {
+  const daily = i === 'daily';   // 오늘의 랭킹 (DAILY). 배경은 하던 구역 그대로
   mapAnim = null;
   tutorialEnd(false);
   tweens = []; fx = []; particles = []; texts = []; dying = [];
@@ -5571,14 +5740,18 @@ async function startLevel(i) {
   mascotMood('idle');
   setMusic('game');
   S.boxOpening = new Set(); S.grow = new Map(); S.chocoHit = false; S.result = null; S.bonusing = false;
-  S.levelIdx = Math.max(0, Math.min(LEVELS.length - 1, i | 0));
-  S.level = LEVELS[S.levelIdx];
+  S.daily = daily;
+  if (!daily) S.levelIdx = Math.max(0, Math.min(LEVELS.length - 1, i | 0));
+  S.level = daily ? DAILY : LEVELS[S.levelIdx];
+  useSeed(daily ? 'fp1:' + (S.dailyDay = kst()) : null);
+  S.log = [];
+  document.querySelector('.boosters').classList.toggle('daily', daily);
   setZoneBg(zoneAt(S.levelIdx));
   parseLayout(S.level.layout);
   S.moves = S.level.moves; S.score = 0; S.collected = {}; S.combo = 0;
   S.over = false; S.selected = null; S.hint = null;
   S.boostLeft = {};
-  for (const k in BOOSTERS) S.boostLeft[k] = boosterOpen(k) ? BOOSTERS[k].start : 0;
+  for (const k in BOOSTERS) S.boostLeft[k] = !daily && boosterOpen(k) ? BOOSTERS[k].start : 0;
   setBoost(null);
   S.jellyTotal = jellyLeft();
   outer: for (let r = 0; r < S.rows; r++) for (let c = 0; c < S.cols; c++) if (S.mask[r][c]) { S.cursor = [r, c]; break outer; }
@@ -5591,12 +5764,15 @@ async function startLevel(i) {
   S.boostUsed = 0;
   S.adContinue = false; S.adBoost = false;
   updateBoosters();
-  save.last = S.levelIdx;
-  save.tries = save.tries || {};
-  save.tries[S.levelIdx] = (save.tries[S.levelIdx] || 0) + 1;
-  persist();
-  track('level_start', { level: S.levelIdx + 1, attempt: save.tries[S.levelIdx] });
-  promoHint();
+  if (daily) track('daily_start');
+  else {
+    save.last = S.levelIdx;
+    save.tries = save.tries || {};
+    save.tries[S.levelIdx] = (save.tries[S.levelIdx] || 0) + 1;
+    persist();
+    track('level_start', { level: S.levelIdx + 1, attempt: save.tries[S.levelIdx] });
+    promoHint();
+  }
   S.busy = true;
   const anims = [];
   let landed = 0, lastPlop = 0;
@@ -5613,26 +5789,28 @@ async function startLevel(i) {
   if (!SIM) { sfx.levelStart(); burst(W / 2, H / 2, '#ffe27a', 16, 1.2); prewarmResult(); }
   save.seenBoost = save.seenBoost || {};
   for (const k in BOOSTERS) {
-    if (SIM || BOOSTERS[k].unlock !== S.levelIdx + 1 || save.seenBoost[k]) continue;
+    if (SIM || daily || BOOSTERS[k].unlock !== S.levelIdx + 1 || save.seenBoost[k]) continue;
     await showBoosterUnlock(k);
     save.seenBoost[k] = true;
     persist();
   }
   const intro = S.level.intro;
-  if (intro && !SIM && !save.seen[intro]) {
+  if (intro && !SIM && !daily && !save.seen[intro]) {
     await showIntro(intro);
     save.seen[intro] = true;
     persist();
   }
   S.busy = false;
   S.hintAt = now + 6000;
-  bigWord(S.level.name, cell * .75);
+  bigWord(daily ? T('daily.name') : S.level.name, cell * .75);
   tutorialStart();
 }
 
 // 처음 하는 사람(아직 깬 레벨이 없음)은 지도를 건너뛰고 바로 1레벨로 들어간다
 const newcomer = () => !Object.keys(save.stars).length;
 function home() { newcomer() ? startLevel(0) : showMap(); }
+// ?test 에서만: 오늘의 랭킹이 같은 수에 같은 결과를 내는지 콘솔에서 확인하려고 판 상태를 연다
+if (TEST) window.__fp = { S, startLevel, attemptSwap, allMoves };
 function boot(data) {
   if (save.musicOff) setMusicOn(false);
   if (save.sfxOff) audio.on = false;
