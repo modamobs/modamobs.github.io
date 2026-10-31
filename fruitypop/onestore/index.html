@@ -1949,8 +1949,8 @@ const STR = {
   'promo.streak': ['출석 {k}/{d}일 — {d}일 연속 오면 토스포인트 {n}원을 받아요', 'Day {k} of {d} — come {d} days in a row to get {n} Toss Points', '出席 {k}/{d}日 — {d}日連続で Toss ポイント {n} ウォン', '签到 {k}/{d} 天 — 连续 {d} 天可获得 {n} 韩元 Toss 积分'],
   'promo.got': ['토스포인트 {n}원을 받았어요', 'You got {n} Toss Points', 'Toss ポイント {n} ウォンを受け取りました', '已获得 {n} 韩元 Toss 积分'],
   'daily.name': ['오늘의 랭킹', 'Daily Ranking', '今日のランキング', '今日排行'],
-  'daily.rule': ['오늘은 모두 같은 판 · 100수 · 부스터 없이', 'Same board for everyone today · 100 moves · no boosters', '今日はみんな同じ盤面 · 100手 · ブースターなし', '今天大家同一盘 · 100 步 · 无道具'],
-  'daily.done': ['100수 끝!', '100 moves done!', '100手 終了！', '100 步结束！'],
+  'daily.rule': ['오늘은 모두 같은 판 · 50수 · 부스터 없이', 'Same board for everyone today · 50 moves · no boosters', '今日はみんな同じ盤面 · 50手 · ブースターなし', '今天大家同一盘 · 50 步 · 无道具'],
+  'daily.done': ['50수 끝!', '50 moves done!', '50手 終了！', '50 步结束！'],
   'daily.best': ['오늘 내 최고 {n}', 'Your best today: {n}', '今日のベスト {n}', '今日最佳 {n}'],
   'daily.again': ['한 번 더', 'Again', 'もう一回', '再来一次'],
   'rank.me': ['내 순위 {r}위 · {t}명 중', 'You are #{r} of {t}', '{t}人中 {r}位', '{t} 人中第 {r} 名'],
@@ -3803,12 +3803,12 @@ function toast(text) {
   requestAnimationFrame(() => el.classList.add('on'));
   setTimeout(() => { el.classList.remove('on'); setTimeout(() => el.remove(), 400); }, 3200);
 }
-// 오늘의 랭킹: 날짜로 정한 같은 판(useSeed)을 100수 두고 점수로 겨룬다. 부스터·광고 이어하기 없음. 10레벨을 깨면 지도에 버튼이 생긴다.
+// 오늘의 랭킹: 날짜로 정한 같은 판(useSeed)을 50수 두고 점수로 겨룬다. 부스터·광고 이어하기 없음. 10레벨을 깨면 지도에 버튼이 생긴다.
 // 순위는 우리 서버(E:/match3/rank-server, Cloudflare Worker + D1)에 모아 토스·안드로이드·원스토어가 한 순위표를 쓴다.
 // 둔 수(S.log)도 같이 보내 나중에 서버가 다시 두어 볼 수 있게 한다. 게임 결과에 현금성 보상을 붙이면 안 된다 (토스 정책)
 const RANK_API = 'https://fruitypop-rank.matgo-cert.workers.dev';
 const DAILY_AT = 10;
-const DAILY = { name: '오늘의 랭킹', daily: true, moves: 100, colors: 5, layout: FULL, goals: [], stars: [100000, 150000, 200000] };   // 봇 100수: 아무렇게나 9.6만~13만, 아래부터 17만 (2026-10-31)
+const DAILY = { name: '오늘의 랭킹', daily: true, moves: 50, colors: 5, layout: FULL, goals: [], stars: [50000, 75000, 100000] };   // 봇 50수: 아무렇게나 3.5만~10.7만(가운데 6.1만), 아래부터 8만 (2026-10-31)
 const dailyOpen = () => TEST || !!save.stars[DAILY_AT - 1];
 const rankPlat = () => TOSS ? 'toss' : NATIVE ? 'android' : osSdk() ? 'onestore' : 'web';
 const RANK_UID = /^[tgd]:[A-Za-z0-9_\-+/=.]{8,128}$/;
