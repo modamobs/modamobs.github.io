@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>프루티 팝</title>
+<title>과일 패치 퍼즐</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -118,6 +118,7 @@ body::before {
 .goal {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   font-family: var(--font-num);
   font-size: 22px;
@@ -332,7 +333,7 @@ body::before {
   border-radius: 22px;
   box-shadow: 0 5px 0 var(--hud-edge), 0 12px 20px rgba(90, 20, 55, .25);
 }
-.map-head .logo { display: block; height: 58px; width: auto; filter: drop-shadow(0 3px 2px rgba(150, 20, 70, .3)); }
+.map-head .logo { display: block; height: 72px; width: auto; margin: -8px 0; filter: drop-shadow(0 3px 2px rgba(150, 20, 70, .3)); }
 .map-head h1 {
   margin: -6px 0;
   font-family: var(--font-display);
@@ -972,7 +973,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 @keyframes bob { 50% { transform: translateY(-3px) rotate(-6deg); } }
 @media (max-width: 440px) {
   .map-head { padding: 8px 12px; gap: 8px; }
-  .map-head .logo { height: 40px; }
+  .map-head .logo { height: 60px; margin: -6px 0; }
   .map-music { width: 36px; height: 36px; font-size: 17px; }
   .map-stars { font-size: 17px; }
   .map-stars img { width: 22px; height: 22px; }
@@ -1009,7 +1010,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
   <button type="button" class="ub-x" id="btnUpdateLater" aria-label="나중에" data-t-aria="up.later">✕</button>
 </div>
 <section class="login" id="login" hidden aria-label="시작하기" data-t-aria="login.aria">
-  <img src="assets/logo.png" alt="프루티 팝" class="login-logo" data-t-alt="app.name">
+  <img src="assets/logo.png" alt="과일 패치 퍼즐" class="login-logo" data-t-alt="app.name">
   <div class="login-mascot" id="loginMascot"></div>
   <div class="opt-list login-btns">
     <button type="button" class="login-google" id="btnGoogle"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.1 5.3-4.6 7l7.1 5.5c4.2-3.9 7.2-9.6 7.2-17z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.4-4.6 2.2-8.8 2.2-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg><span data-t="login.google">Google로 시작</span></button>
@@ -1019,7 +1020,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 </section>
 <section class="map" id="map" hidden aria-label="레벨 지도" data-t-aria="map.aria">
   <header class="map-head">
-    <h1><img src="assets/logo.png" alt="프루티 팝" class="logo" data-t-alt="app.name"></h1>
+    <h1><img src="assets/logo.png" alt="과일 패치 퍼즐" class="logo" data-t-alt="app.name"></h1>
     <button type="button" id="mapOptions" class="opt-btn map-opt" aria-label="설정" data-t-aria="opt.title"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
     <p class="map-stars" aria-live="polite"><img src="assets/star_on.png" alt="별" data-t-alt="star"> <b id="mapStars">0</b> / <b id="mapStarsMax">600</b></p>
   </header>
@@ -1770,7 +1771,7 @@ function persist() {
 const LANGS = ['ko', 'en', 'ja', 'zh'];
 const LANG_NAMES = ['한국어', 'English', '日本語', '中文'];
 const STR = {
-  'app.name': ['프루티 팝', 'Fruity Pop', 'フルーティーポップ', '水果泡泡'],
+  'app.name': ['과일 패치 퍼즐', 'Fruit Patch Puzzle', 'フルーツパッチパズル', '水果拼布消消乐'],
   'up.text': ['새 버전이 나왔어요!', 'A new version is here!', '新しいバージョンが出たよ！', '新版本来啦！'],
   'up.go': ['업데이트', 'Update', 'アップデート', '更新'],
   'up.later': ['나중에', 'Later', 'あとで', '稍后'],
@@ -4043,6 +4044,11 @@ function buildGoals() {
     box.appendChild(el);
     return { g, el, t };
   });
+  // 수가 줄면 글자 폭이 바뀌어 목표 줄이 1줄↔2줄로 오간다 → 가장 넓을 때(처음 수) 폭으로 고정. 다 하면 수 대신 ✓만 (updateHUD)
+  for (const { g, el, t } of goalEls) {
+    t.textContent = g.type === 'collect' ? g.count + '/' + g.count : goalText(g);
+    el.style.minWidth = Math.ceil(el.getBoundingClientRect().width) + 'px';
+  }
   const bar = $('bar');
   tickEls.forEach(t => t.remove());
   tickEls = S.level.stars.map(s => {
@@ -4063,8 +4069,10 @@ function updateHUD() {
   $('barFill').style.width = Math.min(100, S.score / S.level.stars[2] * 100) + '%';
   tickEls.forEach((t, i) => t.classList.toggle('on', S.score >= S.level.stars[i]));
   for (const { g, el, t } of goalEls) {
-    t.textContent = goalText(g);
-    el.classList.toggle('done', goalLeft(g) === 0);
+    const done = goalLeft(g) === 0;
+    t.textContent = done ? '' : goalText(g);
+    t.hidden = done;
+    el.classList.toggle('done', done);
   }
 }
 function showOverlay(html) { overlay.classList.remove('celebrate', 'gloomy'); overlay.innerHTML = html; overlay.hidden = false; const b = overlay.querySelector('.primary, button'); if (b) b.focus(); }
