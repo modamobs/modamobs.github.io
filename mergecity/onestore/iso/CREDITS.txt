@@ -1,0 +1,13 @@
+public/iso — 게임이 쓰는 그림 (배경 제거, 폭 480 WebP). 원본은 AI_Gemini/ 에 같은 구조로 있다.
+
+stone/, city/, waste/ : 테마별 건물 등. Gemini(나노바나나)로 이 프로젝트를 위해 생성. 프롬프트는 docs/sprite-prompt.md
+city/ground-a         : 포장 바닥. 현대 도시는 석기 잔디를 쓰고 있었다
+stone/totem, hide-rack, storage-pit, hunt-camp, pond, grove, gathering
+                      : 판에는 안 나오고 도시에만 서는 건물 (docs/city-plan.md). 아직 안 붙였다
+shared/               : 잔디 계열 공용 — 도로·공원·광장·호수·나무 (석기·도시)
+tex-ground.webp       : 각 세트의 빈 타일에서 잘라 만든 질감 패치 (도시 화면 대지)
+
+public/audio — 배경음
+bgm.mp3               : Gemini 로 이 프로젝트를 위해 생성. 원본(Sprouting_Wonders.mp3, 30.75초)은
+                        AI_Gemini/audio/ 에 있고, 여기 있는 것은 scripts/make-bgm.py 가 끊김 없이
+                        돌게 이음매를 만들고(28.75초) 크기를 낮춘 것이다.
