@@ -1984,7 +1984,7 @@ const STR = {
   'help.wrap.text': ['주변 3×3을 터뜨리고, 반짝이며 남았다가 한 번 더 터져요.', 'Blasts the 3×3 around it, sparkles, then blasts once more.', 'まわり3×3を消して、キラキラ残ってからもう一度ばくはつするよ。', '炸开周围 3×3，闪闪发光后再炸一次。'],
   'help.fly.how': ['2×2 네모', '2×2 square', '2×2の四角', '2×2 方块'],
   'help.fly.name': ['나비 과일', 'Butterfly fruit', 'ちょうちょフルーツ', '蝴蝶水果'],
-  'help.fly.text': ['주변 십자를 터뜨린 뒤 젤리·얼음·폭탄 같은 목표로 날아가 한 칸을 더 터뜨려요.', 'Pops a cross around it, then flies to a goal like jelly, ice or a bomb and pops one more tile.', 'まわりの十字を消したあと、ゼリー・こおり・ばくだんなどの目標へ飛んでいって、もう1マス消すよ。', '消除周围十字后，飞向果冻、冰块、炸弹等目标再消除一格。'],
+  'help.fly.text': ['주변 십자를 터뜨린 뒤 아직 남은 미션 칸(젤리·얼음·잼·벌집·열쇠·병아리 알 밑)으로 날아가 한 칸을 더 터뜨려요. 마지막 몇 칸을 찾아가 마무리해 줘요.', 'Pops a cross around it, then flies to a tile your mission still needs (jelly, ice, jam, hive, key, under an egg) and pops it. Great for finishing the last few.', 'まわりの十字を消したあと、まだ残っているミッションのマス（ゼリー・こおり・ジャム・はちの巣・カギ・たまごの下）へ飛んでいって消すよ。残り数マスの仕上げにぴったり。', '消除周围十字后，飞向任务还需要的格子（果冻、冰块、果酱、蜂巢、钥匙、蛋的下方）再消除一格，特别适合收尾最后几格。'],
   'help.bomb.how': ['5개를 한 줄로', '5 in a row', '5つ一列', '5 个连成一线'],
   'help.bomb.name': ['무지개 과일', 'Rainbow fruit', 'にじ色フルーツ', '彩虹水果'],
   'help.bomb.text': ['바꾼 과일과 같은 색을 모두 터뜨려요.', 'Pops every fruit of the color you swap it with.', '入れ替えた果物と同じ色を全部消すよ。', '消除与交换水果同色的所有水果。'],
@@ -3031,16 +3031,38 @@ function mostCommonColor() {
   for (const k in cnt) if (cnt[k] > best) { best = cnt[k]; bc = +k; }
   return bc;
 }
-// 나비가 노릴 칸: 폭탄 > 젤리 > 얼음 > 열쇠 > 잼·휘핑크림 > 모을 색 > 아무 과일
+// 나비가 노릴 칸: 아직 남은 미션을 돕는 칸. 곧 터질 시한폭탄이 먼저고, 그다음 남은 목표 —
+// 젤리·얼음·잼·휘핑크림·벌집(꿀)·열쇠(상자)·병아리 알 바로 밑·모을 색. 끝난 미션 칸은 거의 안 본다.
+// 미션이 몇 칸 안 남으면 그 칸을 크게 쳐줘서, 손 닿기 힘든 마지막 칸을 나비가 마무리하게 한다
 function pickFlyTarget(r0, c0, piecesOnly = false, skip = new Set()) {
-  const want = new Set(S.level.goals.filter(g => g.type === 'collect').map(g => g.color));
+  const left = {}, wantColor = new Set();
+  for (const g of S.level.goals) {
+    const n = goalLeft(g);
+    if (!n) continue;
+    if (g.type === 'collect') wantColor.add(g.color);
+    else left[g.type] = (left[g.type] || 0) + n;
+  }
+  // 남은 수가 적을수록 더 노린다 (3칸 이하면 +10)
+  const need = (type, base) => left[type] ? base + (left[type] <= 3 ? 10 : 0) : 0;
+  const underEgg = new Set();
+  if (left.ing) forEachPiece((q, r, c) => { if (q.ing && playable(r + 1, c) && open(r + 1, c)) underEgg.add(key(r + 1, c)); });
   let best = null, bestV = -1;
   for (let r = 0; r < S.rows; r++) for (let c = 0; c < S.cols; c++) {
     if (Math.abs(r - r0) + Math.abs(c - c0) <= 1 || skip.has(key(r, c)) || !playable(r, c)) continue;
     let v = -1;
-    if (!piecesOnly && (S.choco[r][c] || S.mer[r][c])) v = 6;
+    if (!piecesOnly) {
+      if (S.choco[r][c]) v = need('choco', 7) || 2;
+      if (S.mer[r][c]) v = need('mer', 7) || 2;
+      if (S.hive[r][c] && left.honey) v = 9;
+    }
     const q = at(r, c);
-    if (q && !q.ing) v = Math.max(v, 1 + (q.timer ? 30 - q.timer : 0) + S.jelly[r][c] * 5 + (q.ice ? 6 : 0) + (q.key ? 8 : 0) + (want.has(q.color) ? 3 : 0));
+    if (q && !q.ing) v = Math.max(v, 1
+      + (q.timer ? 30 - q.timer : 0)
+      + (S.jelly[r][c] ? need('jelly', 5 * S.jelly[r][c]) : 0)
+      + (q.ice ? need('ice', 6) || 1 : 0)
+      + (q.key ? need('box', 8) : 0)
+      + (underEgg.has(key(r, c)) ? 7 + (left.ing <= 1 ? 4 : 0) : 0)
+      + (wantColor.has(q.color) ? 3 : 0));
     if (v < 0) continue;
     v += rnd();
     if (v > bestV) { bestV = v; best = [r, c]; }
@@ -3759,10 +3781,13 @@ function askReview(i) {
 // 토스포인트 프로모션 (2026-10-31 만듦, 2027-01-31 까지, 예산 각 2,000원). 비즈월렛에서 진짜 돈이 나간다 — 받았을 때만 save.promo 에 적는다.
 //   first  「프루티 팝 첫 판 해보기 리워드」 id 200165, 2원 — 첫 판이 끝나면(이기든 지든)
 //   streak 「프루티 팝 3일 연속 출석 리워드」 id 200169, 5원 — 한국 날짜로 사흘 잇달아 켜면 사흘째에
+//   play   「과일 패치 퍼즐 한 판 리워드」 id 200985 (2026-11-01, 예산 10,000원) 1원 — 첫 판 다음부터 판이 끝날 때마다(이기든 지든), 하루 5판까지.
+//          토스 쪽에도 1인 하루 5원 한도. 랭킹 판은 세지 않는다 (결과 보상처럼 보이지 않게). 코드가 비면 꺼진다
 // 승인 → 지급 시험 번들(PROMO_TEST, TEST_ 코드) → 이 코드가 든 번들 출시 → RUNNING 순서. 그 전에는 거절되고, 적지 않았으니 나중에 받는다
 const PROMO = {
   first: { code: '01M67QPYT0W6ANQ0P8C0ANK27Z', amount: 2 },
   streak: { code: '01M67QVM2C1SPXW7DVZGMJQT3V', amount: 5, days: 3 },
+  play: { code: '01M6B6WMTM1WG1MYB922NH4ZHC', amount: 1, daily: 5 },
 };
 const kst = (ms = Date.now()) => new Date(ms + 9 * 3600000).toISOString().slice(0, 10);
 const promoOn = id => !!TOSS?.promo?.available && !TOSS.promo.test && !TEST && !SHOT && !save.promo?.[id];
@@ -3782,9 +3807,28 @@ function promoHint() {
   promoHint.done = true;
   setTimeout(() => toast(T('promo.first', { n: PROMO.first.amount })), 900);
 }
-// 판이 끝날 때(이기든 지든). 결과 창이 뜬 다음에 알린다
+// 판이 끝날 때(이기든 지든). 결과 창이 뜬 다음에 알린다. 첫 판은 first, 그 뒤로는 play.
+// 광고 보고 이어 하다 다시 지면 lose 가 또 불리므로 한 번 시작한 판에 한 번만 (S.promoDone, startLevel 에서 지움)
 function promoFirst() {
-  if (promoOn('first')) setTimeout(() => promoGrant('first'), 1200);
+  if (S.promoDone) return;
+  S.promoDone = true;
+  if (promoOn('first') && !promoGrant.first) setTimeout(() => promoGrant('first'), 1200);
+  else if (playOn()) setTimeout(promoPlay, 1200);
+}
+// save.pp = { d: 한국 날짜, n: 그날 받은 판 수 }. 받았을 때만 센다
+const playOn = () => !!PROMO.play.code && !!TOSS?.promo?.available && !TOSS.promo.test && !TEST && !SHOT && !promoPlay.off
+  && (save.pp?.d !== kst() || save.pp.n < PROMO.play.daily);
+async function promoPlay() {
+  if (promoPlay.busy || !playOn()) return;
+  promoPlay.busy = true;
+  const m = PROMO.play, r = await TOSS.promo.grant(m.code, m.amount);
+  promoPlay.busy = false;
+  track('toss_promo', { m: 'play', r });
+  if (r !== 'ok') { promoPlay.off = true; return; }   // 시작 전·예산 끝·토스 하루 한도면 이번에 켠 동안은 더 두드리지 않는다
+  const d = kst();
+  save.pp = { d, n: save.pp?.d === d ? save.pp.n + 1 : 1 };
+  persist();
+  toast(T('promo.got', { n: m.amount }));   // 하루 몇 판까지인지는 보여주지 않는다 (2026-11-01 사용자)
 }
 // 출석: save.att = { d: 마지막으로 켠 날(한국 날짜), n: 그날까지 잇달아 켠 날 수 }. 켤 때 한 번 센다
 function promoAttend() {
@@ -5720,6 +5764,7 @@ if (TOSS?.promo?.test) {
   setTimeout(async () => {
     const lines = ['PROMO TEST'];
     for (const [id, m] of Object.entries(PROMO)) {
+      if (!m.code) continue;
       const r = await TOSS.promo.grant('TEST_' + m.code, m.amount);
       lines.push(`${id} TEST_${m.code} ${m.amount}원: ${r}`);
       box.textContent = lines.join('\n');
@@ -5777,7 +5822,7 @@ async function startLevel(i) {
   updateHUD();
   S.goalStart = S.level.goals.map(goalLeft);
   S.boostUsed = 0;
-  S.adContinue = false; S.adBoost = false;
+  S.adContinue = false; S.adBoost = false; S.promoDone = false;
   updateBoosters();
   if (daily) track('daily_start');
   else {
@@ -5817,7 +5862,7 @@ async function startLevel(i) {
   }
   S.busy = false;
   S.hintAt = now + 6000;
-  bigWord(daily ? T('daily.name') : S.level.name, cell * .75);
+  bigWord(daily ? T('daily.name') : levelTitle(S.levelIdx), cell * .75);   // 레벨 이름은 한국어에만 있다 — 다른 말은 구역 이름
   tutorialStart();
 }
 
