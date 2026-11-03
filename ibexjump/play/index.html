@@ -11,7 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
 <style>
-/* Layout: one portrait game column centred on a dusk ground; HUD floats on top, the trajectory toggle docks bottom-right */
+/* Layout: one portrait game column centred in the window. The canvas runs past the column to the window edges, so the sky
+   and the wall fill wide screens; there (Steam Deck, desktop) a mountain map and a ranking panel sit in the side wings. */
 :root{
   --ground:#1b1210;     /* page ground beside the game column */
   --sand:#f3e0c6;       /* HUD + panel text */
@@ -23,12 +24,13 @@
   --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   color-scheme:dark;
 }
-html,body{height:100%}
+html,body{height:100%;margin:0}
 [hidden]{display:none!important}
 *,*::before,*::after{box-sizing:border-box}
 body{background:var(--ground);color:var(--sand);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-#stage{position:relative;width:100%;max-width:min(520px,64vh);height:100%;margin:0 auto;overflow:hidden;background:#3a2218}
-#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:pointer}
+#stage{--col:min(520px,64vh,100vw);position:relative;width:var(--col);height:100%;margin:0 auto;background:#3a2218}
+#cv{position:absolute;top:0;left:calc(var(--col) / 2 - 50vw);width:100vw;height:100%;display:block;touch-action:none;cursor:pointer}
+body.pad #cv{cursor:none}
 
 .hud{position:absolute;top:0;left:0;right:0;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
   padding-top:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
@@ -84,6 +86,34 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
 .name{font:500 14px var(--body);padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--sand)}
 .rank{margin:0;padding:0 0 0 22px;display:grid;gap:4px;font-size:13px;color:#e8d3b8;font-variant-numeric:tabular-nums}
 .rank .me{color:#fff4e2;font-weight:600}
+button.padf{outline:2px solid #fff3d6;outline-offset:2px}
+
+/* side wings: only when there is room beside the column */
+.wing{position:fixed;top:0;bottom:0;z-index:4;width:calc(50vw - min(520px,64vh) / 2);display:none;place-items:center;padding:24px 16px;pointer-events:none}
+.wing.l{left:0}.wing.r{right:0}
+@media (min-width:860px) and (min-aspect-ratio:5/4){.wing{display:grid}}
+.wcard{width:min(250px,100%);max-height:100%;display:grid;gap:12px;padding:18px 18px 16px;background:var(--panel);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:16px;text-shadow:none}
+.wcard h2{margin:0;font-family:var(--display);font-weight:800;font-size:20px;color:#fff4e2}
+.wcard h3{margin:4px 0 0;font-size:11px;font-weight:600;letter-spacing:.14em;color:#f3b27a}
+.wcard p{margin:0;font-size:12.5px;line-height:1.55;color:#e8d3b8}
+.wcard .rank{font-size:12.5px}
+.stats{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13px;color:#e8d3b8}
+.stats dd{margin:0;text-align:right;color:#fff4e2;font-weight:600;font-variant-numeric:tabular-nums}
+.pads{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:12.5px;line-height:1.45;color:#e8d3b8}
+.pads kbd{display:inline-block;min-width:24px;padding:1px 6px;margin-right:4px;border:1px solid var(--line);border-radius:6px;
+  font:600 11.5px var(--body);text-align:center;color:#fff4e2;background:rgba(0,0,0,.25)}
+/* the mountain: zone bands from 0 to 1000 m, the ibex, today's best and the ghost on it */
+.mtn{position:relative;height:min(62vh,520px);display:grid;grid-template-columns:22px 1fr;gap:10px}
+.mbar{position:relative;border-radius:11px;overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(to top,#9c4a24 0 15%,#756c66 15% 35%,#717d91 35% 60%,#857d9e 60% 100%)}
+.mlab{position:relative;font-size:11.5px;color:#d9c1a3}
+.mlab span{position:absolute;left:0;transform:translateY(50%);white-space:nowrap}
+.mlab b{color:#fff4e2;font-weight:600;font-variant-numeric:tabular-nums}
+.mk{position:absolute;left:50%;width:14px;height:14px;margin:0 0 -7px -7px;border-radius:50%;transition:bottom .25s}
+.mk.me{background:var(--ember);box-shadow:0 0 0 3px rgba(236,138,60,.35);z-index:2}
+.mk.gh{background:rgba(255,241,220,.55);width:10px;height:10px;margin:0 0 -5px -5px}
+.mk.top{left:0;right:0;width:auto;height:2px;margin:0;border-radius:0;background:#fff3d6}
 </style>
 </head>
 <body>
@@ -136,6 +166,45 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
       <div class="btns"><button id="shopClose" type="button" style="grid-column:1/-1;background:var(--ember);color:var(--ink);border:0">닫기</button></div>
     </div>
   </div>
+
+  <aside class="wing l" aria-label="산 지도">
+    <div class="wcard">
+      <h3>정상까지</h3>
+      <h2><span id="mapLeft">1000</span>m 남음</h2>
+      <div class="mtn">
+        <div class="mbar"><i class="mk top" id="mkTop"></i><i class="mk gh" id="mkGh" hidden></i><i class="mk me" id="mkMe"></i></div>
+        <div class="mlab">
+          <span style="bottom:100%"><b>1000m</b> 정상</span>
+          <span style="bottom:60%"><b>600m</b> 구름 위</span>
+          <span style="bottom:35%"><b>350m</b> 설산</span>
+          <span style="bottom:15%"><b>150m</b> 회색 바위산</span>
+          <span style="bottom:0"><b>0m</b> 붉은 협곡</span>
+        </div>
+      </div>
+      <p>흰 선은 최고 높이, 흐린 점은 고스트예요.</p>
+    </div>
+  </aside>
+  <aside class="wing r" aria-label="기록과 조작">
+    <div class="wcard">
+      <h3 id="wMode">자유 등반</h3>
+      <dl class="stats">
+        <dt>시간</dt><dd id="wTime">0:00</dd>
+        <dt>최고 기록</dt><dd id="wBest">-</dd>
+        <dt>추락</dt><dd id="wFalls">0번</dd>
+        <dt>소금</dt><dd id="wSalt">0</dd>
+      </dl>
+      <h3 id="wRankH" hidden>오늘의 절벽 랭킹</h3>
+      <ol class="rank" id="wRank" hidden></ol>
+      <h3>조작</h3>
+      <ul class="pads">
+        <li><kbd>L1</kbd><kbd>R1</kbd> 또는 <kbd>◀</kbd><kbd>▶</kbd> 꾹 누르고 떼면 점프</li>
+        <li><kbd>A</kbd> 꾹 + 스틱으로 방향 바꾸기</li>
+        <li>휘청이면 발판 쪽 버튼 연타</li>
+        <li><kbd>A</kbd> 메뉴 고르기 · <kbd>B</kbd> 뒤로</li>
+        <li>화면을 직접 눌러도 돼요</li>
+      </ul>
+    </div>
+  </aside>
 
   <footer class="controls">
     <button class="guide" id="restartBtn" type="button">처음부터</button>
@@ -266,7 +335,7 @@ function makeRng(seed) {
   let a = seed | 0;
   return () => { a = (a + 0x6D2B79F5) | 0; let x = Math.imul(a ^ (a >>> 15), a | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
 }
-let cw = 0, ch = 0, s = 1, viewH = 600, dpr = 1;
+let cw = 0, ch = 0, s = 1, viewH = 600, dpr = 1, fw = 0, ox = 0;   // cw: the play column, fw: the whole canvas, ox: where the column starts in it
 let skyT = SKY[0][1], skyB = SKY[0][2];
 
 const sy = wy => ch - (wy - cam) * s;
@@ -280,12 +349,12 @@ const surf = (l, x) => {
 const summitX = l => l.half ? l.x - l.half * (l.w / 2 - l.flat) : l.x;
 
 function resize() {
-  const r = stage.getBoundingClientRect();
+  const r = stage.getBoundingClientRect(), rc = cv.getBoundingClientRect();
   if (!r.width || !r.height) return;   // hidden or not laid out yet: keep the last size
-  cw = r.width; ch = r.height;
+  cw = r.width; ch = r.height; fw = Math.max(cw, rc.width || cw); ox = rc.width ? r.left - rc.left : 0;
   dpr = Math.min(2, window.devicePixelRatio || 1);
-  cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cv.width = Math.round(fw * dpr); cv.height = Math.round(ch * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, dpr * ox, 0);
   s = cw / W; viewH = ch / s;
 }
 
@@ -365,6 +434,7 @@ function reset() {
   windRng = mode === 'daily' ? makeRng(seed ^ 0x2545F491) : Math.random;
   nextBabyY = 40 * U; babies = owned.has('flute') ? 1 : 0; trail = []; hoofUsed = false; flash = 0; lightT = 4;
   rec = []; recT = 0; ghost = mode === 'daily' ? store.get('ibex.ghost.' + kstDay(), null) : null;
+  $('mkGh').hidden = !(ghost && ghost.p && ghost.p.length);
   fill(); syncHud();
 }
 
@@ -432,6 +502,10 @@ window.addEventListener('keydown', e => {
   if ((k === 'space' || k === 'enter') && e.target && e.target.closest && e.target.closest('button,label')) return;
   e.preventDefault();
   if (e.repeat) return;
+  inputDown(k);
+});
+// left / right / space from the keyboard or a gamepad
+function inputDown(k) {
   if (state !== 'play') { if (k === 'space' || k === 'enter') startGame(); return; }
   const wasCharging = ib.charging;
   if (k === 'left' || k === 'right') {
@@ -442,16 +516,56 @@ window.addEventListener('keydown', e => {
     press(held.left !== held.right ? (held.left ? -1 : 1) : ib.facing);
   }
   if (!wasCharging && ib.charging) chargeKey = k;
-});
-window.addEventListener('keyup', e => {
-  const k = KEYS[e.key];
+}
+window.addEventListener('keyup', e => inputUp(KEYS[e.key]));
+function inputUp(k) {
   if (k === 'left' || k === 'right') {
     held[k] = false;
     const other = k === 'left' ? 'right' : 'left';
     if (chargeKey === k && held[other]) { chargeKey = other; return; }   // rolled onto the other arrow: keep charging
   }
   if (k && k === chargeKey) release();
-});
+}
+
+// Gamepad (Steam Deck): L1/R1, the triggers, the d-pad or the left stick charge toward a side; A charges toward where
+// you face and the stick steers it. In menus the d-pad moves between buttons, A presses one and B goes back.
+const pad = { on: false, was: {} };
+function pollPad() {
+  const gp = navigator.getGamepads ? [...navigator.getGamepads()].find(g => g && g.connected) : null;
+  if (!gp) return;
+  const b = i => !!gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.5), ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
+  const now = {
+    left: b(14) || b(4) || b(6) || ax < -0.5, right: b(15) || b(5) || b(7) || ax > 0.5, space: b(0),
+    up: b(12) || ay < -0.5, down: b(13) || ay > 0.5, back: b(1), start: b(9),
+  };
+  const was = pad.was, hit = k => now[k] && !was[k];
+  pad.was = now;
+  if (!pad.on && Object.values(now).some(Boolean)) { pad.on = true; document.body.classList.add('pad'); padKeys(); }
+  if (state === 'play') {
+    for (const k of ['left', 'right', 'space']) { if (hit(k)) inputDown(k); else if (was[k] && !now[k]) inputUp(k); }
+    return;
+  }
+  // menus (a focus the page moved itself, like showOverlay's, gets the pad ring too)
+  const ae = document.activeElement && document.activeElement.closest && document.activeElement.closest('button');
+  if (ae && !ae.classList.contains('padf')) padFocus(ae);
+  const btns = [...$('overlay').querySelectorAll('button')].filter(el => el.offsetParent);
+  const cur = btns.indexOf(document.activeElement);
+  const go = d => { const el = btns[(Math.max(0, cur) + d + btns.length) % btns.length]; if (el) { el.focus({ preventScroll: true }); padFocus(el); } };
+  if (hit('left') || hit('up')) go(cur < 0 ? 0 : -1);
+  if (hit('right') || hit('down')) go(cur < 0 ? 0 : 1);
+  if (hit('space')) { if (cur >= 0) btns[cur].click(); else startGame(); }
+  if (hit('start')) startGame();
+  if (hit('back') && !$('shop').hidden) showOverlay();
+}
+function padFocus(el) {
+  for (const o of document.querySelectorAll('.padf')) o.classList.remove('padf');
+  if (pad.on && el) el.classList.add('padf');
+}
+document.addEventListener('focusin', e => padFocus(e.target.closest && e.target.closest('button')));
+window.addEventListener('pointerdown', () => { padFocus(null); }, true);
+function padKeys() {
+  if (pad.on) $('ovKeys').textContent = '패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요';
+}
 
 // ---- simulation ----
 // a long drop since the highest point of this flight breaks the combo and says how far you fell
@@ -883,15 +997,17 @@ function skyAt(alt) {
 }
 
 function drawLayer(polys, base, col) {
-  const k = W / 400;
+  const k = W / 400, span = 400 * k * s;
   ctx.fillStyle = css(col);
-  for (const poly of polys) {
-    ctx.beginPath();
-    poly.forEach(([x, h], i) => { const X = x * k * s, Y = base - h * s; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
-    ctx.lineTo(poly[poly.length - 1][0] * k * s, ch + 10); ctx.lineTo(poly[0][0] * k * s, ch + 10);
-    ctx.closePath(); ctx.fill();
+  for (let t0 = Math.floor(-ox / span) * span; t0 < fw - ox; t0 += span) {   // repeats across a wide window
+    for (const poly of polys) {
+      ctx.beginPath();
+      poly.forEach(([x, h], i) => { const X = t0 + x * k * s, Y = base - h * s; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
+      ctx.lineTo(t0 + poly[poly.length - 1][0] * k * s, ch + 10); ctx.lineTo(t0 + poly[0][0] * k * s, ch + 10);
+      ctx.closePath(); ctx.fill();
+    }
   }
-  if (base < ch) ctx.fillRect(0, base, cw, ch - base + 1);
+  if (base < ch) ctx.fillRect(-ox - 40, base, fw + 80, ch - base + 1);
 }
 
 function drawSpires(p) {
@@ -900,12 +1016,12 @@ function drawSpires(p) {
     const col = mix(haze, mix(p.faceDark, p.faceMid, 0.5), L.k), litCol = mix(col, lit, 0.22);
     const ly0 = cam * L.f, Y = ly => ch - (ly - ly0) * s;
     for (let c = Math.floor((ly0 - 420) / L.cell); c <= Math.ceil((ly0 + viewH) / L.cell); c++) {
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0, n = Math.round(3 * fw / cw); j < n; j++) {
         const r = k => hash(L.seed * 71.3 + c * 9.17 + j * 3.71 + k * 1.37);
         if (r(0) < 0.3) continue;
         const prof = SPIRE_PROFILES[r(1) < 0.4 ? 0 : r(1) < 0.8 ? 1 : 2];
         const w = (20 + r(2) * 30) * L.sc * (prof === SPIRE_PROFILES[2] ? 1.35 : 1), hgt = (170 + r(3) * 230) * L.sc;
-        const cx = (-0.1 + 1.2 * r(4)) * W * s, topY = Y(c * L.cell + r(5) * L.cell), botY = topY + hgt * s;
+        const cx = -ox + (-0.1 + 1.2 * r(4)) * fw, topY = Y(c * L.cell + r(5) * L.cell), botY = topY + hgt * s;
         if (topY > ch || botY < 0) continue;
         const left = [], right = [];
         SPIRE_T.forEach((tt, i) => {
@@ -929,7 +1045,7 @@ function drawSpires(p) {
       }
     }
     // a veil of haze between layers
-    ctx.fillStyle = css(haze, 0.14); ctx.fillRect(0, 0, cw, ch);
+    ctx.fillStyle = css(haze, 0.14); ctx.fillRect(-ox - 40, -40, fw + 80, ch + 80);
   }
 }
 
@@ -944,9 +1060,10 @@ function facePath(yTop, yBot, step) {
 
 function drawFace(p) {
   const yTop = cam + viewH + 40, yBot = cam - 40, edge = facePath(yTop, yBot, 16);
-  ctx.beginPath(); ctx.moveTo(-4, sy(yTop));
+  const L0 = -ox - 44;   // past the column's left side the wall goes on to the window edge
+  ctx.beginPath(); ctx.moveTo(L0, sy(yTop));
   for (const [x, y] of edge) ctx.lineTo(x, y);
-  ctx.lineTo(-4, sy(yBot)); ctx.closePath();
+  ctx.lineTo(L0, sy(yBot)); ctx.closePath();
   const g = ctx.createLinearGradient(0, 0, W * 0.9 * s, 0);
   g.addColorStop(0, css(p.faceDark)); g.addColorStop(0.55, css(p.faceMid)); g.addColorStop(1, css(p.faceLit));
   ctx.fillStyle = g; ctx.fill();
@@ -957,14 +1074,14 @@ function drawFace(p) {
   for (let wy = Math.ceil(yTop / 22) * 22; wy > yBot; wy -= 22) {
     const y = sy(wy), h = hash(wy * 0.37);
     ctx.strokeStyle = css(p.faceDark, 0.25 + h * 0.3);
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y + (h - 0.5) * 6 * s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(L0, y); ctx.lineTo(cw, y + (h - 0.5) * 6 * s); ctx.stroke();
   }
   // long vertical fissures
   ctx.strokeStyle = css(p.faceDark, 0.55); ctx.lineWidth = Math.max(1, s * 1.1);
   for (let cell = Math.floor(yBot / 140) - 1; cell <= Math.ceil(yTop / 140); cell++) {
-    for (let k = 0; k < 2; k++) {
+    for (let k = -Math.ceil(ox / s / (W * 0.45)) * 2; k < 2; k++) {   // k < 0: lanes on the wall left of the column
       if (hash(cell * 11.3 + k * 5.1) < 0.35) continue;
-      let x = (0.05 + hash(cell * 2.9 + k) * 0.8) * W, wy = cell * 140 + hash(cell + k * 9) * 60;
+      let x = k < 0 ? (Math.floor(k / 2) * 0.45 + hash(cell * 2.9 + k) * 0.45) * W : (0.05 + hash(cell * 2.9 + k) * 0.8) * W, wy = cell * 140 + hash(cell + k * 9) * 60;
       ctx.beginPath(); ctx.moveTo(x * s, sy(wy));
       for (let j = 1; j <= 6; j++) { wy -= 22; x += (hash(cell * 7 + j + k * 3) - 0.5) * 9; ctx.lineTo(x * s, sy(wy)); }
       ctx.stroke();
@@ -972,7 +1089,7 @@ function drawFace(p) {
   }
   // grit
   for (let cy = Math.floor(yBot / 26); cy <= Math.ceil(yTop / 26); cy++) {
-    for (let cx = 0; cx < W / 26; cx++) {
+    for (let cx = Math.floor(-ox / s / 26) - 1; cx < W / 26; cx++) {
       const h = hash(cy * 31.7 + cx * 7.3);
       if (h > 0.45) continue;
       ctx.fillStyle = h < 0.2 ? css(p.faceDark, 0.45) : css(p.faceLit, 0.35);
@@ -988,7 +1105,7 @@ function drawFace(p) {
 
 function drawPillar(l, p) {
   const top = l.spike ? l.top - l.h - 6 : l.top - 8, len = 150 + hash(l.id * 1.31 + 0.2) * 130;
-  const y0 = sy(top), y1 = sy(top - len);
+  const y0 = sy(top), y1 = sy(Math.max(0, top - len));   // near the bottom it stands on the ground
   if (y1 < -10 || y0 > ch + 10) return;
   const hw = l.spike ? l.w * 0.31 : clamp(l.w * 0.26, 7, 22), haze = mix(skyT, skyB, 0.65);
   const T = [0, 0.18, 0.42, 0.7, 1], left = [], right = [];
@@ -1022,11 +1139,12 @@ function drawPillar(l, p) {
 function drawGround(p) {
   const y = sy(0);
   if (y > ch + 10) return;
+  const x0 = Math.floor((-ox - 40) / s / 15) * 15, x1 = (fw - ox + 40) / s;
   ctx.fillStyle = css(p.faceDark);
-  ctx.beginPath(); ctx.moveTo(0, y);
-  for (let x = 0; x <= W + 20; x += 15) ctx.lineTo(x * s, y + (hash(x * 0.71) - 0.3) * 5 * s);
-  ctx.lineTo(cw, ch + 5); ctx.lineTo(0, ch + 5); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = css(p.cap, 0.5); ctx.fillRect(0, y - 1 * s, cw, 2 * s);
+  ctx.beginPath(); ctx.moveTo(x0 * s, y);
+  for (let x = x0; x <= x1 + 15; x += 15) ctx.lineTo(x * s, y + (hash(x * 0.71) - 0.3) * 5 * s);
+  ctx.lineTo(x1 * s + 15 * s, ch + 45); ctx.lineTo(x0 * s, ch + 45); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = css(p.cap, 0.5); ctx.fillRect(x0 * s, y - 1 * s, (x1 - x0 + 15) * s, 2 * s);
 }
 
 // Rock outlines are built once per ledge, in world units measured from the walking surface (y grows downward).
@@ -1353,7 +1471,9 @@ function drawBabies(col) {
 function drawGhost() {
   if (!ghost || !ghost.p || !ghost.p.length || state !== 'play') return;
   const i = Math.min(ghost.p.length - 1, Math.floor(runTime / 0.1)), a = ghost.p[i], b = ghost.p[Math.min(ghost.p.length - 1, i + 1)], k = runTime / 0.1 - i;
-  drawSpriteAt(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2], a[3], 1, '#fff1dc', 0.35);
+  const gy = a[1] + (b[1] - a[1]) * k;
+  drawSpriteAt(a[0] + (b[0] - a[0]) * k, gy, a[2], a[3], 1, '#fff1dc', 0.35);
+  mapMark('mkGh', clamp(gy / U, 0, 1000));
 }
 
 // called with the canvas already at the ibex's feet (and tilted for slopes or a teeter)
@@ -1537,7 +1657,7 @@ function drawHints() {
   } else if (!ib.charging && jumps < 2) {
     ctx.globalAlpha = 0.55 + 0.2 * Math.sin(time * 3);
     ctx.fillStyle = '#fff3dc'; ctx.font = '600 15px "IBM Plex Sans KR", system-ui, sans-serif';
-    ctx.fillText('◀  왼쪽 꾹', cw * 0.22, ch * 0.8); ctx.fillText('오른쪽 꾹  ▶', cw * 0.78, ch * 0.8);
+    ctx.fillText(pad.on ? '◀  L1 꾹' : '◀  왼쪽 꾹', cw * 0.22, ch * 0.8); ctx.fillText(pad.on ? 'R1 꾹  ▶' : '오른쪽 꾹  ▶', cw * 0.78, ch * 0.8);
     ctx.globalAlpha = 0.18; ctx.strokeStyle = '#fff3dc'; ctx.lineWidth = 1; ctx.setLineDash([6, 8]);
     ctx.beginPath(); ctx.moveTo(cw / 2, ch * 0.22); ctx.lineTo(cw / 2, ch * 0.88); ctx.stroke(); ctx.setLineDash([]);
   }
@@ -1549,7 +1669,8 @@ function render() {
   const z = 1 + 0.07 * clamp(slowT / 0.25, 0, 1) + 0.035 * clamp(pulseT / 0.3, 0, 1);
   const sk = shakeT > 0 ? shakeAmp * shakeT / 0.35 : 0;
   const fx = ib.x * s, fy = sy(ib.y + 16);
-  ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * (fx * (1 - z) + (Math.random() - 0.5) * sk), dpr * (fy * (1 - z) + (Math.random() - 0.5) * sk));
+  ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * (ox + fx * (1 - z) + (Math.random() - 0.5) * sk), dpr * (fy * (1 - z) + (Math.random() - 0.5) * sk));
+  const X0 = -ox - 40, XW = fw + 80;   // a full-width fill, with room for the shake and the zoom
 
   const alt = (cam + viewH * 0.45) / U;
   const n = nightAt(alt);
@@ -1561,12 +1682,12 @@ function render() {
 
   const g = ctx.createLinearGradient(0, 0, 0, ch);
   g.addColorStop(0, css(skyT)); g.addColorStop(1, css(skyB));
-  ctx.fillStyle = g; ctx.fillRect(0, 0, cw, ch);
+  ctx.fillStyle = g; ctx.fillRect(X0, -40, XW, ch + 80);
 
   const st = clamp((n - 0.45) / 0.35, 0, 1);
   if (st > 0) {
     ctx.fillStyle = '#fff6e0';
-    for (const a of STARS) { ctx.globalAlpha = st * a.a * (0.6 + 0.4 * Math.sin(time * a.f + a.p)); ctx.fillRect(a.x * cw, a.y * ch, a.r, a.r); }
+    for (const a of STARS) { ctx.globalAlpha = st * a.a * (0.6 + 0.4 * Math.sin(time * a.f + a.p)); ctx.fillRect(-ox + a.x * fw, a.y * ch, a.r, a.r); }
     ctx.globalAlpha = 1;
   }
 
@@ -1575,7 +1696,7 @@ function render() {
   if (sunY < ch + 240 * s && sunA > 0) {
     const rg = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 170 * s);
     rg.addColorStop(0, `rgba(255,226,160,${0.6 * sunA})`); rg.addColorStop(1, 'rgba(255,200,140,0)');
-    ctx.fillStyle = rg; ctx.fillRect(0, 0, cw, ch);
+    ctx.fillStyle = rg; ctx.fillRect(X0, 0, XW, ch);
     ctx.fillStyle = `rgba(255,243,206,${sunA})`;
     ctx.beginPath(); ctx.arc(sunX, sunY, 18 * s, 0, Math.PI * 2); ctx.fill();
   }
@@ -1585,14 +1706,14 @@ function render() {
     const rx = cw * 0.82, ry = ch * (0.92 - 0.3 * rise);
     const rg = ctx.createRadialGradient(rx, ry, 0, rx, ry, 230 * s);
     rg.addColorStop(0, `rgba(255,214,150,${0.7 * rise})`); rg.addColorStop(1, 'rgba(255,190,130,0)');
-    ctx.fillStyle = rg; ctx.fillRect(0, 0, cw, ch);
+    ctx.fillStyle = rg; ctx.fillRect(X0, 0, XW, ch);
     ctx.fillStyle = `rgba(255,242,206,${rise})`;
     ctx.beginPath(); ctx.arc(rx, ry, 24 * s, 0, Math.PI * 2); ctx.fill();
   }
   for (let i = 0; i < 4; i++) {
     const y = ((ch * (0.18 + i * 0.17) + cam * s * 0.25) % (ch * 1.1)) - ch * 0.05;
     ctx.fillStyle = `rgba(255,236,214,${0.07 * (1 - n * 0.7)})`;
-    ctx.fillRect(0, y, cw, (5 + i * 3) * s);
+    ctx.fillRect(X0, y, XW, (5 + i * 3) * s);
   }
   drawSpires(p);
   drawLayer(FAR, ch * 0.74 + cam * s * 0.05, mix(skyB, FAR_ROCK, 0.38 + n * 0.25));
@@ -1609,10 +1730,10 @@ function render() {
   const cloudK = clamp((alt - 580) / 40, 0, 1);
   if (cloudK > 0) {
     for (let cy = Math.floor(cam / 160) - 1; cy <= Math.ceil((cam + viewH) / 160); cy++) {
-      for (let k = 0; k < 2; k++) {
-        const span = W + 200, r = (40 + hash(cy * 7.3 + k) * 40) * s;
+      for (let k = 0, n = Math.round(2 * fw / cw); k < n; k++) {
+        const span = fw / s + 200, r = (40 + hash(cy * 7.3 + k) * 40) * s;
         let x = (hash(cy * 5.1 + k) * span + time * (8 + hash(cy + k * 3) * 10)) % span;
-        x = (x - 100) * s;
+        x = (x - 100) * s - ox;
         const y = sy(cy * 160 + hash(cy * 2.3 + k) * 160);
         const cg = ctx.createRadialGradient(x, y, 0, x, y, r);
         cg.addColorStop(0, `rgba(255,255,255,${0.5 * cloudK})`); cg.addColorStop(1, 'rgba(255,255,255,0)');
@@ -1621,13 +1742,13 @@ function render() {
     }
     const sea = ctx.createLinearGradient(0, ch * 0.7, 0, ch);
     sea.addColorStop(0, 'rgba(242,238,250,0)'); sea.addColorStop(1, `rgba(242,238,250,${0.6 * cloudK})`);
-    ctx.fillStyle = sea; ctx.fillRect(0, ch * 0.7, cw, ch * 0.3);
+    ctx.fillStyle = sea; ctx.fillRect(X0, ch * 0.7, XW, ch * 0.3 + 40);
   }
 
   // the drop below pulls the eye down
   const dg = ctx.createLinearGradient(0, ch * 0.72, 0, ch);
   dg.addColorStop(0, 'rgba(20,8,6,0)'); dg.addColorStop(1, `rgba(20,8,6,${0.35 * clamp(cam / 100, 0, 1)})`);
-  ctx.fillStyle = dg; ctx.fillRect(0, ch * 0.72, cw, ch * 0.28);
+  ctx.fillStyle = dg; ctx.fillRect(X0, ch * 0.72, XW, ch * 0.28 + 40);
 
   for (const q of parts) {
     const k = 1 - q.t / q.life;
@@ -1646,8 +1767,8 @@ function render() {
   const snowK = clamp((alt - 340) / 30, 0, 1) * clamp((620 - alt) / 30, 0, 1);
   if (snowK > 0) {
     ctx.fillStyle = `rgba(255,255,255,${0.8 * snowK})`;
-    for (let i = 0; i < 70; i++) {
-      const x = hash(i * 1.7) * cw + Math.sin(time * 0.7 + i) * 18;
+    for (let i = 0, n = Math.round(70 * fw / cw); i < n; i++) {
+      const x = -ox + hash(i * 1.7) * fw + Math.sin(time * 0.7 + i) * 18;
       const y = (hash(i * 3.7) * ch + time * (30 + hash(i) * 40)) % ch;
       ctx.beginPath(); ctx.arc(x, y, 1 + hash(i * 9.1) * 1.4, 0, Math.PI * 2); ctx.fill();
     }
@@ -1660,10 +1781,10 @@ function render() {
     if (a > 0.01) {
       const dk = ctx.createRadialGradient(cx, cyy, 60 * s, cx, cyy, 175 * s);
       dk.addColorStop(0, 'rgba(4,5,16,0)'); dk.addColorStop(1, `rgba(4,5,16,${a})`);
-      ctx.fillStyle = dk; ctx.fillRect(-cw, -ch, cw * 3, ch * 3);
+      ctx.fillStyle = dk; ctx.fillRect(X0 - cw, -ch, XW + cw * 2, ch * 3);
     }
     if (flash > 0.55) {
-      ctx.fillStyle = `rgba(225,232,255,${(flash - 0.55) * 0.9})`; ctx.fillRect(0, 0, cw, ch);
+      ctx.fillStyle = `rgba(225,232,255,${(flash - 0.55) * 0.9})`; ctx.fillRect(X0, 0, XW, ch);
       ctx.strokeStyle = `rgba(255,255,255,${flash})`; ctx.lineWidth = 2.2; ctx.lineJoin = 'miter';
       ctx.beginPath(); let bx = cw * 0.86, by = 0; ctx.moveTo(bx, by);
       for (let i = 1; i <= 7; i++) { bx += (hash(lightT * 10 + i) - 0.5) * 34; by += ch * 0.06; ctx.lineTo(bx, by); }
@@ -1686,7 +1807,11 @@ function render() {
 
 // ---- HUD / overlay ----
 const hud = {};
-function put(id, v) { if (hud[id] !== v) { $(id).textContent = v; hud[id] = v; } }
+function put(id, v) {
+  if (hud[id] === v) return;
+  hud[id] = v;
+  if (id[0] === '@') $(id.slice(1)).style.bottom = v; else $(id).textContent = v;
+}
 function syncHud() {
   if (maxAlt > best) { best = maxAlt; store.set('ibex.cliff.best', best); }
   put('alt', Math.max(0, Math.floor(ib.y / U)));
@@ -1697,7 +1822,18 @@ function syncHud() {
   put('time', fmtTime(runTime));
   put('comboN', combo);
   $('combo').hidden = combo < 2;
+  // side wings
+  put('wTime', fmtTime(runTime));
+  put('wFalls', falls + '번');
+  put('wSalt', salt);
+  put('wMode', mode === 'daily' ? '오늘의 절벽' : '자유 등반');
+  const bt = mode === 'daily' ? +store.get('ibex.daily.' + kstDay(), 0) || 0 : bestTime;
+  put('wBest', bt ? fmtTime(bt) : '-');
+  const m = clamp(ib.y / U, 0, 1000);
+  put('mapLeft', Math.max(0, Math.ceil(1000 - m)));
+  mapMark('mkMe', m); mapMark('mkTop', clamp(best, 0, 1000));
 }
+const mapMark = (id, m) => put('@' + id, (m / 10).toFixed(1) + '%');
 
 function showOverlay(kind, isBest) {
   const done = kind === 'done', daily = mode === 'daily';
@@ -1824,14 +1960,17 @@ async function showRanking() {
     body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'runs' }], orderBy: [{ field: { fieldPath: 't' }, direction: 'ASCENDING' }], limit: 10 } }),
   });
   const docs = (rows || []).map(r => r.document).filter(Boolean);
-  const list = $('rankList'); list.textContent = '';
-  for (const d of docs) {
-    const li = document.createElement('li'), f = d.fields;
-    li.textContent = `${f.name.stringValue} · ${fmtTime(+f.t.integerValue / 10)}`;
-    if (fauth && f.by.stringValue === fauth.uid) li.className = 'me';
-    list.append(li);
+  for (const [list, n] of [[$('rankList'), 10], [$('wRank'), 5]]) {
+    list.textContent = '';
+    for (const d of docs.slice(0, n)) {
+      const li = document.createElement('li'), f = d.fields;
+      li.textContent = `${f.name.stringValue} · ${fmtTime(+f.t.integerValue / 10)}`;
+      if (fauth && f.by.stringValue === fauth.uid) li.className = 'me';
+      list.append(li);
+    }
+    list.hidden = !docs.length;
   }
-  list.hidden = !docs.length;
+  $('wRankH').hidden = !docs.length;
 }
 
 // ---- loop ----
@@ -1841,6 +1980,7 @@ function frame(now) {
   slowT = Math.max(0, slowT - real); shakeT = Math.max(0, shakeT - real); pulseT = Math.max(0, pulseT - real);
   if (!shakeT) shakeAmp = 0;
   requestAnimationFrame(frame);
+  pollPad();
   if (!cw) { resize(); if (!cw) return; }
   if (!isFinite(cam)) cam = ib.y - viewH * 0.3;
   update(real * (slowT > 0 ? 0.35 : 1)); audioTick(); render();
@@ -1850,6 +1990,7 @@ resize();
 window.addEventListener('resize', resize);
 reset();
 showOverlay();
+syncHud();
 requestAnimationFrame(frame);
 })();
 </script>
