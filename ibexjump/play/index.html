@@ -57,8 +57,10 @@ button.guide{font:inherit;color:inherit}
 button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offset:2px}
 
 .overlay{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding-block:24px 70px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  background:linear-gradient(rgba(27,14,10,0),rgba(27,14,10,.4))}
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+/* the menu's dimming spans the whole window, like the canvas, so wide screens show no darker column */
+.overlay::before{content:"";position:absolute;top:0;bottom:0;left:calc(var(--col) / 2 - 50vw);width:100vw;z-index:-1;
+  background:linear-gradient(rgba(27,14,10,0),rgba(27,14,10,.4));pointer-events:none}
 .card{width:100%;max-width:340px;display:grid;gap:12px;background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   border:1px solid var(--line);border-radius:18px;padding:24px 22px}
 .eyebrow{margin:0;font-size:11px;font-weight:600;letter-spacing:.14em;color:#f3b27a}

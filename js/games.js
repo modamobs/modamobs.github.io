@@ -24,6 +24,7 @@
      thumb    : 썸네일 (선택, 없으면 이니셜 썸네일이 나옵니다)
      accent   : 카드 포인트 색 (선택, 게임 테마색)
      portrait : true면 세로 화면 게임 — 플레이어가 세로 비율로 띄웁니다
+     wide     : true면 세로 게임이라도 넓은 화면을 지원 — 플레이 페이지에서 틀을 넓게 띄웁니다 (피드는 그대로 세로)
    =================================================== */
 
 const GAMES = [
@@ -86,7 +87,8 @@ const GAMES = [
     onestore: "",
     thumb: "/assets/images/ibexjump.png",
     accent: "#ec8a3c",
-    portrait: true
+    portrait: true,
+    wide: true
   },
   {
     slug: "minesweeper",

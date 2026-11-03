@@ -180,7 +180,7 @@
       }
 
       const box = document.createElement('div');
-      box.className = 'frame-box' + (game.portrait ? ' portrait' : '');
+      box.className = 'frame-box' + (game.portrait && !game.wide ? ' portrait' : '');
       const frame = document.createElement('iframe');
       frame.src = game.play;
       frame.title = game.title;
