@@ -1,15 +1,16 @@
-// AdMob interstitials for the Android app (Capacitor) only. On the website and in OneStore there is no
-// native AdMob plugin, so window.adBreak just starts the next game.
+// Interstitials: AdMob in the Android app (Capacitor), the ONE store SDK in the ONE store web game
+// (window.oneStoreInterstitial, set by onestore.js once its placement ID is filled in). Both follow the same
+// rule below. On the plain website there is neither, so window.adBreak just starts the next game.
 //
-// The ad unit below is empty, so the app runs Google's test interstitial. Before the release build, create
-// an app and an interstitial unit for 사과 게임 in the AdMob console (mobsgamez@gmail.com), put the unit in
-// REAL_INTERSTITIAL and the app ID in android/app/src/main/AndroidManifest.xml.
+// The unit belongs to the AdMob app "사과 게임" (mobsgamez@gmail.com, app ID ~9858579577, made 2026-10-29);
+// the app ID is in android/app/src/main/AndroidManifest.xml. Until the app is live on Play and linked to the
+// store in AdMob, AdMob limits ad serving. Emptying REAL_INTERSTITIAL switches back to Google's test ad.
 (function () {
   const cap = window.Capacitor;
   const AdMob = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.AdMob;
 
   const TEST_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
-  const REAL_INTERSTITIAL = '';
+  const REAL_INTERSTITIAL = 'ca-app-pub-3012351240086302/4033865264'; // applegame_interstitial
   const isTesting = !REAL_INTERSTITIAL;
   const adId = REAL_INTERSTITIAL || TEST_INTERSTITIAL;
   // the developer's phone: real units still show test ads there (same phone as sudoku/minesweeper)
@@ -62,9 +63,16 @@
   // Called when the player starts another game. gameFinished says the last game reached its end.
   // The new board is drawn right away behind the ad; its clock only starts on the first drag.
   window.adBreak = async function (gameFinished, next) {
-    if (!AdMob) return next();
+    const oneStore = window.oneStoreInterstitial;
+    if (!AdMob && !oneStore) return next();
     if (gameFinished) finished++;
     if (finished < EVERY || Date.now() - lastShown < GAP) return next();
+    if (!AdMob) {
+      finished = 0;
+      lastShown = Date.now();
+      oneStore();
+      return next();
+    }
     const ok = await Promise.race([prepare(), timeout(1500, false)]);
     if (!ok) return next();
     finished = 0;

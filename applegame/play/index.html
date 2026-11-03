@@ -1106,8 +1106,9 @@ function start(data) {
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 flushPending();
 
-// Installable / offline when served from its own site (GitHub Pages, the Android app). Skipped inside previews.
-if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && window.top === window && !window.ONESTORE) {
+// Installable / offline when served from its own site (GitHub Pages, the Android app). Skipped inside previews
+// and in the ONE store and Toss apps, which serve their own copies.
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && window.top === window && !window.ONESTORE && !window.Toss) {
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
