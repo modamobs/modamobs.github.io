@@ -29,6 +29,7 @@ html,body{height:100%;margin:0}
 *,*::before,*::after{box-sizing:border-box}
 body{background:var(--ground);color:var(--sand);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #stage{--col:min(520px,64vh,100vw);position:relative;width:var(--col);height:100%;margin:0 auto;background:#3a2218}
+body.wide #stage{--col:100vw}   /* the wide edition: the whole window is the cliff */
 #cv{position:absolute;top:0;left:calc(var(--col) / 2 - 50vw);width:100vw;height:100%;display:block;touch-action:none;cursor:pointer}
 body.pad #cv{cursor:none}
 
@@ -220,15 +221,23 @@ button.padf{outline:2px solid #fff3d6;outline-offset:2px}
 (() => {
 const $ = id => document.getElementById(id);
 const stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
+// The wide edition (PC, Steam Deck): the whole screen is the cliff, 720 units across, with its own daily ranking.
+// A build sets window.IBEX_WIDE; ?wide on the address does the same for testing.
+const WIDE = !!window.IBEX_WIDE || /[?&]wide/.test(location.search);
+if (WIDE) document.body.classList.add('wide');
 
 // ---- tuning ----
-const W = 300;                 // world width in units
-const U = 5;                   // units per metre: the summit sign says 1000 m, the climb is ~70 ledges (about 5 minutes)
+const W = WIDE ? 720 : 300;    // world width in units
+const WK = W / 300;            // how much wider than the phone cliff, for scenery density
+const VIEW_MIN = 440;          // wide edition: at least this much height in view, the sides show scenery past that
+const ZOOM = WIDE ? 1.25 : 1.3; // the camera sits this much closer than a whole-cliff view and follows you sideways
+const U = 10;                  // units per metre: the summit sign says 1000 m, the climb is ~140 ledges (about 10 minutes)
 const G = 1900;                // gravity
 const ANG = 76 * Math.PI / 180;// steep, upward hops
 const VMIN = 240, VMAX = 900;  // launch speed range
 const CHARGE_T = 1.0;          // seconds from empty to full (then it drains back)
 const CR_T = 1.3;              // seconds a cracked ledge holds after you land
+const DRAFT_A = 3200, DRAFT_V = 500;   // an updraft's lift and the speed it carries you up at
 const REACH = 11;              // how far past a ledge end the body can land and still teeter
 const TIP = 6;                 // how fast a teeter grows on its own
 const TAP = 1.05;              // push back per tap toward the ledge
@@ -314,22 +323,27 @@ const STARS = Array.from({ length: 90 }, (_, i) => ({
 }));
 
 // the cliff's open edge wanders as you climb
-const edgeAt = y => W * (0.8 + 0.08 * Math.sin(y * 0.0042) + 0.04 * Math.sin(y * 0.013 + 1.7));
+const edgeAt = WIDE ? y => W * (0.9 + 0.03 * Math.sin(y * 0.0042) + 0.02 * Math.sin(y * 0.013 + 1.7))   // wide: ledges across nearly the whole screen
+  : y => W * (0.8 + 0.08 * Math.sin(y * 0.0042) + 0.04 * Math.sin(y * 0.013 + 1.7));
 // Where the drawn wall ends. Only the picture: ledges are still placed against edgeAt, so maps don't change.
 // It swings wide and narrow, so stretches of wall alternate with open fields of pillars in the haze.
-const faceEdge = y => W * Math.min(0.8 + 0.08 * Math.sin(y * 0.0042), 0.5 + 0.27 * Math.sin(y * 0.0038 - 0.3) + 0.06 * Math.sin(y * 0.0093 + 2.1));
+const faceEdge = WIDE ? y => W * Math.min(0.62 + 0.08 * Math.sin(y * 0.0042), 0.36 + 0.2 * Math.sin(y * 0.0038 - 0.3) + 0.05 * Math.sin(y * 0.0093 + 2.1))
+  : y => W * Math.min(0.8 + 0.08 * Math.sin(y * 0.0042), 0.5 + 0.27 * Math.sin(y * 0.0038 - 0.3) + 0.06 * Math.sin(y * 0.0093 + 2.1));
 // ledges out past the wall stand on a rock pillar rising out of the mist
-const onPillar = l => !l.ground && !l.camp && !l.mover && !l.crumble && l.x > faceEdge(l.top) - 6;
+const onPillar = l => !l.ground && !l.camp && !l.mover && !l.crumble && !l.cloud && l.x > faceEdge(l.top) - 6;
 
 // ---- state ----
 let state = 'ready', ledges = [], tip = null, nextId = 0, ib, cam = 0, parts = [], pops = [];
 let maxAlt = 0, combo = 0, perfects = 0, salt = 0, saves = 0, jumps = 0, falls = 0, time = 0, spikeTips = 0;
 let rocks = [], warns = [], eagle = null, rockT = 3, eagleT = 6, bands = [], bandTip = 70 * U;
-let runTime = 0, zoneIdx = 0, bestTime = +store.get('ibex.best.time', 0) || 0;
+// the wide edition keeps its own best time, daily records and ghost (its cliffs differ from the phone's)
+const REC = WIDE ? 'ibex.w.' : 'ibex.';
+let runTime = 0, zoneIdx = 0, bestTime = +store.get(REC + 'best.time', 0) || 0;
 let slowT = 0, shakeT = 0, shakeAmp = 0, pulseT = 0;
 // tier 3: baby ibex, night lightning, salt shop / tier 4: daily cliff, ghost, ranking
 let mode = 'free', mapRng = Math.random, windRng = Math.random, nextBabyY = 0, babies = 0, trail = [];
 let hoofUsed = false, flash = 0, lightT = 4, ghost = null, rec = [], recT = 0;
+let drafts = [], gems = [];
 let wallet = +store.get('ibex.wallet', 0) || 0, fur = store.get('ibex.fur', 'fur-default');
 const owned = new Set(store.get('ibex.owned', ['fur-default']));
 const kstDay = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '');
@@ -338,7 +352,7 @@ function makeRng(seed) {
   let a = seed | 0;
   return () => { a = (a + 0x6D2B79F5) | 0; let x = Math.imul(a ^ (a >>> 15), a | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
 }
-let cw = 0, ch = 0, s = 1, viewH = 600, dpr = 1, fw = 0, ox = 0;   // cw: the play column, fw: the whole canvas, ox: where the column starts in it
+let cw = 0, ch = 0, s = 1, viewH = 600, dpr = 1, fw = 0, ox = 0, ox0 = 0, camX = 0;   // cw: the play column, fw: the whole canvas, ox: where the column starts in it
 let skyT = SKY[0][1], skyB = SKY[0][2];
 
 const sy = wy => ch - (wy - cam) * s;
@@ -355,14 +369,17 @@ function resize() {
   const r = stage.getBoundingClientRect(), rc = cv.getBoundingClientRect();
   if (!r.width || !r.height) return;   // hidden or not laid out yet: keep the last size
   cw = r.width; ch = r.height; fw = Math.max(cw, rc.width || cw); ox = rc.width ? r.left - rc.left : 0;
+  if (WIDE) { cw = Math.min(fw, W * ch / VIEW_MIN); ox = (fw - cw) / 2; }   // a very wide window keeps enough height in view
   dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(fw * dpr); cv.height = Math.round(ch * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, dpr * ox, 0);
-  s = cw / W; viewH = ch / s;
+  s = cw / W * ZOOM; viewH = ch / s; ox0 = ox;
 }
+// the column shows W / ZOOM of the cliff; keep the ibex near its middle without showing past the cliff's ends
+const camXFor = x => clamp(x - W / ZOOM / 2, 0, W - W / ZOOM);
 
 function makeLedge(x, top, w, o = {}) {
-  return Object.assign({ id: nextId++, x, top, w, crumble: false, salt: false, ground: false, crT: -1, falling: false, vy: 0, home: 0, back: 0, fade: 1, dir: 0, moss: false, mover: null, spike: false, half: 0, h: 0, slope: 0, flat: 0, baby: false, camp: 0, summit: false, reached: false, flagX: 0, flagT: 0, geo: null }, o);
+  return Object.assign({ id: nextId++, x, top, w, crumble: false, salt: false, ground: false, crT: -1, falling: false, vy: 0, home: 0, back: 0, fade: 1, dir: 0, moss: false, mover: null, spike: false, half: 0, h: 0, slope: 0, flat: 0, baby: false, ice: 0, cloud: null, camp: 0, summit: false, reached: false, flagX: 0, flagT: 0, geo: null }, o);
 }
 
 // Main path zigzags up the face; sometimes a tiny side ledge holds salt off the path.
@@ -376,8 +393,8 @@ function genNext(prev) {
   }
   const alt = prev.top / U, d = clamp(alt / 400, 0, 1);
   const px = prev.ground ? 70 : prev.camp ? mr(60, edgeAt(prev.top) - 60) : prev.x;
-  const w = clamp(64 - 40 * d + mr(-6, 6), 20, 72);
-  let dir = prev.dir ? (mapRng() < 0.72 ? -prev.dir : prev.dir) : 1;
+  let w = clamp(64 - 40 * d + mr(-6, 6), 20, 72);
+  let dir = prev.dir ? (mapRng() < (WIDE ? 0.6 : 0.72) ? -prev.dir : prev.dir) : 1;   // the wide cliff turns less, so the path wanders across it
   const dx = mr(50, 112 + 14 * d);
   const dy = mr(46, 78 + 16 * d);
   const lo = w / 2 + 12, hi = edgeAt(prev.top + dy) - w / 2 - 6;
@@ -405,16 +422,46 @@ function genNext(prev) {
     const amp = Math.min(mr(18, 36), (hi - lo) / 2 - 2), cx = clamp(x, lo + amp, hi - amp);
     opts.mover = { cx, amp, sp: mr(0.8, 1.4), ph: mr(0, 6) };
     x = cx;
-  } else if (alt > 20 && roll < 0.3) opts.moss = true;
+  } else if (alt > 20 && roll < 0.3) {
+    if (alt > 350 && alt < 600) { opts.ice = mapRng() < 0.5 ? -1 : 1; w *= 1.2; }   // the snow zone's ledges are iced over and tilted
+    else opts.moss = true;
+  } else if (alt > 600 && roll < 0.46) { opts.cloud = { per: mr(4.5, 5.5), ph: mr(0, 5) }; w *= 1.3; }
   else opts.crumble = alt > 30 && mapRng() < 0.1 + 0.25 * d;
   if (top > nextBabyY + 45 * U) { opts.baby = true; opts.crumble = false; nextBabyY += mr(130, 190) * U; }
   const l = makeLedge(x, top, w, opts);
   ledges.push(l);
 
-  if (!prev.ground && !prev.camp && alt > 8 && mapRng() < 0.32) {
+  // golden salt floats in the air above the path: a bigger jump than you need picks it up
+  if (alt > 30 && mapRng() < 0.16) {
+    const gx = clamp((px + x) / 2 + mr(-30, 30), 16, edgeAt(top) - 16);
+    gems.push({ x: gx, y: Math.max(prev.top, top) + mr(60, 110), got: false, id: l.id });
+  }
+  // an updraft beside this ledge: jump into it from a ledge below and it carries you up and drops you here
+  if (alt > 100 && !l.cloud && mapRng() < 0.14) {
+    const hw = WIDE ? 22 : 18, side = mapRng() < 0.5 ? -1 : 1;
+    for (const sd of [side, -side]) {
+      const cx = l.x + sd * (l.w / 2 + 26 + hw), y1 = top - 20;   // tops out below the ledge, so jumping off the ledge never catches it
+      if (cx < hw + 8 || cx > Math.min(edgeAt(top), edgeAt(top - 340)) - hw - 4) continue;
+      const a = ledges.find(o => !o.ground && !o.spike && !o.cloud && o.top > top - 320 && o.top < top - 160 && Math.abs(o.x - cx) > 40 + o.w / 2 && Math.abs(o.x - cx) < 130);
+      if (!a || drafts.some(o => Math.abs(o.x - cx) < o.hw + hw + 16 && o.y0 < y1 + 40 && o.y1 > a.top - 70)) continue;
+      const t = DRAFT_V / G + Math.sqrt((DRAFT_V / G) ** 2 + 2 * (y1 - top) / G);
+      drafts.push({ id: l.id, x: cx, hw, y0: a.top - 30, y1, kick: (l.x - cx) / t });
+      gems.push({ x: cx, y: y1 - 40, got: false, id: l.id + 0.5 });
+      break;
+    }
+  }
+
+  if (!prev.ground && !prev.camp && alt > 8 && mapRng() < (WIDE ? 0.45 : 0.32)) {
     const sw = mr(20, 28), sx = prev.x - l.dir * mr(72, 96), st = prev.top + mr(14, 30);
     if (sx > sw / 2 + 10 && sx < edgeAt(st) - sw / 2 - 4 && Math.abs(sx - l.x) < 150 && (Math.abs(sx - l.x) > 50 || Math.abs(st - l.top) > 36))
       { const kid = top > nextBabyY; if (kid) nextBabyY += mr(130, 190) * U; ledges.push(makeLedge(sx, st, sw, kid ? { baby: true } : { salt: true })); }
+  }
+  // the wide cliff has a lot more open air: stray ledges away from the path catch some falls and lead back up
+  if (WIDE && !prev.ground && mapRng() < 0.55) {
+    const sw = mr(26, 46), st = top - mr(10, 50), sx = mr(sw / 2 + 12, edgeAt(st) - sw / 2 - 6);
+    if (Math.abs(sx - l.x) > 110 && Math.abs(sx - prev.x) > 90 &&
+        !ledges.slice(-5).some(o => Math.abs(sx - o.x) < (sw + o.w) / 2 + 24 && Math.abs(st - o.top) < 45))
+      ledges.push(makeLedge(sx, st, sw));
   }
   return l;
 }
@@ -428,15 +475,16 @@ function reset() {
   const ground = makeLedge(W / 2, 0, W * 2, { ground: true });
   ledges = [ground]; tip = ground;
   ib = { x: 70, y: 0, vx: 0, vy: 0, on: ground, from: null, off: 70 - W / 2, facing: 1,
-         charging: false, charge: 0, chT: 0, side: 1, squash: 0, wob: null, zone: 0, peak: null, hurt: 0, slide: 0, spin: 0 };
-  cam = -viewH * 0.28; maxAlt = 0; combo = 0; perfects = 0; salt = 0; saves = 0; jumps = 0; falls = 0; parts = []; pops = [];
+         charging: false, charge: 0, chT: 0, side: 1, squash: 0, wob: null, zone: 0, peak: null, hurt: 0, slide: 0, spin: 0, iceV: 0, grip: 0, used: null };
+  cam = -viewH * 0.28; camX = camXFor(ib.x); maxAlt = 0; combo = 0; perfects = 0; salt = 0; saves = 0; jumps = 0; falls = 0; parts = []; pops = [];
   rocks = []; warns = []; eagle = null; rockT = 3; eagleT = 6; bands = []; bandTip = 70 * U;
   runTime = 0; zoneIdx = 0; slowT = 0; shakeT = 0; pulseT = 0;
   const seed = +kstDay();
   mapRng = mode === 'daily' ? makeRng(seed) : Math.random;
   windRng = mode === 'daily' ? makeRng(seed ^ 0x2545F491) : Math.random;
   nextBabyY = 40 * U; babies = owned.has('flute') ? 1 : 0; trail = []; hoofUsed = false; flash = 0; lightT = 4;
-  rec = []; recT = 0; ghost = mode === 'daily' ? store.get('ibex.ghost.' + kstDay(), null) : null;
+  drafts = []; gems = [];
+  rec = []; recT = 0; ghost = mode === 'daily' ? store.get(REC + 'ghost.' + kstDay(), null) : null;
   $('mkGh').hidden = !(ghost && ghost.p && ghost.p.length);
   fill(); syncHud();
 }
@@ -602,6 +650,7 @@ function land(l) {
     } else { sfx('teeter'); slowmo(0.3); }
   } else ib.off = clamp(o, -hw + 3, hw - 3);
   ib.slide = l.moss && !ib.wob ? vxIn * 0.55 : 0;
+  ib.iceV = 0; ib.grip = 0.5; ib.used = null;
   if (l.salt) {
     l.salt = false; salt++; sfx('salt');
     wallet++; store.set('ibex.wallet', wallet);
@@ -628,7 +677,7 @@ function land(l) {
 function landSpike(l) {
   const same = l === ib.from, o = ib.x - l.x;
   ib.launch = null;
-  ib.on = l; ib.vx = ib.vy = 0; ib.squash = 1; ib.charging = false; ib.wob = null; ib.slide = 0;
+  ib.on = l; ib.vx = ib.vy = 0; ib.squash = 1; ib.charging = false; ib.wob = null; ib.slide = 0; ib.used = null;
   const sc = summitX(l);
   if (Math.abs(ib.x - sc) <= l.flat + 1) { ib.off = clamp(ib.x, sc - l.flat + 2, sc + l.flat - 2) - l.x; ib.zone = 0; }
   else { ib.off = o; ib.zone = l.half || Math.sign(o); ib.facing = -ib.zone; }
@@ -678,6 +727,7 @@ function update(dt) {
       if (l.back <= 0) { l.falling = false; l.top = l.home; l.vy = 0; l.fade = 0; }
     }
     if (l.fade < 1) l.fade = Math.min(1, l.fade + dt * 2);
+    if (l.cloud && ib.on === l && cloudLeft(l) < 0) { ib.on = null; ib.from = l; ib.launch = null; ib.vx = 0; ib.vy = 0; ib.charging = false; ib.wob = null; combo = 0; }
   }
 
   if (state !== 'ready') {
@@ -696,6 +746,17 @@ function update(dt) {
         }
         ib.x = l.x + ib.off;
       }
+      if (l.ice && !ib.wob && (ib.grip -= dt) < 0) {   // ice tilts: after a moment's grip you slide off its low end, faster and faster
+        ib.iceV = Math.min(32, ib.iceV + 10 * dt); ib.off += l.ice * ib.iceV * dt;
+        if (Math.random() < dt * ib.iceV * 0.4) parts.push({ x: ib.x, y: ib.y + 1, vx: -l.ice * rand(10, 30), vy: rand(10, 40), life: 0.4, t: 0, r: rand(0.8, 1.6), col: 'ice' });
+        if (Math.abs(ib.off) > l.w / 2 + 2) {
+          const d = Math.sign(ib.off);
+          ib.iceV = 0; ib.off = d * (l.w / 2 + 4);
+          ib.wob = { dir: d, phi: 0.32, vel: 0.3, flash: 0 };
+          pebbles(l, d, 4);
+        }
+        ib.x = l.x + ib.off;
+      }
       if (ib.charging) { ib.chT += dt; ib.charge = 0.05 + 0.95 * tri(ib.chT / CHARGE_T); }
       const w = ib.wob;
       if (w) {
@@ -708,7 +769,7 @@ function update(dt) {
           sfx('slip');
           pebbles(l, w.dir, 8);
         } else if (w.phi <= 0.05) {
-          ib.wob = null; ib.off = w.dir * (l.w / 2 - 4); saves++;
+          ib.wob = null; ib.off = w.dir * (l.w / 2 - 4); ib.iceV = 0; ib.grip = 1; saves++;
           pops.push({ x: l.x, y: l.top + 50, text: '버텼다!', t: 0 });
           sfx('save'); slowmo(0.25);
           syncHud();
@@ -717,7 +778,7 @@ function update(dt) {
     } else {
       const px = ib.x, py = ib.y;
       if (ib.peak == null) ib.peak = py;
-      ib.vy = Math.max(-1400, ib.vy - G * dt); ib.vx += windAt(ib.y) * dt; ib.x += ib.vx * dt; ib.y += ib.vy * dt;
+      airStep(ib, dt);
       // a baby ibex catches a long fall once and brings you back to where you jumped from
       const L = ib.launch;
       if (state === 'play' && babies > 0 && L && !L.l.falling && ib.vy < 0 && ib.y < L.y - 140) {
@@ -735,11 +796,17 @@ function update(dt) {
         if (l.falling) continue;
         if (l.spike) {
           if (Math.abs(ib.x - l.x) <= l.w / 2 && py >= surf(l, px) - 0.01 && ib.y < surf(l, ib.x)) { landSpike(l); break; }
-        } else if (ib.vy <= 0 && py >= l.top - 0.01 && ib.y <= l.top && Math.abs(ib.x - l.x) <= l.w / 2 + REACH) { land(l); break; }
+        } else if (ib.vy <= 0 && py >= l.top - 0.01 && ib.y <= l.top && Math.abs(ib.x - l.x) <= l.w / 2 + REACH && !(l.cloud && cloudLeft(l) < 0)) { land(l); break; }
       }
     }
   }
   ib.squash = Math.max(0, ib.squash - dt * 5);
+  if (state === 'play') for (const q of gems) {
+    if (q.got || Math.hypot(q.x - ib.x, q.y - (ib.y + 14)) > 16) continue;
+    q.got = true; salt += 5; wallet += 5; store.set('ibex.wallet', wallet); sfx('salt');
+    pops.push({ x: q.x, y: q.y + 30, text: '황금 소금 +5', t: 0 });
+    for (let i = 0; i < 18; i++) parts.push({ x: q.x, y: q.y, vx: rand(-110, 110), vy: rand(-40, 200), life: 0.9, t: 0, r: rand(1, 2.4), col: 'gold' });
+  }
 
   // camera follows the climb, and drops with you when you fall
   let target = cam;
@@ -748,6 +815,7 @@ function update(dt) {
   cam += (target - cam) * Math.min(1, dt * 3.2);
   if (!ib.on && ib.y < cam + viewH * 0.22) cam = ib.y - viewH * 0.22;
   cam = Math.max(cam, -viewH * 0.28);
+  camX += (camXFor(ib.x + clamp(ib.vx * 0.15, -30, 30)) - camX) * Math.min(1, dt * 3);
 
   fill();
   updateHazards(dt);
@@ -780,6 +848,10 @@ const INTRO = {
   wind: ['바람', '바람 구간에선 공중에서 옆으로 밀려요'],
   eagle: ['독수리', '부딪히면 떨어져요. 날아오는 쪽을 보세요'],
   night: ['번개 치는 밤', '어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요'],
+  gem: ['황금 소금', '공중에 떠 있어요. 몸이 닿으면 소금 5개', '새 보물'],
+  draft: ['상승기류', '빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요', '새 지형'],
+  ice: ['얼음 발판', '기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요'],
+  cloud: ['구름 발판', '나타났다 사라져요. 깜빡이면 곧 사라져요'],
 };
 const seen = new Set();
 // banners queue up so a new zone and a new obstacle never overwrite each other
@@ -798,7 +870,7 @@ function clearBanners() { bannerQ.length = 0; $('banner').hidden = true; }
 function intro(kind) {
   if (seen.has(kind)) return;
   seen.add(kind);
-  showBanner('새 장애물', INTRO[kind][0], INTRO[kind][1]);
+  showBanner(INTRO[kind][2] || '새 장애물', INTRO[kind][0], INTRO[kind][1]);
 }
 
 const fmtTime = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
@@ -808,13 +880,16 @@ function finish() {
   clearBanners();
   let isBest;
   if (mode === 'daily') {          // today's best time keeps its ghost for the next try
-    const key = 'ibex.daily.' + kstDay(), prev = +store.get(key, 0) || 0;
+    const key = REC + 'daily.' + kstDay(), prev = +store.get(key, 0) || 0;
     isBest = !prev || runTime < prev;
-    if (isBest) { store.set(key, runTime); store.set('ibex.ghost.' + kstDay(), { t: runTime, p: rec }); }
+    if (isBest) {
+      store.set(key, runTime); store.set(REC + 'ghost.' + kstDay(), { t: runTime, p: rec });
+      try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k.startsWith(REC + 'ghost.') && k !== REC + 'ghost.' + kstDay()) localStorage.removeItem(k); } } catch (e) {}
+    }
     submitDaily(runTime);
   } else {
     isBest = !bestTime || runTime < bestTime;
-    if (isBest) { bestTime = runTime; store.set('ibex.best.time', bestTime); }
+    if (isBest) { bestTime = runTime; store.set(REC + 'best.time', bestTime); }
   }
   sfx('summit'); slowmo(0.8);
   for (let i = 0; i < 40; i++) parts.push({ x: ib.x + rand(-30, 30), y: ib.y + rand(0, 40), vx: rand(-120, 120), vy: rand(150, 420), life: 1.6, t: 0, r: rand(1.2, 2.6), col: 'salt' });
@@ -910,6 +985,27 @@ function audioTick() {
   windGain.gain.setTargetAtTime(soundOn ? (sfxBuf.wind ? Math.min(1, w / 230) : Math.min(0.22, w / 1000)) : 0, t0, 0.2);
 }
 
+// one step of flight: gravity, wind, and updraft columns that catch you, centre you, carry you up and toss you onto their ledge
+function draftAt(x, y) {
+  for (const d of drafts) if (Math.abs(x - d.x) <= d.hw && y >= d.y0 && y <= d.y1) return d;
+  return null;
+}
+function airStep(o, dt) {
+  o.vy = Math.max(-1400, o.vy - G * dt); o.vx += windAt(o.y) * dt;
+  const d = draftAt(o.x, o.y);
+  if (d && o.used !== d) {
+    o.vx += ((d.x - o.x) * 30 - o.vx * 11) * dt;
+    if (o.vy < DRAFT_V) o.vy = Math.min(DRAFT_V, o.vy + DRAFT_A * dt);
+    if (o.y > d.y1 - 8) { o.used = d; o.vx = d.kick; o.vy = DRAFT_V; }
+  }
+  o.x += o.vx * dt; o.y += o.vy * dt;
+}
+// a cloud ledge is there for most of its cycle; seconds of it left, or -1 while it is gone
+function cloudLeft(l) {
+  const c = l.cloud, u = (time + c.ph) % c.per;
+  return u < c.per * 0.75 ? c.per * 0.75 - u : -1;
+}
+
 // sideways push inside a wind band, easing in at the band's edges and gusting over time
 function windAt(y) {
   for (const b of bands) {
@@ -946,7 +1042,11 @@ function updateHazards(dt) {
     if (l.top < cam || l.top > cam + viewH) continue;
     if (l.moss) intro('moss');
     if (l.mover) intro('mover');
+    if (l.ice) intro('ice');
+    if (l.cloud) intro('cloud');
   }
+  if (drafts.some(d => d.y1 > cam && d.y0 < cam + viewH * 0.8)) intro('draft');
+  if (gems.some(q => !q.got && q.y > cam && q.y < cam + viewH * 0.85)) intro('gem');
 
   // falling rocks: a warning at the top of the screen, then the rock
   if (alt > 50 && (rockT -= dt) <= 0) {
@@ -974,7 +1074,7 @@ function updateHazards(dt) {
     r.vy = Math.max(-900, r.vy - G * 0.6 * dt); r.y += r.vy * dt; r.a += r.spin * dt;
     if (Math.hypot(r.x - ib.x, r.y - (ib.y + 16)) < r.r + 11 && knock(Math.sign(ib.x - r.x) || 1, '낙석!')) r.dead = true;
     for (const l of ledges) {
-      if (r.dead || l.falling) continue;
+      if (r.dead || l.falling || (l.cloud && cloudLeft(l) < 0)) continue;
       const top = l.spike ? (Math.abs(r.x - l.x) <= l.w / 2 ? surf(l, r.x) : null)
                           : (Math.abs(r.x - l.x) <= l.w / 2 + 2 ? l.top : null);
       if (top !== null && py >= top && r.y - r.r < top) r.dead = true;   // a ledge above you is a roof
@@ -1019,7 +1119,7 @@ function drawSpires(p) {
     const col = mix(haze, mix(p.faceDark, p.faceMid, 0.5), L.k), litCol = mix(col, lit, 0.22);
     const ly0 = cam * L.f, Y = ly => ch - (ly - ly0) * s;
     for (let c = Math.floor((ly0 - 420) / L.cell); c <= Math.ceil((ly0 + viewH) / L.cell); c++) {
-      for (let j = 0, n = Math.round(3 * fw / cw); j < n; j++) {
+      for (let j = 0, n = Math.round(3 * WK * fw / cw); j < n; j++) {
         const r = k => hash(L.seed * 71.3 + c * 9.17 + j * 3.71 + k * 1.37);
         if (r(0) < 0.3) continue;
         const prof = SPIRE_PROFILES[r(1) < 0.4 ? 0 : r(1) < 0.8 ? 1 : 2];
@@ -1326,13 +1426,15 @@ function drawCamp(l, p) {
 function drawLedge(l, p) {
   if (l.camp) return drawCamp(l, p);
   if (l.spike) return drawSpike(l, p);
+  if (l.cloud) return drawCloudLedge(l, p);
   if (l.ground) return;
   const y0 = sy(l.top);
   if (y0 < -30 || y0 > ch + 40) return;
   const ox = l.crT > 0 ? (Math.random() - 0.5) * (1 - l.crT / CR_T) * 2.4 : 0;
   const g = ledgeGeo(l), P = ([dx, dy]) => [(l.x + ox + dx) * s, y0 + dy * s];
   const hw = l.w / 2, mid = (l.x + ox) * s;
-  const cap = l.crumble ? mix(p.cap, GREY, 0.4) : p.cap, under = l.crumble ? mix(p.under, GREY, 0.3) : p.under;
+  const ICE = [214, 238, 255];
+  const cap = l.crumble ? mix(p.cap, GREY, 0.4) : l.ice ? ICE : p.cap, under = l.crumble ? mix(p.under, GREY, 0.3) : l.ice ? mix(p.under, ICE, 0.35) : p.under;
   const outline = [...g.top, ...g.under];
 
   if (l.mover) {                 // the groove it slides along
@@ -1375,16 +1477,37 @@ function drawLedge(l, p) {
     }
   }
 
+  if (l.ice) {                // icicles under it, and a sheen that runs down toward the low end
+    ctx.fillStyle = 'rgba(225,244,255,.85)';
+    for (let i = 0; i < 4; i++) {
+      const ix = (l.x + ox - hw * 0.6 + (i + 0.5) / 4 * l.w * 0.6) * s, il = (6 + hash(l.id * 5 + i) * 8) * s, iy = y0 + (8 + 4 * Math.sin((i + 0.5) / 4 * Math.PI)) * s;
+      ctx.beginPath(); ctx.moveTo(ix - 1.8 * s, iy); ctx.lineTo(ix + 1.8 * s, iy); ctx.lineTo(ix, iy + il); ctx.closePath(); ctx.fill();
+    }
+    const u = (time * 0.7 + hash(l.id)) % 1, sx = mid + l.ice * (u - 0.5) * l.w * s;
+    const sh = ctx.createLinearGradient(sx - 6 * s, 0, sx + 6 * s, 0);
+    sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(0.5, 'rgba(255,255,255,.9)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sh; ctx.fillRect(sx - 6 * s, y0 - 2 * s, 12 * s, 3 * s);
+    ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.1 * s; ctx.lineCap = 'round';
+    for (const k of [-0.18, 0.18]) {      // chevrons pointing downhill
+      const cx = mid + (k + l.ice * 0.1) * l.w * s, cy = y0 - 5 * s;
+      ctx.beginPath(); ctx.moveTo(cx - l.ice * 2 * s, cy - 2 * s); ctx.lineTo(cx + l.ice * 1 * s, cy); ctx.lineTo(cx - l.ice * 2 * s, cy + 2 * s); ctx.stroke();
+    }
+  }
+
   if (l.crumble) {
     ctx.strokeStyle = 'rgba(28,12,8,.85)'; ctx.lineWidth = 1.2 * s; ctx.lineJoin = 'miter';
     ctx.beginPath(); ctx.moveTo(mid - 3 * s, y0 - 1 * s); ctx.lineTo(mid + 1 * s, y0 + 4 * s); ctx.lineTo(mid - 2 * s, y0 + 8 * s); ctx.lineTo(mid + 2 * s, y0 + 12 * s); ctx.stroke();
   }
+  drawLedgeExtras(l, p);
+}
+function drawLedgeExtras(l, p) {
+  const y0 = sy(l.top), mid = l.x * s;
   if (l.baby) {             // a stranded kid waiting on its ledge
     const kc = css(mix(p.cap, [70, 45, 30], 0.55)), bob = Math.abs(Math.sin(time * 3 + l.id)) * 1.5;
     const gl = ctx.createRadialGradient(mid, y0 - 8 * s, 0, mid, y0 - 8 * s, 22 * s);
     gl.addColorStop(0, `rgba(255,236,200,${0.25 + 0.15 * Math.sin(time * 4)})`); gl.addColorStop(1, 'rgba(255,236,200,0)');
     ctx.fillStyle = gl; ctx.fillRect(mid - 22 * s, y0 - 30 * s, 44 * s, 44 * s);
-    drawSpriteAt(l.x + ox, l.top + bob, 0, hash(l.id) < 0.5 ? -1 : 1, 0.55, kc, 1);
+    drawSpriteAt(l.x, l.top + bob, 0, hash(l.id) < 0.5 ? -1 : 1, 0.55, kc, 1);
   }
   if (l.salt) {
     const tw = 0.6 + 0.4 * Math.sin(time * 5 + l.id);
@@ -1395,6 +1518,72 @@ function drawLedge(l, p) {
     const sg = ctx.createRadialGradient(mid, y0 - 5 * s, 0, mid, y0 - 5 * s, 16 * s);
     sg.addColorStop(0, `rgba(255,255,240,${0.35 * tw})`); sg.addColorStop(1, 'rgba(255,255,240,0)');
     ctx.fillStyle = sg; ctx.fillRect(mid - 16 * s, y0 - 21 * s, 32 * s, 32 * s);
+  }
+}
+
+// a puff of cloud you can stand on while it lasts; it flickers before it goes
+function drawCloudLedge(l, p) {
+  const y0 = sy(l.top);
+  if (y0 < -30 || y0 > ch + 40) return;
+  const left = cloudLeft(l), gone = left < 0;
+  const a = gone ? 0.16 : left < 0.8 ? 0.45 + 0.45 * (Math.sin(time * 30) > 0 ? 1 : 0) : 0.95;
+  const base = mix(p.cap, [255, 255, 255], 0.55), hw = l.w / 2;
+  ctx.save(); ctx.globalAlpha *= a;
+  ctx.fillStyle = css(mix(base, p.faceMid, 0.35));
+  for (let i = 0; i < 4; i++) { const cx = (l.x - hw * 0.7 + i / 3 * hw * 1.4) * s; ctx.beginPath(); ctx.ellipse(cx, y0 + 4 * s, 7 * s, 4 * s, 0, 0, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = css(base);
+  for (let i = 0; i < 5; i++) {
+    const cx = (l.x - hw + (i + 0.5) / 5 * l.w) * s, r = (4.5 + hash(l.id * 3 + i) * 3) * s;
+    ctx.beginPath(); ctx.arc(cx, y0 + 1 * s - r * 0.35, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillRect((l.x - hw) * s, y0 - 1 * s, l.w * s, 5 * s);
+  ctx.restore();
+  if (gone) {
+    ctx.strokeStyle = css(base, 0.35); ctx.lineWidth = Math.max(1, s); ctx.setLineDash([3 * s, 3 * s]);
+    ctx.beginPath(); ctx.moveTo((l.x - hw) * s, y0); ctx.lineTo((l.x + hw) * s, y0); ctx.stroke(); ctx.setLineDash([]);
+  }
+  drawLedgeExtras(l, p);
+}
+
+// updraft columns: a faint shaft with streaks rising through it and a curl at the top toward its ledge
+function drawDrafts() {
+  for (const d of drafts) {
+    const yt = sy(d.y1), yb = sy(d.y0);
+    if (yb < -20 || yt > ch + 20) continue;
+    const x0 = (d.x - d.hw) * s, x1 = (d.x + d.hw) * s, H = d.y1 - d.y0;
+    const gr = ctx.createLinearGradient(x0, 0, x1, 0);
+    gr.addColorStop(0, 'rgba(255,250,235,0)'); gr.addColorStop(0.5, 'rgba(255,250,235,.24)'); gr.addColorStop(1, 'rgba(255,250,235,0)');
+    ctx.fillStyle = gr; ctx.fillRect(x0, yt, x1 - x0, yb - yt);
+    ctx.lineCap = 'round'; ctx.lineWidth = 1.4 * s;
+    for (let i = 0; i < 9; i++) {
+      const fx = d.x + (hash(d.id * 7 + i) - 0.5) * 1.5 * d.hw, u = (time * 0.55 + hash(d.id * 3 + i)) % 1, y = d.y0 + u * H;
+      const k = Math.sin(u * Math.PI);
+      ctx.strokeStyle = `rgba(255,252,240,${0.75 * k})`;
+      ctx.beginPath(); ctx.moveTo(fx * s, sy(y)); ctx.lineTo(fx * s, sy(y + 26)); ctx.stroke();
+    }
+    const dir = Math.sign(d.kick) || 1;
+    ctx.strokeStyle = 'rgba(255,252,240,.6)'; ctx.lineWidth = 1.6 * s;
+    ctx.beginPath(); ctx.moveTo(d.x * s, yt + 10 * s); ctx.quadraticCurveTo(d.x * s, yt - 6 * s, (d.x + dir * 14) * s, yt - 4 * s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo((d.x + dir * 10) * s, yt - 8 * s); ctx.lineTo((d.x + dir * 15) * s, yt - 4 * s); ctx.lineTo((d.x + dir * 10) * s, yt); ctx.stroke();
+  }
+}
+
+// golden salt: a bobbing crystal with a warm glow and a twinkle
+function drawGems() {
+  for (const q of gems) {
+    if (q.got) continue;
+    const x = q.x * s, y = sy(q.y + Math.sin(time * 2.4 + q.id) * 3);
+    if (y < -30 || y > ch + 30) continue;
+    const gl = ctx.createRadialGradient(x, y, 0, x, y, 20 * s);
+    gl.addColorStop(0, 'rgba(255,214,110,.55)'); gl.addColorStop(1, 'rgba(255,214,110,0)');
+    ctx.fillStyle = gl; ctx.fillRect(x - 20 * s, y - 20 * s, 40 * s, 40 * s);
+    ctx.fillStyle = '#ffc94a';
+    ctx.beginPath(); ctx.moveTo(x, y - 7 * s); ctx.lineTo(x + 5 * s, y); ctx.lineTo(x, y + 7 * s); ctx.lineTo(x - 5 * s, y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff3c4';
+    ctx.beginPath(); ctx.moveTo(x, y - 7 * s); ctx.lineTo(x + 2 * s, y - 1 * s); ctx.lineTo(x - 2.5 * s, y); ctx.closePath(); ctx.fill();
+    const tw = Math.max(0, Math.sin(time * 3 + q.id * 1.7));
+    ctx.strokeStyle = `rgba(255,250,225,${tw})`; ctx.lineWidth = 1 * s;
+    ctx.beginPath(); ctx.moveTo(x + 6 * s, y - 9 * s); ctx.lineTo(x + 6 * s, y - 3 * s); ctx.moveTo(x + 3 * s, y - 6 * s); ctx.lineTo(x + 9 * s, y - 6 * s); ctx.stroke();
   }
 }
 
@@ -1553,9 +1742,9 @@ function drawAim() {
   ctx.fillStyle = g; roundRect(bx, by, Math.max(bh, bw * ib.charge), bh, 2.5 * s); ctx.fill();
 
   if (guide) {
-    let x = ib.x, y = ib.y + 2, vx = l.vx, vy = l.vy;
+    const o = { x: ib.x, y: ib.y + 2, vx: l.vx, vy: l.vy, used: null };
     for (let i = 0; i < 60; i++) {
-      const dt = 0.025; vy -= G * dt; vx += windAt(y) * dt; x += vx * dt; y += vy * dt;
+      airStep(o, 0.025); const { x, y } = o;
       if (y < cam || x < 0 || x > W + 20) break;
       if (i % 2) continue;
       ctx.fillStyle = `rgba(255,245,225,${0.85 - i / 80})`;
@@ -1668,6 +1857,7 @@ function drawHints() {
 }
 
 function render() {
+  ox = ox0 - camX * s;   // the sideways camera, as a shift of the whole world
   // slow motion zooms in a touch on the ibex; hard landings and hits shake the view
   const z = 1 + 0.07 * clamp(slowT / 0.25, 0, 1) + 0.035 * clamp(pulseT / 0.3, 0, 1);
   const sk = shakeT > 0 ? shakeAmp * shakeT / 0.35 : 0;
@@ -1726,14 +1916,16 @@ function render() {
   drawGround(p);
   for (const l of ledges) if (onPillar(l)) { ctx.globalAlpha = l.fade; drawPillar(l, p); }
   ctx.globalAlpha = 1;
+  drawDrafts();
   for (const l of ledges) { ctx.globalAlpha = l.fade; drawLedge(l, p); }
   ctx.globalAlpha = 1;
+  drawGems();
 
   // above 600 m clouds drift across the face and a sea of cloud fills the drop below
   const cloudK = clamp((alt - 580) / 40, 0, 1);
   if (cloudK > 0) {
     for (let cy = Math.floor(cam / 160) - 1; cy <= Math.ceil((cam + viewH) / 160); cy++) {
-      for (let k = 0, n = Math.round(2 * fw / cw); k < n; k++) {
+      for (let k = 0, n = Math.round(2 * WK * fw / cw); k < n; k++) {
         const span = fw / s + 200, r = (40 + hash(cy * 7.3 + k) * 40) * s;
         let x = (hash(cy * 5.1 + k) * span + time * (8 + hash(cy + k * 3) * 10)) % span;
         x = (x - 100) * s - ox;
@@ -1755,7 +1947,7 @@ function render() {
 
   for (const q of parts) {
     const k = 1 - q.t / q.life;
-    ctx.fillStyle = q.col === 'moss' ? css(p.moss, k) : q.col === 'rock' ? css(p.faceDark, k) : q.col === 'salt' ? `rgba(255,255,250,${k})` : css(mix(p.cap, [255, 240, 220], 0.3), k * 0.8);
+    ctx.fillStyle = q.col === 'moss' ? css(p.moss, k) : q.col === 'rock' ? css(p.faceDark, k) : q.col === 'salt' ? `rgba(255,255,250,${k})` : q.col === 'gold' ? `rgba(255,205,90,${k})` : q.col === 'ice' ? `rgba(225,244,255,${k})` : css(mix(p.cap, [255, 240, 220], 0.3), k * 0.8);
     ctx.beginPath(); ctx.arc(q.x * s, sy(q.y), q.r * s, 0, Math.PI * 2); ctx.fill();
   }
 
@@ -1770,7 +1962,7 @@ function render() {
   const snowK = clamp((alt - 340) / 30, 0, 1) * clamp((620 - alt) / 30, 0, 1);
   if (snowK > 0) {
     ctx.fillStyle = `rgba(255,255,255,${0.8 * snowK})`;
-    for (let i = 0, n = Math.round(70 * fw / cw); i < n; i++) {
+    for (let i = 0, n = Math.round(70 * WK * fw / cw); i < n; i++) {
       const x = -ox + hash(i * 1.7) * fw + Math.sin(time * 0.7 + i) * 18;
       const y = (hash(i * 3.7) * ch + time * (30 + hash(i) * 40)) % ch;
       ctx.beginPath(); ctx.arc(x, y, 1 + hash(i * 9.1) * 1.4, 0, Math.PI * 2); ctx.fill();
@@ -1830,7 +2022,7 @@ function syncHud() {
   put('wFalls', falls + '번');
   put('wSalt', salt);
   put('wMode', mode === 'daily' ? '오늘의 절벽' : '자유 등반');
-  const bt = mode === 'daily' ? +store.get('ibex.daily.' + kstDay(), 0) || 0 : bestTime;
+  const bt = mode === 'daily' ? +store.get(REC + 'daily.' + kstDay(), 0) || 0 : bestTime;
   put('wBest', bt ? fmtTime(bt) : '-');
   const m = clamp(ib.y / U, 0, 1000);
   put('mapLeft', Math.max(0, Math.ceil(1000 - m)));
@@ -1840,8 +2032,8 @@ const mapMark = (id, m) => put('@' + id, (m / 10).toFixed(1) + '%');
 
 function showOverlay(kind, isBest) {
   const done = kind === 'done', daily = mode === 'daily';
-  const dayBest = +store.get('ibex.daily.' + kstDay(), 0) || 0;
-  $('ovEyebrow').textContent = done ? (isBest ? '새 최고 기록' : '정상 도착') : '프로토타입 · 정상까지 1000m';
+  const dayBest = +store.get(REC + 'daily.' + kstDay(), 0) || 0;
+  $('ovEyebrow').textContent = done ? (isBest ? '새 최고 기록' : '정상 도착') : (WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m');
   $('ovTitle').textContent = done ? (daily ? '오늘의 절벽 정상!' : '1000m 정상!') : '아이벡스 점프';
   $('ovResult').hidden = !done; $('ovHow').hidden = done; $('ovKeys').hidden = done;
   if (done) $('ovResult').textContent = `시간 ${fmtTime(runTime)} · 최고 ${fmtTime(daily ? dayBest : bestTime)} · 추락 ${falls}번 · 소금 ${salt}개`;
@@ -1921,6 +2113,7 @@ function openShop() {
 const FIRE = { project: 'ibex-jump', apiKey: 'AIzaSyBW_I2fYPPByWhSRweI3YJ4witqYnrk51U' };
 const fireReady = !!(FIRE.project && FIRE.apiKey);
 const FDB = `https://firestore.googleapis.com/v1/projects/${FIRE.project}/databases/(default)/documents`;
+const RANK = WIDE ? 'ibexDailyWide' : 'ibexDaily';   // the wide edition has its own daily ranking
 // a default name is made once and kept, so the same player keeps the same name on the board
 function playerName() {
   let n = store.get('ibex.name', '');
@@ -1951,14 +2144,14 @@ async function submitDaily(sec) {
   const a = await fsign();
   if (!a) return;
   const id = `${a.uid}_${Math.random().toString(36).slice(2, 10)}`;
-  await fjson(`${FDB}/ibexDaily/${kstDay()}/runs?documentId=${id}`, {
+  await fjson(`${FDB}/${RANK}/${kstDay()}/runs?documentId=${id}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${a.id}` },
     body: JSON.stringify({ fields: { by: { stringValue: a.uid }, name: { stringValue: playerName().slice(0, 12) }, t: { integerValue: String(Math.round(sec * 10)) }, v: { integerValue: '1' } } }),
   });
   if (!$('overlay').hidden) showRanking();
 }
 async function showRanking() {
-  const rows = await fjson(`${FDB}/ibexDaily/${kstDay()}:runQuery`, {
+  const rows = await fjson(`${FDB}/${RANK}/${kstDay()}:runQuery`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'runs' }], orderBy: [{ field: { fieldPath: 't' }, direction: 'ASCENDING' }], limit: 10 } }),
   });
