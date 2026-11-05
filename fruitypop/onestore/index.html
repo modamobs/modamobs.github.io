@@ -851,7 +851,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .lv-stars { font-size: 14px; letter-spacing: 1px; color: var(--gold); }
 .lv.cur .lv-stars { color: var(--panel); }
 .goal-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 14px; }
-/* 오늘의 랭킹 */
+/* 랭킹 (별 랭킹 · 30수 랭킹) */
 .map-rank {
   position: fixed; z-index: 3;
   bottom: calc(18px + max(env(safe-area-inset-bottom, 0px), var(--os-bottom, 0px))); left: 50%;
@@ -877,6 +877,8 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .rank-list li:nth-child(-n+3) b { color: #e08a00; }
 .rank-list span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rank-list em { font-style: normal; font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--hud-ink); }
+.rank-tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 4px; }
+.rank-tabs .lang-chip { padding: 6px 14px; font-size: 15px; }
 .rank-name { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .rank-name button { padding: 4px 12px; font-size: 13px; }
 .name-in {
@@ -1025,7 +1027,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
     <p class="map-stars" aria-live="polite"><img src="assets/star_on.png" alt="별" data-t-alt="star"> <b id="mapStars">0</b> / <b id="mapStarsMax">600</b></p>
   </header>
   <div class="map-path" id="mapPath"></div>
-  <button type="button" id="mapRank" class="map-rank primary" hidden data-t="daily.name">오늘의 랭킹</button>
+  <button type="button" id="mapRank" class="map-rank primary" data-t="rank.title">랭킹</button>
   <p class="zone-title" id="zoneTitle" aria-live="polite"></p>
 </section>
 <div id="zoneFade" aria-hidden="true"></div>
@@ -1954,10 +1956,14 @@ const STR = {
   'promo.first': ['한 판 하면 토스포인트 {n}원을 받아요', 'Play one level to get {n} Toss Points', '1回遊ぶと Toss ポイント {n} ウォンもらえます', '玩一局即可获得 {n} 韩元 Toss 积分'],
   'promo.streak': ['출석 {k}/{d}일 — {d}일 연속 오면 토스포인트 {n}원을 받아요', 'Day {k} of {d} — come {d} days in a row to get {n} Toss Points', '出席 {k}/{d}日 — {d}日連続で Toss ポイント {n} ウォン', '签到 {k}/{d} 天 — 连续 {d} 天可获得 {n} 韩元 Toss 积分'],
   'promo.got': ['토스포인트 {n}원을 받았어요', 'You got {n} Toss Points', 'Toss ポイント {n} ウォンを受け取りました', '已获得 {n} 韩元 Toss 积分'],
-  'daily.name': ['오늘의 랭킹', 'Daily Ranking', '今日のランキング', '今日排行'],
-  'daily.rule': ['오늘은 모두 같은 판 · 30수 · 부스터 없이', 'Same board for everyone today · 30 moves · no boosters', '今日はみんな同じ盤面 · 30手 · ブースターなし', '今天大家同一盘 · 30 步 · 无道具'],
+  'daily.name': ['30수 랭킹', '30-Move Ranking', '30手ランキング', '30步排行'],
+  'daily.rule': ['판은 매일 바뀌어요 · 30수 · 부스터 없이 · 내 최고 점수로 겨뤄요', 'New board every day · 30 moves · no boosters · your best score counts', '盤面は毎日変わる · 30手 · ブースターなし · ベストスコアで競う', '每天换新棋盘 · 30 步 · 无道具 · 以最高分排名'],
   'daily.done': ['30수 끝!', '30 moves done!', '30手 終了！', '30 步结束！'],
-  'daily.best': ['오늘 내 최고 {n}', 'Your best today: {n}', '今日のベスト {n}', '今日最佳 {n}'],
+  'daily.best': ['내 최고 {n}', 'Your best: {n}', 'ベスト {n}', '最佳 {n}'],
+  'rank.title': ['랭킹', 'Ranking', 'ランキング', '排行榜'],
+  'rank.stars': ['별 랭킹', 'Star Ranking', 'スターランキング', '星星排行'],
+  'rank.starRule': ['레벨을 깨고 모은 별 수로 겨뤄요', 'Ranked by the stars you earn in levels', 'レベルで集めたスターの数で競う', '按关卡获得的星星数排名'],
+  'rank.locked': ['5레벨을 깨면 열려요', 'Unlocks after level 5', 'レベル5をクリアすると解放', '通关第 5 关后开放'],
   'daily.again': ['한 번 더', 'Again', 'もう一回', '再来一次'],
   'rank.me': ['내 순위 {r}위 · {t}명 중', 'You are #{r} of {t}', '{t}人中 {r}位', '{t} 人中第 {r} 名'],
   'rank.none': ['아직 기록이 없어요. 첫 기록을 남겨 보세요', 'No scores yet — be the first!', 'まだ記録がありません。一番乗りしよう', '还没有记录，来当第一个吧'],
@@ -2221,6 +2227,7 @@ function mergeSave(a, b) {
   out.seen = Object.assign({}, a.seen, b.seen);
   out.seenBoost = Object.assign({}, a.seenBoost, b.seenBoost);
   out.last = Math.max(a.last || 0, b.last || 0);
+  if (a.top30 || b.top30) out.top30 = Math.max(a.top30 || 0, b.top30 || 0);
   for (const k of SETTINGS) out[k] = a[k];
   return out;
 }
@@ -2239,6 +2246,7 @@ async function useAccount(user) {
     if (raw) replaceSave(mergeSave(save, JSON.parse(raw)));
   } catch (e) {}
   persist();
+  syncStarsOnce();
 }
 function loginError(e) {
   const m = String((e && (e.code || e.message)) || '');
@@ -3737,6 +3745,7 @@ async function win() {
   mapAnim = { from: i, before: prevStars, after: save.stars[i] };
   save.best[i] = Math.max(prevBest, S.score);
   persist();
+  if (save.stars[i] > prevStars) sendStars();   // 별 랭킹 (기다리지 않는다)
   track('level_win', { level: i + 1, stars, score: S.score, moves_left: S.goalMoves ?? S.moves,
     attempt: save.tries?.[i] || 1, boosters_used: S.boostUsed });
   sfx.win();
@@ -3853,13 +3862,15 @@ function toast(text) {
   requestAnimationFrame(() => el.classList.add('on'));
   setTimeout(() => { el.classList.remove('on'); setTimeout(() => el.remove(), 400); }, 3200);
 }
-// 오늘의 랭킹: 날짜로 정한 같은 판(useSeed)을 30수 두고 점수로 겨룬다. 부스터·광고 이어하기 없음. 5레벨을 깨면 지도에 버튼이 생긴다.
+// 랭킹은 둘이고 둘 다 초기화하지 않는다 (2026-11-05 사용자). 지도 아래 「랭킹」 버튼으로 연다.
+//   별 랭킹: 본 게임에서 모은 별 수(같으면 깬 레벨 수). 별이 늘 때마다 보낸다.
+//   30수 랭킹(예전 오늘의 랭킹): 날짜로 정한 판(useSeed)을 30수 두고, 지금까지 낸 가장 높은 점수로 겨룬다. 부스터·광고 이어하기 없음. 5레벨을 깨면 열린다.
 // 순위는 우리 서버(E:/match3/rank-server, Cloudflare Worker + D1)에 모아 토스·안드로이드·원스토어가 한 순위표를 쓴다.
 // 둔 수(S.log)도 같이 보내 나중에 서버가 다시 두어 볼 수 있게 한다. 게임 결과에 현금성 보상을 붙이면 안 된다 (토스 정책)
 const RANK_API = 'https://fruitypop-rank.matgo-cert.workers.dev';
 const DAILY_AT = 5;
 // stars 는 화면에 안 나온다(랭킹 판은 별·게이지를 숨긴다). 100수 → 50수 → 30수로 줄였다 (2026-10-31, 길다는 사용자 의견)
-const DAILY = { name: '오늘의 랭킹', daily: true, moves: 30, colors: 5, layout: FULL, goals: [], stars: [50000, 75000, 100000] };
+const DAILY = { name: '30수 랭킹', daily: true, moves: 30, colors: 5, layout: FULL, goals: [], stars: [50000, 75000, 100000] };
 const dailyOpen = () => TEST || !!save.stars[DAILY_AT - 1];
 const rankPlat = () => TOSS ? 'toss' : NATIVE ? 'android' : osSdk() ? 'onestore' : 'web';
 const RANK_UID = /^[tgd]:[A-Za-z0-9_\-+/=.]{8,128}$/;
@@ -3888,31 +3899,56 @@ async function rankFetch(path, body) {
     clearTimeout(t);
   }
 }
-function rankHTML(b) {
+function rankHTML(b, stars = false) {
   if (!b || b.error) return `<p class="sub">${T('rank.off')}</p>`;
   if (!b.top.length) return `<p class="sub">${T('rank.none')}</p>`;
-  const row = e => `<li class="${e.me ? 'me' : ''}"><b>${e.rank}</b><span>${escapeHtml(e.name)}</span><em>${fmt(e.score)}</em></li>`;
+  const row = e => `<li class="${e.me ? 'me' : ''}"><b>${e.rank}</b><span>${escapeHtml(e.name)}</span><em>${stars ? '★ ' : ''}${fmt(e.score)}</em></li>`;
   const meOut = b.me?.rank && !b.top.some(e => e.me) ? row({ ...b.me, me: true }) : '';
   return `<ol class="rank-list">${b.top.map(row).join('')}${meOut}</ol>`
     + (b.me?.rank ? `<p class="sub">${T('rank.me', { r: b.me.rank, t: b.total })}</p>` : '');
 }
-function fillRank(b) {
+function fillRank(b, stars) {
   const box = overlay.querySelector('#rankBox');
   if (!box) return;
-  box.innerHTML = rankHTML(b);
+  box.innerHTML = rankHTML(b, stars);
   box.querySelector('.me')?.scrollIntoView({ block: 'nearest' });
 }
-async function showRank() {
+// 별 랭킹에 내 별을 올린다. 별이 하나도 없으면 아직 순위표에 넣지 않는다
+function starTotals() {
+  let stars = 0, level = 0;
+  for (const [i, n] of Object.entries(save.stars)) if (n > 0) { stars += n; level = Math.max(level, +i + 1); }
+  return { stars, level };
+}
+async function sendStars() {
+  if (SHOT) return null;
+  const t = starTotals();
+  if (!t.stars) return null;
+  return rankFetch('/stars', { uid: await rankUid(), plat: rankPlat(), name: rankName(), ...t, dev: TEST || undefined });
+}
+// 켤 때 한 번 보내 별 랭킹이 생기기 전부터 모은 별도 들어가게 한다. 안드로이드는 계정이 붙은 뒤에 (기기 아이디로 따로 들어가지 않게)
+function syncStarsOnce() {
+  if (syncStarsOnce.done || (NATIVE && !account)) return;
+  syncStarsOnce.done = true;
+  sendStars();
+}
+async function showRank(tab = save.rtab || 'stars') {
+  if (save.rtab !== tab) { save.rtab = tab; persist(); }
+  const stars = tab === 'stars', locked = !stars && !dailyOpen();
+  const chip = (t, label) => `<button type="button" class="lang-chip${tab === t ? ' on' : ''}" data-act="rank-tab" data-tab="${t}" aria-pressed="${tab === t}">${label}</button>`;
   showOverlay(`
     <div class="panel wide" role="dialog" aria-labelledby="ovTitle">
-      <h2 id="ovTitle">${T('daily.name')}</h2>
-      <p class="sub rank-rule">${T('daily.rule')}</p>
+      <h2 id="ovTitle">${T('rank.title')}</h2>
+      <div class="rank-tabs">${chip('stars', T('rank.stars'))}${chip('daily', T('daily.name'))}</div>
+      <p class="sub rank-rule">${T(stars ? 'rank.starRule' : 'daily.rule')}</p>
       <div class="rank-box" id="rankBox"><p class="sub">${T('rank.loading')}</p></div>
       <p class="sub rank-name">${T('rank.myName', { n: escapeHtml(rankName()) })}<button type="button" data-act="rank-rename">${T('rank.rename')}</button></p>
-      <div class="row"><button type="button" data-act="close">${T('close')}</button><button type="button" class="primary" data-act="daily">${T('rank.play')}</button></div>
+      <div class="row"><button type="button" data-act="close">${T('close')}</button>${stars ? ''
+        : `<button type="button" class="primary" data-act="daily"${locked ? ' disabled' : ''}>${T(locked ? 'rank.locked' : 'rank.play')}</button>`}</div>
     </div>`);
-  const uid = await rankUid();
-  fillRank(await rankFetch(`/board?day=${kst()}&uid=${encodeURIComponent(uid)}${TEST ? '&dev=1' : ''}`));
+  const n = showRank.n = (showRank.n || 0) + 1;   // 탭을 빨리 바꾸면 앞 탭 응답이 늦게 와도 덮어쓰지 않게
+  const uid = await rankUid(), q = `?uid=${encodeURIComponent(uid)}${TEST ? '&dev=1' : ''}`;
+  const b = stars ? (await sendStars()) || await rankFetch('/stars' + q) : await rankFetch('/best' + q);
+  if (n === showRank.n) fillRank(b, stars);
 }
 function showRename() {
   showOverlay(`
@@ -3936,9 +3972,12 @@ async function saveName(btn) {
 }
 async function dailyEnd() {
   if (SIM) { S.result = 'daily'; return; }
-  const day = S.dailyDay, prev = save.daily?.d === day ? save.daily.best : 0;
-  if (S.score > prev) { save.daily = { d: day, best: S.score }; persist(); }
-  track('daily_end', { score: S.score, best: Math.max(prev, S.score) });
+  // 30수 랭킹은 초기화하지 않으니 「내 최고」도 지금까지의 최고 (top30 이 없던 때는 그날 최고에서 시작)
+  const day = S.dailyDay, prev = save.top30 ?? save.daily?.best ?? 0;
+  if (S.score > (save.daily?.d === day ? save.daily.best : 0)) save.daily = { d: day, best: S.score };
+  save.top30 = Math.max(prev, S.score);
+  persist();
+  track('daily_end', { score: S.score, best: save.top30 });
   sfx.win();
   duckMusic(3000);
   mascotMood('cheer');
@@ -3952,7 +3991,7 @@ async function dailyEnd() {
       <div class="rank-box" id="rankBox"><p class="sub">${T('rank.loading')}</p></div>
       <div class="row"><button type="button" data-act="map">${T('btn.map')}</button><button type="button" class="primary" data-act="retry">${T('daily.again')}</button></div>
     </div>`);
-  fillRank(await rankFetch('/score', { uid: await rankUid(), plat: rankPlat(), name: rankName(), day, score: S.score, moves: S.log.join(''), dev: TEST || undefined }));
+  fillRank(await rankFetch('/score', { uid: await rankUid(), plat: rankPlat(), name: rankName(), day, score: S.score, moves: S.log.join(''), dev: TEST || undefined, all: 1 }));
 }
 // 앱을 켜고 처음 뜨는 클리어 화면이 크게 끊겼다(GPU 가 그라데이션·글자·테두리 그림을 처음 준비하느라 130ms 남짓).
 // 그래서 첫 판을 시작할 때 같은 모양의 창을 거의 투명하게 잠깐 그려 두어 준비를 미리 끝낸다
@@ -4188,6 +4227,7 @@ function animate(dur, fn) {
 }
 function showMap(anim = null) {
   if (SIM) return;
+  setTimeout(syncStarsOnce, 1500);
   mapAnim = null;
   tutorialEnd(false);
   S.over = true;
@@ -4215,7 +4255,6 @@ function showMap(anim = null) {
   if (TEST && !head.querySelector('.test-badge')) head.insertAdjacentHTML('beforeend', '<span class="test-badge">테스트 모드 · 모든 레벨 열림</span>');
   $('mapStars').textContent = total;
   $('mapStarsMax').textContent = N * 3;
-  $('mapRank').hidden = !dailyOpen();
   const box = $('mapPath');
   box.style.width = w + 'px';
   box.style.height = h + 'px';
@@ -5616,6 +5655,7 @@ overlay.addEventListener('click', e => {
   if (act === 'retry') startLevel(S.daily ? 'daily' : S.levelIdx);
   else if (act === 'daily') startLevel('daily');
   else if (act === 'rank') showRank();
+  else if (act === 'rank-tab') showRank(b.dataset.tab);
   else if (act === 'rank-rename') showRename();
   else if (act === 'rank-name-save') saveName(b);
   else if (act === 'next') mapAnim ? showMap({ ...mapAnim, play: true }) : startLevel(Math.min(LEVELS.length - 1, S.levelIdx + 1));
@@ -5935,6 +5975,8 @@ if (SIM) {
 if (TEST || SHOT) window.sugarTest = {
   win(score = S.level.stars[2] + 1000) { S.over = true; S.score = score; updateHUD(); return win(); },
   lose() { S.over = true; return lose(); },
+  // 30수 랭킹 판을 그 점수로 끝낸다 (start('daily') 뒤에)
+  daily(score) { S.over = true; S.score = score; updateHUD(); return dailyEnd(); },
   // 앱 시작 화면 모양만 본다 (웹에서는 버튼을 눌러도 로그인되지 않는다)
   login() { showLogin(); },
   // 업데이트 띠 모양만 본다

@@ -35,7 +35,7 @@
 <body>
 
 <h1>과일 패치 퍼즐 개인정보 처리방침</h1>
-<p class="meta">시행일: 2026년 10월 31일</p>
+<p class="meta">시행일: 2026년 11월 5일</p>
 
 <p>과일 패치 퍼즐(구 이름 프루티 팝, 패키지 <code>com.mobs.fruitypop</code>, 이하 "본 게임")은 게스트 또는 Google 계정으로 시작하며,
 게임 기록을 여러 기기에서 이어 하기 위해 Google Firebase에 저장합니다. 앱 개선을 위한 이용 통계(Google Analytics for Firebase)와
@@ -58,16 +58,17 @@
 </ul>
 <p>같은 정보가 기기 안 저장소에도 남습니다. 이 기록은 본인만 읽고 쓸 수 있도록 보안 규칙으로 막혀 있습니다.</p>
 
-<h2>3. 오늘의 랭킹 (개발자 서버)</h2>
-<p>5레벨을 깨면 열리는 「오늘의 랭킹」은 모든 이용자가 같은 판으로 점수를 겨루는 순위표입니다.
+<h2>3. 랭킹 (개발자 서버)</h2>
+<p>게임에는 두 순위표가 있습니다. 「별 랭킹」은 레벨을 깨고 모은 별 수로, 5레벨을 깨면 열리는 「30수 랭킹」은 날마다 모두 같은 판을 30수 두어 낸 가장 높은 점수로 순위를 매깁니다. 레벨에서 별을 처음 얻으면 별 랭킹에 자동으로 올라갑니다.
 순위를 보여 주기 위해 아래 정보를 개발자가 운영하는 서버(Cloudflare Workers·D1)에 저장합니다.</p>
 <ul>
   <li>랭킹용 아이디: 안드로이드 앱은 Firebase 계정 번호(UID), 토스 미니앱은 토스가 이 게임에만 주는 사용자 키,
     그 밖에는 기기에서 만든 임의의 번호</li>
   <li>닉네임: 처음에는 「딸기 #1234」처럼 자동으로 붙고, 랭킹 화면에서 바꿀 수 있습니다. 다른 이용자에게 보입니다.</li>
-  <li>날짜별 최고 점수, 그 점수를 낸 수 순서(부정한 점수를 가려내는 데만 씀), 기록한 시각, 플랫폼(안드로이드·토스·원스토어)</li>
+  <li>날짜별 최고 점수와 지금까지의 최고 점수, 그 점수를 낸 수 순서(부정한 점수를 가려내는 데만 씀), 기록한 시각, 플랫폼(안드로이드·토스·원스토어)</li>
+  <li>모은 별 수와 깬 레벨 수</li>
 </ul>
-<p>다른 이용자에게는 닉네임·점수·순위만 보이고 랭킹용 아이디는 보이지 않습니다. 날짜별 점수 기록은 90일이 지나면 자동으로 지웁니다.
+<p>다른 이용자에게는 닉네임·점수·별 수·순위만 보이고 랭킹용 아이디는 보이지 않습니다. 날짜별 점수 기록은 90일이 지나면, 지금까지의 최고 점수와 별 기록은 1년 동안 게임을 하지 않으면 자동으로 지웁니다.
 게임 결과에 따라 현금이나 포인트 같은 보상을 주지 않습니다.</p>
 
 <h2>4. 이용 통계 (Google Analytics for Firebase)</h2>
@@ -103,10 +104,10 @@
 <h2 id="delete">7. 계정과 데이터 삭제</h2>
 <ul>
   <li><strong>앱에서 바로 삭제</strong>: 설정(톱니바퀴) → 계정 줄 아래의 <strong>계정 삭제</strong>를 누르면
-    Cloud Firestore의 게임 기록과 Firebase 계정, 오늘의 랭킹 기록(닉네임·점수)이 곧바로 지워지고, 기기 안의 기록도 비워집니다.</li>
+    Cloud Firestore의 게임 기록과 Firebase 계정, 랭킹 기록(닉네임·점수·별 수)이 곧바로 지워지고, 기기 안의 기록도 비워집니다.</li>
   <li><strong>이메일로 요청</strong>: 앱을 쓸 수 없다면 <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a>으로
     "과일 패치 퍼즐 계정 삭제"와 함께 로그인한 Google 계정 이메일(게스트였다면 설정 화면에 보이는 정보)을 보내 주세요.
-    토스·원스토어에서 하셨다면 오늘의 랭킹 화면에 보이는 닉네임을 적어 주세요.
+    토스·원스토어에서 하셨다면 랭킹 화면에 보이는 닉네임을 적어 주세요.
     확인 후 7일 안에 지우고 답장드립니다.</li>
 </ul>
 <p>이용 통계는 Google Analytics에 최대 14개월 보관된 뒤 자동으로 지워지며, 개인을 알아볼 수 없는 집계 형태로만 확인합니다.</p>
@@ -126,7 +127,7 @@
 <hr>
 
 <h1>Fruit Patch Puzzle Privacy Policy</h1>
-<p class="meta">Effective: October 31, 2026</p>
+<p class="meta">Effective: November 5, 2026</p>
 
 <p>Fruit Patch Puzzle (formerly Fruity Pop; package <code>com.mobs.fruitypop</code>, "the Game") starts with a guest or Google account and stores your
 progress in Google Firebase so you can continue on other devices. It uses usage statistics (Google Analytics for Firebase)
@@ -148,16 +149,17 @@ and rewarded ads (Google AdMob). There are no in-app purchases.</p>
 </ul>
 <p>The same data is also kept in on-device storage. Security rules allow only you to read and write your own record.</p>
 
-<h2>3. Daily Ranking (developer server)</h2>
-<p>The Daily Ranking, unlocked after level 5, is a leaderboard where all players compete on the same board.
+<h2>3. Rankings (developer server)</h2>
+<p>The game has two leaderboards. The Star Ranking ranks players by the stars earned in levels; the 30-Move Ranking, unlocked after level 5, ranks players by their best score on the daily board everyone shares (30 moves). You join the Star Ranking automatically when you first earn a star in a level.
 To show it, the following is stored on a server run by the developer (Cloudflare Workers and D1):</p>
 <ul>
   <li>A ranking ID: your Firebase UID in the Android app, the game-specific user key Toss provides in the Toss mini-app,
     or otherwise a random ID created on the device</li>
   <li>A nickname: assigned automatically at first (e.g. "Strawberry #1234") and changeable on the ranking screen. Other players can see it.</li>
-  <li>Your best score per day, the moves that produced it (used only to detect fake scores), the time it was recorded, and the platform (Android, Toss, ONE store)</li>
+  <li>Your best score per day and your all-time best score, the moves that produced it (used only to detect fake scores), the time it was recorded, and the platform (Android, Toss, ONE store)</li>
+  <li>Your total stars and the number of levels cleared</li>
 </ul>
-<p>Other players see only nicknames, scores and ranks — never ranking IDs. Daily score records are deleted automatically after 90 days.
+<p>Other players see only nicknames, scores, star totals and ranks — never ranking IDs. Daily score records are deleted automatically after 90 days; your all-time best score and star record are deleted after a year without play.
 No cash, points or other rewards are given based on game results.</p>
 
 <h2>4. Usage statistics (Google Analytics for Firebase)</h2>
@@ -192,7 +194,7 @@ You can reset or delete your Advertising ID in your device settings (Google → 
 <h2>7. Deleting your account and data</h2>
 <ul>
   <li><strong>In the app</strong>: open Settings (gear icon) and tap <strong>Delete account</strong> below the account row.
-    Your Cloud Firestore record, Firebase account and Daily Ranking records (nickname and scores) are deleted right away, and on-device progress is cleared.</li>
+    Your Cloud Firestore record, Firebase account and ranking records (nickname, scores and stars) are deleted right away, and on-device progress is cleared.</li>
   <li><strong>By e-mail</strong>: if you can't use the app, e-mail <a href="mailto:yamoda24@gmail.com">yamoda24@gmail.com</a> with
     "Fruit Patch Puzzle account deletion" and the Google account e-mail you signed in with (on Toss or ONE store, the nickname shown on the ranking screen).
     We delete the data within 7 days and reply.</li>
