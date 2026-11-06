@@ -1981,6 +1981,7 @@ const STR = {
   'cal.sub': ['매일 들어오면 선물을 받아요. 선물은 다음 레벨을 시작할 때 써요', 'Come back every day for a gift. Gifts are used when your next level starts', '毎日来るとギフトがもらえます。次のレベル開始時に使います', '每天来就能领礼物，下一关开始时自动使用'],
   'cal.day': ['{n}일째', 'Day {n}', '{n}日目', '第{n}天'],
   'cal.get': ['선물 받기', 'Claim gift', 'ギフトを受け取る', '领取礼物'],
+  'cal.ad': ['▶ 광고 보고 2배로 받기', '▶ Watch ad: 2× gift', '▶ 広告を見て2倍', '▶ 看广告 双倍领取'],
   'cal.got': ['출석 선물을 받았어요: {g}', 'Daily gift: {g}', '出席ギフト：{g}', '签到礼物：{g}'],
   'cal.have': ['가진 선물: {g}', 'Your gifts: {g}', '持っているギフト：{g}', '已有礼物：{g}'],
   'cal.tomorrow': ['🎁 내일 오면 선물: {g}', '🎁 Come back tomorrow: {g}', '🎁 明日のギフト：{g}', '🎁 明天再来：{g}'],
@@ -2171,7 +2172,7 @@ async function adRewarded() {
     return r;
   }
   if (!NATIVE && osSdk()) {
-    // 이 게임의 보상(이동 5번·부스터 1개)은 그 판 안에서 끝나고 서버에 남는 재화가 없어 앱 안에서 바로 준다
+    // 이 게임의 보상(이동 5번·부스터 1개·출석 선물 2배)은 기기 저장에만 남고 서버에 쌓는 재화가 없어 앱 안에서 바로 준다
     if (!OS_REWARD_ID) return null;
     const r = await osSdk().ads.showRewardedAsync({ placementId: OS_REWARD_ID, requestId: 'fp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) });
     track('ad_rewarded', { earned: r.status === 'rewarded' ? 1 : 0, level: S.levelIdx + 1 });
@@ -3888,14 +3889,15 @@ const giftText = list => list.map(([k, n]) => giftName(k) + (n > 1 ? ' ×' + n :
 const calDue = () => !SIM && !SHOT && save.cal?.d !== kst();
 // 튜토리얼이 아직 남은 첫 판에는 받지도 쓰지도 않는다 (처음 하는 사람 화면을 어지럽히지 않게)
 const tutPending = () => S.levelIdx === 0 && !save.tut && !save.stars[0];
-function claimGift() {
+// x 2 는 광고를 보고 두 배로 받을 때 (2026-11-06 사용자)
+function claimGift(x = 1) {
   if (!calDue()) return null;
-  const n = save.cal?.n || 0, g = GIFTS[n % GIFTS.length];
+  const n = save.cal?.n || 0, g = GIFTS[n % GIFTS.length].map(([k, c]) => [k, c * x]);
   save.inv = save.inv || {};
   for (const [k, c] of g) save.inv[k] = (save.inv[k] || 0) + c;
   save.cal = { d: kst(), n: n + 1 };
   persist();
-  track('gift_claim', { day: n % GIFTS.length + 1, total: n + 1 });
+  track('gift_claim', { day: n % GIFTS.length + 1, total: n + 1, x });
   return g;
 }
 function calendarHTML() {
@@ -3907,7 +3909,7 @@ function calendarHTML() {
       <span class="cal-items">${g.map(([k, c]) => `<span class="cal-item">${k === 'moves' ? '<i class="cal-moves">+3</i>' : `<canvas data-sp="${k}" width="80" height="80" aria-hidden="true"></canvas>`}${c > 1 ? `<small>×${c}</small>` : ''}</span>`).join('')}</span>
       ${got ? '<b class="cal-check" aria-hidden="true">✓</b>' : ''}<span class="sr">${giftText(g)}</span></li>`;
   }).join('');
-  const have = GIFT_KINDS.filter(k => save.inv?.[k] > 0).map(k => [k, save.inv[k]]);
+  const have = GIFT_KINDS.filter(k => save.inv?.[k] > 0).map(k => [k, save.inv[k]]), ad = !done && adAvailable();
   return `
     <div class="panel wide" role="dialog" aria-labelledby="ovTitle">
       <h2 id="ovTitle">${T('cal.title')}</h2>
@@ -3915,7 +3917,8 @@ function calendarHTML() {
       <ol class="cal">${cells}</ol>
       ${done ? `<p class="sub cal-got">${T('cal.have', { g: giftText(have) || '-' })}</p>` : ''}
       <div class="row">${done ? `<button type="button" class="primary" data-act="close">${T('btn.continue')}</button>`
-        : `<button type="button" class="primary" data-act="cal-get">${T('cal.get')}</button>`}</div>
+        : `<button type="button"${ad ? '' : ' class="primary"'} data-act="cal-get">${T('cal.get')}</button>${ad
+          ? `<button type="button" class="primary ad-btn" data-act="cal-ad">${T('cal.ad')}</button>` : ''}`}</div>
     </div>`;
 }
 function drawGiftIcons() {
@@ -3925,8 +3928,15 @@ function showCalendar() {
   showOverlay(calendarHTML());
   drawGiftIcons();
 }
-function calendarGet() {
-  const g = claimGift();
+// 광고: 끝까지 보면 두 배, 중간에 닫으면 그대로 두고, 볼 광고가 없으면 버튼에 알린다
+async function calendarAd(btn) {
+  btn.disabled = true;
+  const ok = await adRewarded();
+  if (!ok) { btn.disabled = ok === null; if (ok === null) btn.textContent = T('ad.none'); return; }
+  calendarGet(2);
+}
+function calendarGet(x = 1) {
+  const g = claimGift(x);
   if (!g) return;
   sfx.win();
   showOverlay(calendarHTML());
@@ -5793,6 +5803,7 @@ overlay.addEventListener('click', e => {
   else if (act === 'rank') showRank();
   else if (act === 'rank-tab') showRank(b.dataset.tab);
   else if (act === 'cal-get') calendarGet();
+  else if (act === 'cal-ad') calendarAd(b);
   else if (act === 'rank-rename') showRename();
   else if (act === 'rank-name-save') saveName(b);
   else if (act === 'next') mapAnim ? showMap({ ...mapAnim, play: true }) : startLevel(Math.min(LEVELS.length - 1, S.levelIdx + 1));
