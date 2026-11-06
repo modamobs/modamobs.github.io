@@ -39,6 +39,11 @@
 [hidden] { display: none !important; }
 html, body { height: 100%; }
 html, body { overflow-x: clip; }
+/* 끝까지 끌었을 때 화면·목록이 고무줄처럼 늘어나거나(안드로이드) 튕기지(iOS) 않게. body 값은 화면 전체로 번지지 않아 html 에도 준다 */
+html, .panel, .shop-list, .rank-list { overscroll-behavior: none; }
+/* 판 화면은 끌어서 움직일 게 없다: 빈 곳을 끌어도 화면이 밀리거나 늘어나지 않게. 창 안 목록만 위아래로 민다 */
+#app { touch-action: none; }
+#app .panel, #app .shop-list, #app .rank-list { touch-action: pan-y; }
 /* 콤보 배지가 커지며 화면 밖으로 삐져나가면 폰이 화면을 잠깐 축소해 보여준다. 확대·축소와 가로 넘침을 막는다 */
 #app { overflow-x: clip; }
 body {
@@ -231,6 +236,8 @@ body::before {
 @keyframes boostFire { 0% { transform: scale(1); } 30% { transform: scale(.75) rotate(-12deg); } 100% { transform: scale(1) rotate(0); } }
 .boost.empty .b-count { background: #d8d4de; color: #6b6577; }
 .boost.ad .b-count { background: #ffcd3c; color: #8a3a00; font-size: 12px; }
+.boost.buy { filter: none; }
+.boost.buy .b-count { background: #3fb950; color: #fff; font-size: 16px; }
 .boost-hint {
   position: absolute;
   top: 10px;
@@ -655,10 +662,20 @@ button {
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 .opt-del { align-self: center; min-height: 0; padding: 2px 8px; border: 0; background: none; box-shadow: none; font-size: 12px; color: var(--ink-soft); text-decoration: underline; }
 /* 언어 고르기: 작은 펠트 칩. 고른 칩만 분홍으로 채운다 */
-.opt-lang { display: flex; flex-direction: column; gap: 6px; padding: 2px 4px 8px; border-bottom: 2px dashed rgba(236, 90, 150, .35); font-size: 14px; color: var(--hud-ink); }
+.opt-lang { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 4px 10px; border-bottom: 2px dashed rgba(236, 90, 150, .35); font-size: 14px; color: var(--hud-ink); }
 .lang-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .lang-chip { min-height: 0; padding: 5px 11px; font-size: 13px; border-width: 2px; box-shadow: 0 2px 0 var(--accent-dark); }
 .lang-chip.on { background: #f2558f; color: #fff; }
+.lang-select {
+  appearance: none; -webkit-appearance: none; min-width: 128px; padding: 7px 34px 7px 14px;
+  font: 15px var(--font-body); color: var(--ink); border: 2px solid #ffc1da; border-radius: 999px; cursor: pointer;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23e0457f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center / 12px 8px;
+  box-shadow: 0 2px 0 var(--accent-dark);
+}
+.lang-select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.opt-shop { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 2px 0 8px; padding: 7px 12px; font-size: 16px; }
+.opt-shop img { width: 26px; height: 26px; }
+.opt-shop b { font-family: var(--font-num); font-weight: normal; color: var(--hud-ink); }
 .overlay .opt-panel.still { animation: none; }
 /* 설정: 털실 끈에 매달린 펠트 팻말이 흔들리며 내려온다 */
 .overlay .opt-panel { position: relative; overflow: visible; max-height: none; margin-top: 40px; padding-top: 26px;
@@ -852,15 +869,44 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .lv.cur .lv-stars { color: var(--panel); }
 .goal-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 14px; }
 /* 랭킹 (별 랭킹 · 30수 랭킹) */
-.map-rank {
+.map-bar {
   position: fixed; z-index: 3;
   bottom: calc(18px + max(env(safe-area-inset-bottom, 0px), var(--os-bottom, 0px))); left: 50%;
   transform: translateX(-50%);
-  padding: 11px 26px; font-size: 19px; white-space: nowrap;
+  display: flex; align-items: center; gap: 10px;
 }
-.map-rank:active { transform: translate(-50%, 3px); }
+.map-rank { padding: 11px 26px; font-size: 19px; white-space: nowrap; }
 .map-rank[hidden] { display: none; }
-.map:has(.map-rank:not([hidden])) .map-path { margin-bottom: 64px; }
+.map .map-path { margin-bottom: 64px; }
+/* 골드 · 상점 */
+.map-shop { display: flex; align-items: center; gap: 4px; padding: 6px 8px 6px 6px; font-size: 19px; white-space: nowrap; }
+.map-shop img, .gold-ic { width: 30px; height: 30px; flex: none; }
+.map-shop b, .shop-gold b, .gold-got b { font-family: var(--font-num); font-weight: normal; color: var(--hud-ink); font-variant-numeric: tabular-nums; }
+.map-shop .plus { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #3fb950; color: #fff; font-size: 18px; line-height: 1; margin-left: 2px; }
+.gold-ic { display: inline-block; vertical-align: middle; width: 22px; height: 22px; }
+.shop-gold, .gold-got { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px 0 6px; font-size: 22px; }
+.shop-gold img, .gold-got img { width: 34px; height: 34px; }
+.gold-got { animation: pop .4s .9s cubic-bezier(.2, 1.6, .4, 1) both; }
+.ad-gold { display: block; margin: 0 auto 10px; padding: 8px 18px; font-size: 16px; }
+.shop-list { list-style: none; margin: 4px 0 8px; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: min(52vh, 420px); overflow: auto; }
+.shop-list li { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 2px 8px; align-items: center; padding: 6px 8px; border-radius: 14px; background: rgba(255, 193, 218, .28); text-align: left; color: var(--ink); }
+.shop-list li > img { width: 56px; height: 56px; grid-row: span 2; }
+.shop-list .buys { display: flex; gap: 6px; }
+.shop-list .buys button { flex: 1; }
+.shop-list li.locked { opacity: .55; }
+.shop-list .nm { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 16px; white-space: nowrap; }
+.shop-list .nm small { color: var(--hud-ink); font-size: 13px; }
+.shop-list button, .shop-packs button { display: flex; align-items: center; justify-content: center; gap: 3px; padding: 6px 9px; font-size: 14px; white-space: nowrap; }
+.shop-list button .gold-ic { width: 18px; height: 18px; }
+.shop-packs { list-style: none; margin: 4px 0 8px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.shop-packs button { flex-direction: column; gap: 0; width: 100%; height: 100%; padding: 6px 2px 8px; background: #fff8de; }
+.shop-packs img { width: 68px; height: 68px; }
+.shop-packs b { font-family: var(--font-num); font-weight: normal; font-size: 19px; color: #c76b00; }
+.shop-packs span { font-size: 13px; color: var(--ink); }
+.shop-note { font-size: 12px; word-break: keep-all; }
+/* 상점: 길게 누르거나 끌어도 글자가 잡히거나 그림이 딸려 나오지 않게 */
+.shop, .shop * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.shop img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
 .boosters.daily .boost { visibility: hidden; }
 /* 랭킹 판: 목표·별 게이지 없이 점수만 크게 */
 .hud.daily .bar, .hud.daily .goal-pill, .hud.daily .hud-name { display: none; }
@@ -892,7 +938,6 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .cal-moves { font-style: normal; font-family: var(--font-num); font-size: 19px; color: #2f9e44; padding: 0 3px; }
 .cal-check { position: absolute; right: 6px; top: 2px; color: #2f9e44; font-size: 18px; }
 .cal li .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.sub.tomorrow { color: var(--hud-ink); background: #fff4c9; border-radius: 12px; padding: 6px 10px; word-break: keep-all; }
 .rank-tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 4px; }
 .rank-tabs .lang-chip { padding: 6px 14px; font-size: 15px; }
 .rank-name { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
@@ -1043,7 +1088,10 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
     <p class="map-stars" aria-live="polite"><img src="assets/star_on.png" alt="별" data-t-alt="star"> <b id="mapStars">0</b> / <b id="mapStarsMax">600</b></p>
   </header>
   <div class="map-path" id="mapPath"></div>
-  <button type="button" id="mapRank" class="map-rank primary" data-t="rank.title">랭킹</button>
+  <div class="map-bar">
+    <button type="button" id="mapShop" class="map-shop" aria-label="상점" data-t-aria="shop.title"><img src="assets/gold.png" alt=""><b id="mapGold">0</b><span class="plus" aria-hidden="true">+</span></button>
+    <button type="button" id="mapRank" class="map-rank primary" data-t="rank.title">랭킹</button>
+  </div>
   <p class="zone-title" id="zoneTitle" aria-live="polite"></p>
 </section>
 <div id="zoneFade" aria-hidden="true"></div>
@@ -1779,6 +1827,7 @@ try { const raw = localStorage.getItem(SAVE_KEY); if (raw) save = Object.assign(
 function persist() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   if (account) { clearTimeout(cloudTimer); cloudTimer = setTimeout(pushCloud, 1500); }
+  if (!persist.quiet && typeof walletPush === 'function') walletPush();   // 토스: 서버에도 (아래 walletSync)
 }
 
 /* ---------- 말 (한국어 · English · 日本語 · 中文) ---------- */
@@ -1984,9 +2033,26 @@ const STR = {
   'cal.ad': ['▶ 광고 보고 2배로 받기', '▶ Watch ad: 2× gift', '▶ 広告を見て2倍', '▶ 看广告 双倍领取'],
   'cal.got': ['출석 선물을 받았어요: {g}', 'Daily gift: {g}', '出席ギフト：{g}', '签到礼物：{g}'],
   'cal.have': ['가진 선물: {g}', 'Your gifts: {g}', '持っているギフト：{g}', '已有礼物：{g}'],
-  'cal.tomorrow': ['🎁 내일 오면 선물: {g}', '🎁 Come back tomorrow: {g}', '🎁 明日のギフト：{g}', '🎁 明天再来：{g}'],
   'gift.moves': ['이동 +3', '+3 moves', '手数 +3', '步数 +3'],
   'gift.used': ['선물을 썼어요: {g}', 'Gift used: {g}', 'ギフトを使いました：{g}', '已使用礼物：{g}'],
+  'shop.title': ['상점', 'Shop', 'ショップ', '商店'],
+  'shop.items': ['아이템', 'Items', 'アイテム', '道具'],
+  'shop.gold': ['골드', 'Gold', 'ゴールド', '金币'],
+  'shop.have': ['보유 {n}', 'Owned {n}', '所持 {n}', '拥有 {n}'],
+  'shop.from': ['{n}레벨부터', 'From Lv.{n}', 'Lv.{n}から', '第{n}关起'],
+  'shop.rule': ['판마다 주는 부스터를 다 쓰면 산 부스터를 써요.', "Bought boosters are used after each level's free ones.", 'レベルごとの無料ブースターを使い切ると、買ったブースターを使うよ。', '每关免费道具用完后，会使用购买的道具。'],
+  'shop.bought': ['{name} {n}개를 샀어요', 'Bought {n} {name}', '{name}を{n}こ買ったよ', '购买了 {n} 个{name}'],
+  'shop.short': ['골드가 모자라요', 'Not enough gold', 'ゴールドが足りないよ', '金币不足'],
+  'shop.earn': ['레벨을 깨면 골드를 받아요', 'Clear levels to earn gold', 'レベルをクリアするとゴールドがもらえるよ', '过关即可获得金币'],
+  'shop.none': ['지금은 골드를 살 수 없어요', "Gold can't be bought right now", 'いまはゴールドを買えないよ', '暂时无法购买金币'],
+  'shop.note': ['결제한 골드는 바로 들어오고, 게임 안에서만 쓸 수 있어요.', 'Purchased gold arrives right away and can only be used in the game.', '購入したゴールドはすぐ届き、ゲーム内でのみ使えます。', '购买的金币会立即到账，仅可在游戏内使用。'],
+  'gold.got': ['골드 +{n}', 'Gold +{n}', 'ゴールド +{n}', '金币 +{n}'],
+  'gold.ad': ['▶ 광고 보고 골드 +{n}', '▶ Watch ad: Gold +{n}', '▶ 広告を見てゴールド +{n}', '▶ 看广告 金币 +{n}'],
+  'pay.ok': ['골드 {n}개가 들어왔어요', '{n} gold added', 'ゴールド{n}こが届いたよ', '已到账 {n} 金币'],
+  'pay.fail': ['결제를 마치지 못했어요', "The payment didn't go through", '決済を完了できませんでした', '支付未完成'],
+  'pay.pending': ['결제 승인을 기다리고 있어요. 승인되면 골드가 들어와요', "Payment pending. Gold arrives once it's approved", '決済の承認待ちです。承認されるとゴールドが届きます', '支付待确认，确认后金币将到账'],
+  'bo.out': ['{name} 더 받기', 'Get more {name}', '{name}をもっと', '获取更多{name}'],
+  'bo.buy': ['×{n}', '×{n}', '×{n}', '×{n}'],
   'rank.stars': ['별 랭킹', 'Star Ranking', 'スターランキング', '星星排行'],
   'rank.starRule': ['레벨을 깨고 모은 별 수로 겨뤄요', 'Ranked by the stars you earn in levels', 'レベルで集めたスターの数で競う', '按关卡获得的星星数排名'],
   'rank.locked': ['5레벨을 깨면 열려요', 'Unlocks after level 5', 'レベル5をクリアすると解放', '通关第 5 关后开放'],
@@ -2213,14 +2279,19 @@ async function adContinue(btn) {
   bigWord(T('ad.more5'), cell * .8);
   track('ad_continue', { level: S.levelIdx + 1 });
 }
-// 다 쓴 부스터를 눌렀을 때: 광고를 보면 1개를 더 준다
+// 다 쓴 부스터를 눌렀을 때: 골드로 3개·10개를 사거나, 광고를 보면 1개를 더 준다 (광고는 한 판에 한 번)
 function askAdBooster(k) {
+  const ad = !S.adBoost && adAvailable();
+  const buy = BUNDLES.map(([n, m]) => `<button type="button" data-act="buy-boost" data-k="${k}" data-n="${n}" data-in="1"
+    aria-label="${BOOSTERS[k].name} ${T('bo.buy', { n })}, ${T('shop.gold')} ${SHOP_BOOST[k] * m}">${T('bo.buy', { n })} <img class="gold-ic" src="assets/gold.png" alt="">${fmt(SHOP_BOOST[k] * m)}</button>`).join('');
   showOverlay(`
     <div class="panel" role="dialog" aria-labelledby="ovTitle">
-      <h2 id="ovTitle">${T('ad.boost.title', { name: BOOSTERS[k].name })}</h2>
+      <h2 id="ovTitle">${T(ad ? 'ad.boost.title' : 'bo.out', { name: BOOSTERS[k].name })}</h2>
       <div class="intro-pair">${mascotRig('cheer')}<img class="unlock-art" src="assets/boost_${k}.png" alt=""></div>
-      <p class="intro-text">${T('ad.boost.text', { name: BOOSTERS[k].name })}</p>
-      <div class="row"><button type="button" data-act="close">${T('close')}</button><button type="button" class="primary" data-act="ad-boost" data-k="${k}">${T('ad.watch')}</button></div>
+      ${ad ? `<p class="intro-text">${T('ad.boost.text', { name: BOOSTERS[k].name })}</p>` : ''}
+      <p class="shop-gold"><img src="assets/gold.png" alt="${T('shop.gold')}"><b id="shopGold">${fmt(gold())}</b></p>
+      <div class="row">${buy}</div>
+      <div class="row"><button type="button" data-act="close">${T('close')}</button>${ad ? `<button type="button" class="primary" data-act="ad-boost" data-k="${k}">${T('ad.watch')}</button>` : ''}</div>
     </div>`);
 }
 async function adBooster(btn) {
@@ -2254,6 +2325,8 @@ function mergeSave(a, b) {
   out.seenBoost = Object.assign({}, a.seenBoost, b.seenBoost);
   out.last = Math.max(a.last || 0, b.last || 0);
   if (a.top30 || b.top30) out.top30 = Math.max(a.top30 || 0, b.top30 || 0);
+  out.wal = walMerge(a.wal, b.wal);
+  out.orders = ordersMerge(a.orders, b.orders);
   for (const k of SETTINGS) out[k] = a[k];
   return out;
 }
@@ -3772,6 +3845,8 @@ async function win() {
   save.best[i] = Math.max(prevBest, S.score);
   persist();
   if (save.stars[i] > prevStars) sendStars();   // 별 랭킹 (기다리지 않는다)
+  S.goldGot = GOLD_WIN[prevStars ? 1 : 0];
+  walAdd('g', S.goldGot);
   track('level_win', { level: i + 1, stars, score: S.score, moves_left: S.goalMoves ?? S.moves,
     attempt: save.tries?.[i] || 1, boosters_used: S.boostUsed });
   sfx.win();
@@ -3786,7 +3861,8 @@ async function win() {
       <div class="stars" aria-label="${T('stars.n', { n: stars })}">${[0, 1, 2].map(k => `<span class="${k < stars ? 'on' : ''}"></span>`).join('')}</div>
       <p class="final">${pts(S.score)}</p>
       <p class="sub">${S.score > prevBest ? `<span class="record">${T('win.record')}</span>` : T('win.best', { n: pts(prevBest) })}</p>
-      ${tomorrowHTML()}
+      <p class="gold-got"><img src="assets/gold.png" alt="${T('shop.gold')}"><b>+${S.goldGot}</b></p>
+      ${adAvailable() ? `<button type="button" class="ad-gold" data-act="gold-ad">${T('gold.ad', { n: GOLD_AD })}</button>` : ''}
       <div class="row">
         <button type="button" data-act="retry">${T('btn.retry')}</button>
         <button type="button" data-act="map">${T('btn.map')}</button>
@@ -3980,14 +4056,292 @@ async function useGifts() {
   track('gift_use', { kinds: used.map(u => u[0]).join(',') });
   if (!got) toast(T('gift.used', { g: giftText(used) }));
 }
-// 결과 창 아래: 내일 오면 받을 선물 (토스는 사흘 연속 출석 토스포인트도)
-function tomorrowHTML() {
-  if (SHOT || S.daily) return '';
-  const n = (save.cal?.n || 0) + (calDue() ? 1 : 0);
-  const streak = promoOn('streak') && save.att?.n ? `<br>${T('promo.streak', { k: Math.min(save.att.n, PROMO.streak.days), d: PROMO.streak.days, n: PROMO.streak.amount })}` : '';
-  return `<p class="sub tomorrow">${T('cal.tomorrow', { g: giftText(GIFTS[n % GIFTS.length]) })}${streak}</p>`;
-}
 // 화면 위쪽에 잠깐 뜨는 알림 (토스포인트 안내)
+/* ---------- 골드 · 상점 (2026-11-06 사용자: 골드를 주고 골드로 아이템을 사게) ---------- */
+// 레벨을 깨면 골드(처음 깬 레벨 10, 다시 깨면 5), 결과 창에서 광고를 보면 30 더. 골드로 부스터 묶음을 사고, 골드는 인앱결제로도 산다.
+// 지갑: save.wal[기기][종류] = [들어온 양, 나간 양]. 기기마다 따로 세서 두 기록을 합칠 때 칸마다 큰 값을 남기면 잃는 것도 두 번 세는 것도 없다.
+//   종류 g = 골드, 부스터 이름 = 산 부스터 (판마다 주는 공짜 부스터를 다 쓴 뒤에 쓴다). 30수 랭킹 판에서는 부스터를 안 쓴다.
+// 기기 아이디는 save 밖에 둔다 (클라우드 기록과 합칠 때 save 는 통째로 섞이므로)
+// 산 골드: save.orders 에 주문 번호를 적어 같은 주문을 두 번 주지 않는다. 안드로이드는 Firestore 기록으로, 토스는 랭킹 서버 /wallet 로 기기 사이를 잇는다
+const GOLD_WIN = [10, 5], GOLD_AD = 30;
+const SHOP_BOOST = { hammer: 200, shuffle: 200, hand: 300, cross: 400 };   // 3개 값. 10개 묶음은 9개 값
+const BUNDLES = [[3, 1], [10, 3]];
+// 골드 묶음 (사진 속 다른 게임 값을 따라 2026-11-06). sku: 토스는 콘솔이 붙여 준 상품 ID, 안드로이드는 Play 상품 ID
+const GOLD_PACKS = [
+  { gold: 200, krw: 2200, toss: 'ait.0000092957.41fc9d03.5c68c16040.3950289293', play: 'gold_200' },
+  { gold: 500, krw: 5500, toss: 'ait.0000092957.8edb005f.1f492febb2.3950309810', play: 'gold_500' },
+  { gold: 1100, krw: 11000, toss: 'ait.0000092957.713d23e5.1176a63c1a.3950311517', play: 'gold_1100' },
+  { gold: 3600, krw: 33000, toss: 'ait.0000092957.62dc3407.d9523b2573.3950313067', play: 'gold_3600' },
+  { gold: 6500, krw: 55000, toss: 'ait.0000092957.157dc5f2.bab279af9a.3950314545', play: 'gold_6500' },
+  { gold: 15000, krw: 110000, toss: 'ait.0000092957.8d44ba26.153f4064bc.3950316324', play: 'gold_15000' },
+];
+const DID = (() => {
+  try {
+    let d = localStorage.getItem('fruitypop.did');
+    if (!d) localStorage.setItem('fruitypop.did', d = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => b.toString(16).padStart(2, '0')).join(''));
+    return d;
+  } catch (e) { return 'x'; }
+})();
+function walN(k) {
+  let n = 0;
+  for (const d in save.wal || {}) { const e = save.wal[d]?.[k]; if (e) n += (e[0] || 0) - (e[1] || 0); }
+  return Math.max(0, n);
+}
+const gold = () => walN('g');
+const bag = k => walN(k);
+function walAdd(k, n) {
+  const w = save.wal = save.wal || {}, me = w[DID] = w[DID] || {}, e = me[k] = me[k] || [0, 0];
+  if (n > 0) e[0] += n; else e[1] -= n;
+  persist();
+  updateGold();
+  walletPush();
+}
+function walMerge(a = {}, b = {}) {
+  const out = {};
+  for (const d of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    out[d] = {};
+    for (const k of new Set([...Object.keys(a[d] || {}), ...Object.keys(b[d] || {})])) {
+      const x = a[d]?.[k] || [0, 0], y = b[d]?.[k] || [0, 0];
+      out[d][k] = [Math.max(x[0] || 0, y[0] || 0), Math.max(x[1] || 0, y[1] || 0)];
+    }
+  }
+  return out;
+}
+const ordersMerge = (a = [], b = []) => [...new Set([...a, ...b])].slice(-300);
+function updateGold() { const el = $('mapGold'); if (el) el.textContent = fmt(gold()); }
+// 토스: 토스 앱을 지우거나 폰을 바꿔도 골드·진행이 남게 랭킹 서버에 맡긴다 (토스 사용자 키로, 2026-11-06 사용자).
+// 토스판은 기록이 웹뷰 저장소에만 있어서 토스를 지우면 같이 지워진다. 켤 때 한 번 서버 것을 받아 합치고(pull), 그 뒤로는 바뀔 때마다 보낸다.
+// 지갑은 서버도 칸마다 큰 값으로 합치고, 진행(prog)은 받아 합친 뒤의 것을 보내 덮는다
+var walletTimer = 0;   // var: persist 가 이 줄보다 먼저 불려도 되게
+function walletPush() {
+  try { if (!TOSS?.userKey || SHOT) return; } catch (e) { return; }   // 켜는 도중(아직 토스 다리 준비 전)에 불린 저장은 건너뛴다
+  clearTimeout(walletTimer); walletTimer = setTimeout(walletSync, 1500);
+}
+const PROG_SKIP = ['wal', 'orders', 'lang', ...SETTINGS];
+const progOf = sv => Object.fromEntries(Object.entries(sv).filter(([k]) => !PROG_SKIP.includes(k)));
+// 서버 진행과 이 폰 진행 합치기: 별·최고 점수·본 안내는 좋은 쪽, 설정은 이 폰 것, 나머지는 더 나아간 쪽
+function mergeProg(local, srv) {
+  const out = mergeSave(srv, local);
+  for (const k of ['lang', ...SETTINGS]) { if (k in local) out[k] = local[k]; else delete out[k]; }
+  if (srv.rname) out.rname = srv.rname;
+  if (srv.rid) out.rid = srv.rid;
+  out.promo = Object.assign({}, srv.promo, local.promo);
+  if ((srv.cal?.n || 0) > (local.cal?.n || 0)) out.cal = srv.cal;
+  for (const k of ['att', 'pp']) if (srv[k] && (srv[k].d || '') > (local[k]?.d || '')) out[k] = srv[k];
+  if (srv.inv || local.inv) {
+    out.inv = {};
+    for (const k of new Set([...Object.keys(srv.inv || {}), ...Object.keys(local.inv || {})])) out.inv[k] = Math.max(srv.inv?.[k] || 0, local.inv?.[k] || 0);
+  }
+  out.tut = local.tut || srv.tut;
+  return out;
+}
+// 이미 보내는 중이면 그 결과를 같이 기다린다 (켤 때 결제 기록 복구가 서버 지갑을 받기 전에 지나가지 않게)
+function walletSync() {
+  if (!walletSync.p) walletSync.p = walletSyncRun().finally(() => { walletSync.p = null; });
+  return walletSync.p;
+}
+async function walletSyncRun() {
+  if (!TOSS?.userKey || SHOT) return;
+  {
+    const uid = await rankUid();
+    if (!uid.startsWith('t:')) return;
+    const pulled = walletSync.pulled;
+    const r = await rankFetch('/wallet', { uid, wal: save.wal || {}, orders: save.orders || [], prog: pulled ? progOf(save) : undefined, dev: TEST || undefined });
+    if (!r?.wal) return;
+    const stars = JSON.stringify(save.stars);
+    if (!pulled && r.prog) replaceSave(mergeProg(save, r.prog));
+    save.wal = walMerge(save.wal, r.wal);
+    save.orders = ordersMerge(save.orders, r.orders);
+    walletSync.pulled = true;
+    persist.quiet = true; persist(); persist.quiet = false;
+    updateGold();
+    if (!pulled) {
+      walletPush();   // 합친 것을 서버에도
+      // 다른 기기·지우기 전 진행을 받아 왔으면 지도를 다시 그린다 (창이 떠 있거나 판 중이면 다음에 지도로 올 때)
+      if (JSON.stringify(save.stars) !== stars && !$('map').hidden && overlay.hidden && !mapBusy) showMap();
+    }
+  }
+}
+// 부스터 수 = 이번 판 공짜 + 산 것
+const boostN = k => (S.boostLeft[k] || 0) + (S.daily ? 0 : bag(k));
+function spendBoost(k) {
+  if ((S.boostLeft[k] || 0) > 0) S.boostLeft[k]--;
+  else walAdd(k, -1);
+}
+
+/* 결제: 토스 IAP · 구글 Play 결제(@capgo/native-purchases). 원스토어·웹은 아직 없다 (골드는 판을 깨서만 모은다) */
+const NP = NATIVE ? Capacitor.Plugins.NativePurchases : null;
+const Pay = TOSS?.iap?.available ? {
+  kind: 'toss',
+  sku: p => p.toss,
+  products: () => TOSS.iap.products(),
+  buy: (sku, grant) => TOSS.iap.buy(sku, grant),
+  pending: () => TOSS.iap.pending(),
+  complete: id => TOSS.iap.complete(id),
+  completed: () => TOSS.iap.completed ? TOSS.iap.completed() : [],
+} : NP ? {
+  kind: 'play',
+  sku: p => p.play,
+  async products() {
+    try {
+      const r = await NP.getProducts({ productIdentifiers: GOLD_PACKS.map(p => p.play), productType: 'inapp' });
+      return (r?.products || []).map(p => ({ sku: p.identifier, price: p.priceString }));
+    } catch (e) { return []; }
+  },
+  // 구글은 골드를 넣고 저장한 다음에 consume 한다 (먼저 consume 하면 앱이 죽었을 때 골드가 사라진다). 3일 안에 consume 안 하면 환불된다
+  async buy(sku, grant) {
+    try {
+      const t = await NP.purchaseProduct({ productIdentifier: sku, productType: 'inapp', isConsumable: false, autoAcknowledgePurchases: false, quantity: 1 });
+      if (String(t?.purchaseState) === '0') return 'pending';
+      if (!t?.purchaseToken || !grant(t.purchaseToken)) return 'fail';
+      NP.consumePurchase({ purchaseToken: t.purchaseToken }).catch(() => {});
+      return 'ok';
+    } catch (e) {
+      const m = String(e?.code || e?.message || e);
+      return /cancel/i.test(m) ? 'cancel' : m.slice(0, 60);
+    }
+  },
+  async pending() {
+    try {
+      const r = await NP.getUnfinishedTransactions();
+      return (r?.transactions || []).filter(t => String(t.purchaseState) === '1' && t.purchaseToken)
+        .map(t => ({ orderId: t.purchaseToken, sku: t.productIdentifier }));
+    } catch (e) { return []; }
+  },
+  complete: id => NP.consumePurchase({ purchaseToken: id }).then(() => true, () => false),
+} : TEST && !NATIVE ? {
+  // ?test 웹: 결제 없이 바로 준다 (화면 확인용)
+  kind: 'test', sku: p => 'test_' + p.gold,
+  products: async () => GOLD_PACKS.map(p => ({ sku: 'test_' + p.gold, price: '₩' + p.krw.toLocaleString() })),
+  buy: async (sku, grant) => (await wait(400), grant('test-' + Date.now()) ? 'ok' : 'fail'),
+  pending: async () => [], complete: async () => true,
+} : null;
+const packOf = sku => GOLD_PACKS.find(p => Pay && Pay.sku(p) && Pay.sku(p) === sku);
+// 주문 하나에 골드를 한 번만 준다. 돌려준 true 를 보고 토스·구글이 지급 완료로 친다
+function grantOrder(orderId, sku) {
+  const p = packOf(sku);
+  if (!p || !orderId) return false;
+  save.orders = save.orders || [];
+  if (!save.orders.includes(orderId)) {
+    save.orders = ordersMerge(save.orders, [orderId]);
+    walAdd('g', p.gold);
+    track('gold_buy', { gold: p.gold, krw: p.krw, pay: Pay.kind });
+    toast(T('pay.ok', { n: fmt(p.gold) }));
+    sfx.goal();
+  }
+  return true;
+}
+// 켤 때: 결제는 됐는데 못 준 주문(앱이 꺼졌을 때 등)을 마저 준다.
+// 토스는 끝난 결제 기록도 본다 — 토스를 지웠다 깔았는데 서버 지갑에도 없는 주문이면 다시 준다.
+// 서버 지갑을 받아 온 뒤(또는 이 폰에 지갑이 아예 없을 때)만 본다: 이미 준 주문 번호를 알아야 두 번 안 준다
+async function payRecover() {
+  if (!Pay || payRecover.busy) return;
+  payRecover.busy = true;
+  try {
+    for (const o of await Pay.pending()) if (grantOrder(o.orderId, o.sku)) await Pay.complete(o.orderId);
+    if (Pay.completed && (walletSync.pulled || !save.wal)) {
+      for (const o of await Pay.completed()) if (o.status === 'COMPLETED' && !(save.orders || []).includes(o.orderId) && grantOrder(o.orderId, o.sku)) track('gold_restore', { sku: o.sku });
+    }
+  } finally { payRecover.busy = false; }
+}
+let shopPrices = null;
+async function loadPrices() {
+  if (!Pay) return {};
+  if (!shopPrices || !Object.keys(shopPrices).length) shopPrices = Object.fromEntries((await Pay.products()).map(p => [p.sku, p.price]));
+  return shopPrices;
+}
+
+// 상점 창: 아이템(골드로 부스터) · 골드(결제)
+const shopOpen = k => unlocked(BOOSTERS[k].unlock - 1);
+function shopItemsHTML() {
+  return `<p class="sub shop-note">${T('shop.rule')}</p><ul class="shop-list">${Object.keys(SHOP_BOOST).map(k => {
+    const open = shopOpen(k);
+    const btns = BUNDLES.map(([n, m]) => `<button type="button" data-act="buy-boost" data-k="${k}" data-n="${n}"${open ? '' : ' disabled'}
+      aria-label="${BOOSTERS[k].name} ${T('bo.buy', { n })}, ${T('shop.gold')} ${SHOP_BOOST[k] * m}">${T('bo.buy', { n })} <img class="gold-ic" src="assets/gold.png" alt="">${fmt(SHOP_BOOST[k] * m)}</button>`).join('');
+    return `<li class="${open ? '' : 'locked'}"><img src="assets/boost_${k}.png" alt=""><span class="nm"><b>${BOOSTERS[k].name}</b>
+      <small>${open ? T('shop.have', { n: bag(k) }) : T('shop.from', { n: BOOSTERS[k].unlock })}</small></span><span class="buys">${btns}</span></li>`;
+  }).join('')}</ul>`;
+}
+function shopGoldHTML(prices) {
+  if (!prices) return `<p class="sub">${T('rank.loading')}</p>`;
+  const list = GOLD_PACKS.map((p, i) => [p, i]).filter(([p]) => prices[Pay.sku(p)]);
+  if (!list.length) return `<p class="sub">${T('shop.none')}</p>`;
+  return `<ul class="shop-packs">${list.map(([p, i]) => `<li><button type="button" data-act="buy-gold" data-sku="${Pay.sku(p)}">
+      <img src="assets/gold_${i + 1}.png" alt=""><b>${fmt(p.gold)}</b><span>${escapeHtml(prices[Pay.sku(p)])}</span></button></li>`).join('')}</ul>
+    <p class="sub shop-note">${T('shop.note')}</p>`;
+}
+async function showShop(tab = 'items') {
+  if (!Pay) tab = 'items';
+  const chip = (t, label) => `<button type="button" class="lang-chip${tab === t ? ' on' : ''}" data-act="shop-tab" data-tab="${t}" aria-pressed="${tab === t}">${label}</button>`;
+  showOverlay(`
+    <div class="panel wide shop" role="dialog" aria-labelledby="ovTitle">
+      <h2 id="ovTitle">${T('shop.title')}</h2>
+      <p class="shop-gold"><img src="assets/gold.png" alt="${T('shop.gold')}"><b id="shopGold">${fmt(gold())}</b></p>
+      ${Pay ? `<div class="rank-tabs">${chip('items', T('shop.items'))}${chip('gold', T('shop.gold'))}</div>` : ''}
+      <div id="shopBox">${tab === 'items' ? shopItemsHTML() : shopGoldHTML(shopPrices)}</div>
+      <div class="row"><button type="button" class="primary" data-act="close">${T('close')}</button></div>
+    </div>`);
+  showShop.tab = tab;
+  if (tab === 'gold' && !shopPrices) {
+    const n = showShop.n = (showShop.n || 0) + 1;
+    const prices = await loadPrices();
+    const box = overlay.querySelector('#shopBox');
+    if (n === showShop.n && showShop.tab === 'gold' && box) box.innerHTML = shopGoldHTML(prices);
+  }
+}
+function refreshShop() {
+  const g = overlay.querySelector('#shopGold'); if (g) g.textContent = fmt(gold());
+  const box = overlay.querySelector('#shopBox');
+  if (box && showShop.tab === 'items') {
+    const top = box.querySelector('.shop-list')?.scrollTop || 0;
+    box.innerHTML = shopItemsHTML();
+    box.querySelector('.shop-list').scrollTop = top;
+  }
+}
+function buyBoost(k, n) {
+  const m = BUNDLES.find(b => b[0] === n)?.[1];
+  if (!m || !SHOP_BOOST[k]) return false;
+  const price = SHOP_BOOST[k] * m;
+  if (gold() < price) {
+    sfx.bad();
+    toast(T(Pay ? 'shop.short' : 'shop.earn'));
+    if (Pay) showShop('gold');
+    return false;
+  }
+  walAdd('g', -price);
+  walAdd(k, n);
+  sfx.goal();
+  toast(T('shop.bought', { name: BOOSTERS[k].name, n }));
+  track('shop_boost', { booster: k, n, gold: price });
+  return true;
+}
+async function buyGold(btn) {
+  if (buyGold.busy) return;
+  buyGold.busy = true;
+  const btns = [...overlay.querySelectorAll('[data-act="buy-gold"]')];
+  btns.forEach(b => b.disabled = true);
+  const sku = btn.dataset.sku;
+  hush(true);
+  const r = await Pay.buy(sku, id => grantOrder(id, sku));
+  hush(false);
+  buyGold.busy = false;
+  btns.forEach(b => b.disabled = false);
+  if (r === 'ok') refreshShop();
+  else if (r === 'pending' || r === 'PAYMENT_PENDING') toast(T('pay.pending'));
+  else if (r !== 'cancel') { toast(T('pay.fail')); track('gold_buy_fail', { r }); }
+}
+// 결과 창 광고: 골드 +30 (한 판에 한 번)
+async function goldAd(btn) {
+  btn.disabled = true;
+  const ok = await adRewarded();
+  if (!ok) { btn.disabled = ok === null; if (ok === null) btn.textContent = T('ad.none'); return; }
+  walAdd('g', GOLD_AD);
+  btn.remove();
+  const g = overlay.querySelector('.gold-got b');
+  if (g) g.textContent = '+' + fmt((S.goldGot || 0) + GOLD_AD);
+  sfx.goal();
+  track('ad_gold', { level: S.levelIdx + 1 });
+}
 function toast(text) {
   document.querySelectorAll('.toast').forEach(e => e.remove());   // 겹치면 새 것만
   const el = document.createElement('div');
@@ -4190,7 +4544,6 @@ async function lose(reason) {
       <p class="sub">${T(reason === 'bomb' ? 'lose.bomb' : 'lose.moves')}</p>
       <div class="goal-summary">${summary}</div>
       <p class="final">${pts(S.score)}</p>
-      ${tomorrowHTML()}
       <div class="row">
         ${reason !== 'bomb' && !S.adContinue && adAvailable() ? `<button type="button" class="primary ad-btn" data-act="ad-continue">${T('ad.continue')}</button>` : ''}
         <button type="button" data-act="map">${T('btn.map')}</button>
@@ -4365,6 +4718,8 @@ function animate(dur, fn) {
 function showMap(anim = null) {
   if (SIM) return;
   setTimeout(syncStarsOnce, 1500);
+  if (!showMap.pay) { showMap.pay = true; setTimeout(async () => { await walletSync(); await payRecover(); }, 1500); }
+  updateGold();
   if (calDue() && !anim?.play) mapCalendar();
   mapAnim = null;
   tutorialEnd(false);
@@ -5009,7 +5364,8 @@ function getSprite(color, special) {
 
 /* ---------- 레이아웃 ---------- */
 function layout() {
-  render.still = false;   // 캔버스 크기가 바뀌면 판을 다시 그린다
+  render.still = false;
+  render.rectAge = 0;   // 캔버스 크기가 바뀌면 판을 다시 그린다
   dpr = Math.min(LOW_FX ? 2 : 2.5, window.devicePixelRatio || 1);
   const vw = document.documentElement.clientWidth;
   const availW = Math.min(580, vw - 32);
@@ -5027,7 +5383,7 @@ function layout() {
   canvas.height = Math.round(H * dpr);
   document.documentElement.style.setProperty('--bw', W + 'px');
   fxW = window.innerWidth; fxH = window.innerHeight;
-  fxDpr = LOW_FX ? Math.min(1.5, dpr) : dpr;
+  fxDpr = LOW_FX ? Math.min(1.25, dpr) : dpr;   // 화면 전체 효과 층이라 폰에서는 해상도를 낮춘다 (2026-11-06 프레임 드랍)
   fxCanvas.width = Math.round(fxW * fxDpr); fxCanvas.height = Math.round(fxH * fxDpr);
   render.fxEmpty = false;
   spriteCache = {};
@@ -5537,8 +5893,9 @@ function render() {
   if (!still || !render.still) drawBoard(shx, shy);
   render.still = still;
 
-  const rect = canvas.getBoundingClientRect();
-  boardRect = rect;
+  // 판 위치는 매 프레임 재지 않는다 (재면 그때마다 레이아웃을 강제로 다시 해서 폰에서 프레임이 떨어졌다). 레이아웃 뒤·20프레임마다 한 번
+  if (!render.rectAge-- || !boardRect) { boardRect = canvas.getBoundingClientRect(); render.rectAge = 20; }
+  const rect = boardRect;
   // 그릴 효과가 없으면 한 번 지우고 쉰다 (빈 캔버스를 매 프레임 다시 올리지 않게)
   const empty = !fx.length && !particles.length && !texts.length && flashAmt <= .01;
   if (empty && render.fxEmpty) return;
@@ -5596,13 +5953,14 @@ const boosterOpen = k => S.levelIdx + 1 >= BOOSTERS[k].unlock;
 const boostBtns = [...document.querySelectorAll('.boost')];
 function updateBoosters() {
   for (const b of boostBtns) {
-    const k = b.dataset.boost, n = S.boostLeft[k] || 0;
+    const k = b.dataset.boost, n = boostN(k);
     const open = boosterOpen(k);
     // 다 썼어도 이번 판에 광고 보상을 아직 안 받았으면 ▶ 표시를 달아 누를 수 있게 둔다
     const ad = open && n <= 0 && !S.adBoost && adAvailable();
-    b.querySelector('.b-count').textContent = ad ? '▶' : open ? n : 'Lv.' + BOOSTERS[k].unlock;
+    b.querySelector('.b-count').textContent = ad ? '▶' : !open ? 'Lv.' + BOOSTERS[k].unlock : n > 0 ? n : '+';
     b.classList.toggle('locked', !open);
     b.classList.toggle('empty', open && n <= 0 && !ad);
+    b.classList.toggle('buy', open && n <= 0 && !ad);
     b.classList.toggle('ad', ad);
     b.setAttribute('aria-label', T(open ? 'bo.count' : 'bo.locked', { name: BOOSTERS[k].name, n: open ? n : BOOSTERS[k].unlock }));
     b.setAttribute('aria-pressed', String(S.boost === k));
@@ -5636,11 +5994,11 @@ async function pressBooster(k) {
     pressBooster.t = setTimeout(() => { if (!S.boost) h.hidden = true; }, 1600);
     return;
   }
-  if ((S.boostLeft[k] || 0) <= 0) { if (!S.adBoost && adAvailable()) { sfx.tick(); askAdBooster(k); } else sfx.bad(); return; }
+  if (boostN(k) <= 0) { sfx.tick(); askAdBooster(k); return; }
   if (S.boost === k) { setBoost(null); return; }
   if (k === 'shuffle') {
     setBoost(null);
-    S.boostLeft.shuffle--;
+    spendBoost('shuffle');
     updateBoosters();
     S.busy = true; S.hint = null;
     await flyIcon('shuffle', (S.rows - 1) / 2, (S.cols - 1) / 2);
@@ -5662,7 +6020,7 @@ async function useBoosterAt(c2) {
       sfx.tick();
       return;
     }
-    S.boostLeft.hand--;
+    spendBoost('hand');
     S.boostUsed++;
     track('booster_used', { level: S.levelIdx + 1, booster: 'hand' });
     setBoost(null);
@@ -5671,7 +6029,7 @@ async function useBoosterAt(c2) {
     await attemptSwap(a, c2, true);
     return;
   }
-  S.boostLeft[k]--;
+  spendBoost(k);
   S.boostUsed++;
   track('booster_used', { level: S.levelIdx + 1, booster: k });
   setBoost(null);
@@ -5757,7 +6115,7 @@ canvas.addEventListener('pointermove', e => {
   if (S.boost === 'hand') {
     const frozen = [at(...drag.start), at(...t)].find(p => p.ice);
     if (frozen) { iceBump(frozen); return; }
-    S.boostLeft.hand--; setBoost(null); sfx.booster(); attemptSwap(drag.start, t, true);
+    spendBoost('hand'); setBoost(null); sfx.booster(); attemptSwap(drag.start, t, true);
   }
   else attemptSwap(drag.start, t);
 });
@@ -5788,6 +6146,22 @@ canvas.addEventListener('keydown', e => {
     setBoost(null);
   }
 });
+// 언어: 설정 창의 선택 상자를 누르면 목록이 뜬다 (2026-11-06 사용자). 고른 말로 화면을 다시 그리고, 설정 창은 흔들림 없이 그 자리에서 바꾼다
+// 판 화면 빈 곳을 끌 때 웹뷰가 화면을 끌어당기지 않게 (touch-action 을 안 따르는 웹뷰 대비). 창 안 목록은 그대로 민다
+$('app').addEventListener('touchmove', e => {
+  if (e.cancelable && !e.target.closest?.('.panel, .shop-list, .rank-list')) e.preventDefault();
+}, { passive: false });
+overlay.addEventListener('dragstart', e => { if (e.target.closest?.('.shop')) e.preventDefault(); });
+overlay.addEventListener('change', e => {
+  if (e.target.id !== 'langSel') return;
+  save.lang = e.target.value; persist();
+  LANG = resolveLang(save.lang);
+  applyLang();
+  if (!$('map').hidden) showMap();
+  else if (S.level && !$('app').hidden) { buildGoals(); updateHUD(); updateBoosters(); }
+  showOverlay(optionsHTML());
+  overlay.querySelector('.opt-panel').classList.add('still');
+});
 overlay.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   initAudio();
@@ -5803,6 +6177,16 @@ overlay.addEventListener('click', e => {
   else if (act === 'rank') showRank();
   else if (act === 'rank-tab') showRank(b.dataset.tab);
   else if (act === 'cal-get') calendarGet();
+  else if (act === 'shop') showShop();
+  else if (act === 'shop-tab') showShop(b.dataset.tab);
+  else if (act === 'buy-gold') buyGold(b);
+  else if (act === 'gold-ad') goldAd(b);
+  else if (act === 'buy-boost') {
+    if (buyBoost(b.dataset.k, +b.dataset.n)) {
+      if (b.dataset.in) hideOverlay(); else refreshShop();
+      if (!$('app').hidden) updateBoosters();
+    }
+  }
   else if (act === 'cal-ad') calendarAd(b);
   else if (act === 'rank-rename') showRename();
   else if (act === 'rank-name-save') saveName(b);
@@ -5811,16 +6195,6 @@ overlay.addEventListener('click', e => {
   else if (act === 'close') hideOverlay();
   else if (act === 'ad-continue') adContinue(b);
   else if (act === 'ad-boost') adBooster(b);
-  else if (act === 'lang') {
-    // 고른 말로 화면을 다시 그리고, 설정 창은 흔들림 없이 그 자리에서 바꾼다
-    save.lang = b.dataset.lang; persist();
-    LANG = resolveLang(save.lang);
-    applyLang();
-    if (!$('map').hidden) showMap();
-    else if (S.level && !$('app').hidden) { buildGoals(); updateHUD(); updateBoosters(); }
-    showOverlay(optionsHTML());
-    overlay.querySelector('.opt-panel').classList.add('still');
-  }
   else if (act === 'exit') { flushTrack(); TOSS ? TOSS.close() : Capacitor.Plugins.App.exitApp(); }
   else if (act === 'help') showHelp();
   else if (act === 'opt') showOverlay(optionsHTML());
@@ -5872,10 +6246,10 @@ function optionsHTML() {
         ${optIcon('opt-music', T('opt.music'), BGM.on, OPT_ICONS.music)}
         <button type="button" class="opt-icon help" data-act="help" aria-label="${T('opt.help')}">${OPT_ICONS.help}<span>${T('opt.help')}</span></button>
       </div>
-      <div class="opt-lang"><span>${T('opt.lang')}</span><div class="lang-chips">
-        ${['auto', ...LANGS].map(l => `<button type="button" class="lang-chip${(save.lang || 'auto') === l ? ' on' : ''}" data-act="lang" data-lang="${l}"
-          aria-pressed="${(save.lang || 'auto') === l}">${l === 'auto' ? T('opt.auto') : LANG_NAMES[LANGS.indexOf(l)]}</button>`).join('')}
-      </div></div>
+      ${$('map').hidden ? `<button type="button" class="opt-shop" data-act="shop"><img src="assets/gold.png" alt="">${T('shop.title')} <b>${fmt(gold())}</b></button>` : ''}
+      <label class="opt-lang"><span>${T('opt.lang')}</span><select class="lang-select" id="langSel">
+        ${['auto', ...LANGS].map(l => `<option value="${l}"${(save.lang || 'auto') === l ? ' selected' : ''}>${l === 'auto' ? T('opt.auto') : LANG_NAMES[LANGS.indexOf(l)]}</option>`).join('')}
+      </select></label>
       ${NATIVE && account ? `<div class="opt-account">
         <span>${account.guest ? T('opt.guest') : escapeHtml(account.name || T('opt.google'))}</span>
         <button type="button" class="opt-link" data-act="${account.guest ? 'link-google' : 'sign-out'}">${T(account.guest ? 'opt.link' : 'opt.signout')}</button>
@@ -5913,6 +6287,7 @@ function showHelp() {
 $('btnOptions').addEventListener('click', () => { initAudio(); showOverlay(optionsHTML()); });
 $('mapOptions').addEventListener('click', () => { initAudio(); showOverlay(optionsHTML()); });
 $('mapRank').addEventListener('click', () => { if (mapBusy) return; initAudio(); showRank(); });
+$('mapShop').addEventListener('click', () => { if (mapBusy) return; initAudio(); showShop(); });
 overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'nameIn') overlay.querySelector('[data-act="rank-name-save"]').click(); });
 
 /* ---------- 뒤로가기 (안드로이드 앱) ---------- */
