@@ -877,6 +877,22 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .rank-list li:nth-child(-n+3) b { color: #e08a00; }
 .rank-list span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rank-list em { font-style: normal; font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--hud-ink); }
+.cal { list-style: none; margin: 8px 0 4px; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cal li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px 8px; border-radius: 14px;
+  background: rgba(255, 193, 218, .28); border: 2px solid transparent; color: var(--hud-ink); }
+.cal li:last-child { grid-column: span 2; background: #ffe9a8; }
+.cal li.today { border-color: var(--accent); background: #fff; box-shadow: 0 3px 0 var(--accent); }
+.cal li.got { opacity: .55; }
+.cal li.pop { opacity: 1; animation: starIn .45s cubic-bezier(.2, 1.6, .4, 1) both; }
+.cal-day { font-size: 13px; }
+.cal-items { display: flex; align-items: center; justify-content: center; gap: 2px; min-height: 40px; }
+.cal-item { position: relative; display: inline-flex; align-items: center; }
+.cal-item canvas { width: 38px; height: 38px; }
+.cal-item small { font-size: 12px; font-weight: bold; margin-left: -4px; align-self: flex-end; }
+.cal-moves { font-style: normal; font-family: var(--font-num); font-size: 19px; color: #2f9e44; padding: 0 3px; }
+.cal-check { position: absolute; right: 6px; top: 2px; color: #2f9e44; font-size: 18px; }
+.cal li .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.sub.tomorrow { color: var(--hud-ink); background: #fff4c9; border-radius: 12px; padding: 6px 10px; word-break: keep-all; }
 .rank-tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 4px; }
 .rank-tabs .lang-chip { padding: 6px 14px; font-size: 15px; }
 .rank-name { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
@@ -1961,6 +1977,15 @@ const STR = {
   'daily.done': ['30수 끝!', '30 moves done!', '30手 終了！', '30 步结束！'],
   'daily.best': ['내 최고 {n}', 'Your best: {n}', 'ベスト {n}', '最佳 {n}'],
   'rank.title': ['랭킹', 'Ranking', 'ランキング', '排行榜'],
+  'cal.title': ['출석 선물', 'Daily Gift', '出席ギフト', '签到礼物'],
+  'cal.sub': ['매일 들어오면 선물을 받아요. 선물은 다음 레벨을 시작할 때 써요', 'Come back every day for a gift. Gifts are used when your next level starts', '毎日来るとギフトがもらえます。次のレベル開始時に使います', '每天来就能领礼物，下一关开始时自动使用'],
+  'cal.day': ['{n}일째', 'Day {n}', '{n}日目', '第{n}天'],
+  'cal.get': ['선물 받기', 'Claim gift', 'ギフトを受け取る', '领取礼物'],
+  'cal.got': ['출석 선물을 받았어요: {g}', 'Daily gift: {g}', '出席ギフト：{g}', '签到礼物：{g}'],
+  'cal.have': ['가진 선물: {g}', 'Your gifts: {g}', '持っているギフト：{g}', '已有礼物：{g}'],
+  'cal.tomorrow': ['🎁 내일 오면 선물: {g}', '🎁 Come back tomorrow: {g}', '🎁 明日のギフト：{g}', '🎁 明天再来：{g}'],
+  'gift.moves': ['이동 +3', '+3 moves', '手数 +3', '步数 +3'],
+  'gift.used': ['선물을 썼어요: {g}', 'Gift used: {g}', 'ギフトを使いました：{g}', '已使用礼物：{g}'],
   'rank.stars': ['별 랭킹', 'Star Ranking', 'スターランキング', '星星排行'],
   'rank.starRule': ['레벨을 깨고 모은 별 수로 겨뤄요', 'Ranked by the stars you earn in levels', 'レベルで集めたスターの数で競う', '按关卡获得的星星数排名'],
   'rank.locked': ['5레벨을 깨면 열려요', 'Unlocks after level 5', 'レベル5をクリアすると解放', '通关第 5 关后开放'],
@@ -3760,6 +3785,7 @@ async function win() {
       <div class="stars" aria-label="${T('stars.n', { n: stars })}">${[0, 1, 2].map(k => `<span class="${k < stars ? 'on' : ''}"></span>`).join('')}</div>
       <p class="final">${pts(S.score)}</p>
       <p class="sub">${S.score > prevBest ? `<span class="record">${T('win.record')}</span>` : T('win.best', { n: pts(prevBest) })}</p>
+      ${tomorrowHTML()}
       <div class="row">
         <button type="button" data-act="retry">${T('btn.retry')}</button>
         <button type="button" data-act="map">${T('btn.map')}</button>
@@ -3850,6 +3876,106 @@ function promoAttend() {
   const n = Math.min(save.att.n, PROMO.streak.days);
   setTimeout(() => n >= PROMO.streak.days ? promoGrant('streak')
     : toast(T('promo.streak', { k: n, d: PROMO.streak.days, n: PROMO.streak.amount })), 2500);
+}
+// 출석 선물 (2026-11-06, 다음 날 다시 오게): 한국 날짜로 하루 한 번, 7일 판을 차례로 받는다. 빠진 날이 있어도 처음으로 돌아가지 않는다.
+// 받은 선물은 save.inv 에 쌓였다가 다음 레벨을 시작할 때 종류마다 하나씩 쓴다 (줄무늬·포장·무지개 과일을 판에 놓거나 이동 +3).
+// 지도가 뜰 때 출석판을 띄우고, 지도를 안 거치고 판을 시작하면 그때 조용히 받는다. 30수 랭킹 판에는 쓰지 않는다 (공정하게).
+// save.cal = { d: 마지막으로 받은 날, n: 지금까지 받은 날 수 }. 현금성 보상이 아니라 토스 정책과 상관없다
+const GIFTS = [[['h', 1]], [['moves', 1]], [['wrap', 1]], [['h', 2]], [['moves', 2]], [['bomb', 1]], [['bomb', 1], ['wrap', 1], ['moves', 1]]];
+const GIFT_KINDS = ['moves', 'h', 'wrap', 'bomb'];
+const giftName = k => T(k === 'moves' ? 'gift.moves' : `help.${k}.name`);
+const giftText = list => list.map(([k, n]) => giftName(k) + (n > 1 ? ' ×' + n : '')).join(', ');
+const calDue = () => !SIM && !SHOT && save.cal?.d !== kst();
+// 튜토리얼이 아직 남은 첫 판에는 받지도 쓰지도 않는다 (처음 하는 사람 화면을 어지럽히지 않게)
+const tutPending = () => S.levelIdx === 0 && !save.tut && !save.stars[0];
+function claimGift() {
+  if (!calDue()) return null;
+  const n = save.cal?.n || 0, g = GIFTS[n % GIFTS.length];
+  save.inv = save.inv || {};
+  for (const [k, c] of g) save.inv[k] = (save.inv[k] || 0) + c;
+  save.cal = { d: kst(), n: n + 1 };
+  persist();
+  track('gift_claim', { day: n % GIFTS.length + 1, total: n + 1 });
+  return g;
+}
+function calendarHTML() {
+  const n = save.cal?.n || 0, done = !calDue(), today = (done ? n - 1 : n) % GIFTS.length;
+  const cycleStart = n - (done ? today + 1 : today);
+  const cells = GIFTS.map((g, i) => {
+    const got = cycleStart + i < n, cls = got ? 'got' : i === today ? 'today' : '';
+    return `<li class="${cls}"><span class="cal-day">${T('cal.day', { n: i + 1 })}</span>
+      <span class="cal-items">${g.map(([k, c]) => `<span class="cal-item">${k === 'moves' ? '<i class="cal-moves">+3</i>' : `<canvas data-sp="${k}" width="80" height="80" aria-hidden="true"></canvas>`}${c > 1 ? `<small>×${c}</small>` : ''}</span>`).join('')}</span>
+      ${got ? '<b class="cal-check" aria-hidden="true">✓</b>' : ''}<span class="sr">${giftText(g)}</span></li>`;
+  }).join('');
+  const have = GIFT_KINDS.filter(k => save.inv?.[k] > 0).map(k => [k, save.inv[k]]);
+  return `
+    <div class="panel wide" role="dialog" aria-labelledby="ovTitle">
+      <h2 id="ovTitle">${T('cal.title')}</h2>
+      <p class="sub">${T('cal.sub')}</p>
+      <ol class="cal">${cells}</ol>
+      ${done ? `<p class="sub cal-got">${T('cal.have', { g: giftText(have) || '-' })}</p>` : ''}
+      <div class="row">${done ? `<button type="button" class="primary" data-act="close">${T('btn.continue')}</button>`
+        : `<button type="button" class="primary" data-act="cal-get">${T('cal.get')}</button>`}</div>
+    </div>`;
+}
+function drawGiftIcons() {
+  overlay.querySelectorAll('canvas[data-sp]').forEach(cv => drawCandy(cv.getContext('2d'), 80, cv.dataset.sp === 'bomb' ? -1 : cv.dataset.sp === 'wrap' ? 1 : 4, cv.dataset.sp));
+}
+function showCalendar() {
+  showOverlay(calendarHTML());
+  drawGiftIcons();
+}
+function calendarGet() {
+  const g = claimGift();
+  if (!g) return;
+  sfx.win();
+  showOverlay(calendarHTML());
+  drawGiftIcons();
+  [...overlay.querySelectorAll('.cal li.got')].pop()?.classList.add('pop');
+}
+// 레벨을 시작할 때 가진 선물을 종류마다 하나씩 쓴다
+async function useGifts() {
+  if (SIM || SHOT || S.daily || tutPending()) return;
+  // 지도를 안 거치고 왔으면 여기서 받는다. 알림은 하나만 (받은 것 알림이 쓴 것 알림을 덮지 않게)
+  const got = calDue() && claimGift();
+  const inv = save.inv || {}, used = [];
+  for (const k of GIFT_KINDS) {
+    if (!(inv[k] > 0)) continue;
+    if (k === 'moves') {
+      S.moves += 3;
+      updateHUD();
+      floatText(T('gift.moves'), W / 2, H / 2, cell * .6, '#ffffff', '#2f9e44');
+    } else {
+      const cands = [];
+      forEachPiece((q, r, c) => {
+        if (!q.special && q.color >= 0 && !q.ice && !q.key && !q.ing && !q.timer && !S.choco[r][c] && !S.mer[r][c] && !S.box[r][c]
+          && r > 0 && r < S.rows - 1 && c > 0 && c < S.cols - 1) cands.push([r, c]);
+      });
+      if (!cands.length) continue;
+      const [r, c] = cands[Math.floor(Math.random() * cands.length)], q = S.grid[r][c];
+      q.special = k === 'h' ? (Math.random() < .5 ? 'h' : 'v') : k;
+      if (k === 'bomb') q.color = -1;
+      burst(cx(c), cy(r), '#fff3a8', 14, 1.1);
+      floatText(T('sp.' + k), cx(c), cy(r) - cell * .45, cell * .34);
+      sfx.tick();
+      await wait(260);
+    }
+    inv[k]--;
+    used.push([k, 1]);
+  }
+  if (got) toast(T('cal.got', { g: giftText(got) }));
+  if (!used.length) return;
+  save.inv = inv;
+  persist();
+  track('gift_use', { kinds: used.map(u => u[0]).join(',') });
+  if (!got) toast(T('gift.used', { g: giftText(used) }));
+}
+// 결과 창 아래: 내일 오면 받을 선물 (토스는 사흘 연속 출석 토스포인트도)
+function tomorrowHTML() {
+  if (SHOT || S.daily) return '';
+  const n = (save.cal?.n || 0) + (calDue() ? 1 : 0);
+  const streak = promoOn('streak') && save.att?.n ? `<br>${T('promo.streak', { k: Math.min(save.att.n, PROMO.streak.days), d: PROMO.streak.days, n: PROMO.streak.amount })}` : '';
+  return `<p class="sub tomorrow">${T('cal.tomorrow', { g: giftText(GIFTS[n % GIFTS.length]) })}${streak}</p>`;
 }
 // 화면 위쪽에 잠깐 뜨는 알림 (토스포인트 안내)
 function toast(text) {
@@ -4054,6 +4180,7 @@ async function lose(reason) {
       <p class="sub">${T(reason === 'bomb' ? 'lose.bomb' : 'lose.moves')}</p>
       <div class="goal-summary">${summary}</div>
       <p class="final">${pts(S.score)}</p>
+      ${tomorrowHTML()}
       <div class="row">
         ${reason !== 'bomb' && !S.adContinue && adAvailable() ? `<button type="button" class="primary ad-btn" data-act="ad-continue">${T('ad.continue')}</button>` : ''}
         <button type="button" data-act="map">${T('btn.map')}</button>
@@ -4228,6 +4355,7 @@ function animate(dur, fn) {
 function showMap(anim = null) {
   if (SIM) return;
   setTimeout(syncStarsOnce, 1500);
+  if (calDue() && !anim?.play) mapCalendar();
   mapAnim = null;
   tutorialEnd(false);
   S.over = true;
@@ -4298,6 +4426,14 @@ function showMap(anim = null) {
     const target = box.querySelector(`[data-lv="${cur}"]`);
     requestAnimationFrame(() => { target && target.scrollIntoView({ block: 'center' }); mapZoneCheck(); });
     if (anim && anim.play && anim.from + 1 < N) startLevel(anim.from + 1);
+  }
+}
+// 지도가 자리 잡고 별 연출이 끝난 뒤에 출석판을 띄운다 (다른 창이 떠 있으면 조금 기다린다)
+async function mapCalendar() {
+  for (let k = 0; k < 12; k++) {
+    await wait(k ? 500 : 900);
+    if ($('map').hidden || !calDue()) return;
+    if (overlay.hidden && !mapBusy) { showCalendar(); return; }
   }
 }
 async function playMapAnim(a, node, next, opens, pts, spot) {
@@ -5656,6 +5792,7 @@ overlay.addEventListener('click', e => {
   else if (act === 'daily') startLevel('daily');
   else if (act === 'rank') showRank();
   else if (act === 'rank-tab') showRank(b.dataset.tab);
+  else if (act === 'cal-get') calendarGet();
   else if (act === 'rank-rename') showRename();
   else if (act === 'rank-name-save') saveName(b);
   else if (act === 'next') mapAnim ? showMap({ ...mapAnim, play: true }) : startLevel(Math.min(LEVELS.length - 1, S.levelIdx + 1));
@@ -5774,7 +5911,7 @@ overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id 
 function backPop() {
   if (!overlay.hidden) {
     // 도움말은 설정으로 돌아가고, 결과 창은 지도로, 안내 창은 확인으로 닫는다
-    const b = ['opt', 'close', 'intro', 'map', 'rank'].map(a => overlay.querySelector(`[data-act="${a}"]`)).find(Boolean);
+    const b = ['opt', 'close', 'intro', 'map', 'rank', 'cal-get'].map(a => overlay.querySelector(`[data-act="${a}"]`)).find(Boolean);
     if (b) b.click();
     return true;
   }
@@ -5887,6 +6024,7 @@ async function startLevel(i) {
   forEachPiece((p, r, c) => { p.y = r - S.rows - 1; anims.push(fall(p, r, reduceMotion ? 0 : c * 35 + (S.rows - 1 - r) * 22, plop)); });
   await Promise.all(anims);
   if (!SIM) { sfx.levelStart(); burst(W / 2, H / 2, '#ffe27a', 16, 1.2); prewarmResult(); }
+  await useGifts();
   save.seenBoost = save.seenBoost || {};
   for (const k in BOOSTERS) {
     if (SIM || daily || BOOSTERS[k].unlock !== S.levelIdx + 1 || save.seenBoost[k]) continue;
