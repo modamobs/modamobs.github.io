@@ -40,10 +40,10 @@
 html, body { height: 100%; }
 html, body { overflow-x: clip; }
 /* 끝까지 끌었을 때 화면·목록이 고무줄처럼 늘어나거나(안드로이드) 튕기지(iOS) 않게. body 값은 화면 전체로 번지지 않아 html 에도 준다 */
-html, .panel, .shop-list, .rank-list { overscroll-behavior: none; }
+html, .panel, .shop-list, .rank-list, .mail-list { overscroll-behavior: none; }
 /* 판 화면은 끌어서 움직일 게 없다: 빈 곳을 끌어도 화면이 밀리거나 늘어나지 않게. 창 안 목록만 위아래로 민다 */
 #app { touch-action: none; }
-#app .panel, #app .shop-list, #app .rank-list { touch-action: pan-y; }
+#app .panel, #app .shop-list, #app .rank-list, #app .mail-list { touch-action: pan-y; }
 /* 콤보 배지가 커지며 화면 밖으로 삐져나가면 폰이 화면을 잠깐 축소해 보여준다. 확대·축소와 가로 넘침을 막는다 */
 #app { overflow-x: clip; }
 body {
@@ -560,6 +560,26 @@ body::before {
 .face-cell { padding: 4px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 2px rgba(217, 87, 139, .25); }
 .face-cell canvas { width: 100%; aspect-ratio: 1; display: block; }
 .face-cell.on { box-shadow: inset 0 0 0 3px #ffb300; background: #fff6d6; }
+.pre-goals { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin: 2px 0; }
+.pre-goal { display: flex; align-items: center; gap: 4px; font-family: var(--font-num); font-size: 22px; color: var(--hud-ink); }
+.pre-goal canvas { width: 36px; height: 36px; }
+.pre-goal b { font-weight: normal; }
+.pre-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.pre-title { margin: 0; text-align: left; }
+.pre-gold { flex: none; display: flex; align-items: center; gap: 3px; padding: 2px 10px 2px 4px; border-radius: 999px; background: #fff8de; box-shadow: inset 0 0 0 2px #ffcf4d; }
+.pre-gold img { width: 26px; height: 26px; }
+.pre-gold b { font: normal 19px/1 var(--font-num); color: #9a4a00; }
+.pre-boosts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px; }
+.pre-b { position: relative; aspect-ratio: 1; padding: 6px; border-radius: 18px; background: #fff; box-shadow: inset 0 0 0 2px rgba(217, 87, 139, .25); display: grid; place-items: center; }
+.pre-b canvas { width: 100%; height: 100%; }
+.pre-b .cal-moves { font-size: 22px; }
+.pre-b.on { background: #fff6d6; box-shadow: inset 0 0 0 3px #ffb300; }
+.pre-n { position: absolute; right: -4px; bottom: -6px; min-width: 22px; padding: 0 5px; border-radius: 999px; background: #d9578b; color: #fff; font: normal 14px/22px var(--font-num); box-sizing: border-box; }
+.pre-price { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 0 6px; border-radius: 999px;
+  background: #fff8de; color: #c76b00; font: normal 13px/20px var(--font-num); box-shadow: 0 1px 3px rgba(80, 20, 50, .25); white-space: nowrap; }
+.pre-price img, .pre-cost img { width: 14px; height: 14px; }
+.pre-check { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #2f9e44; color: #fff; font-size: 14px; line-height: 22px; text-align: center; }
+.pre-cost { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; }
 .map-mascot { position: absolute; width: 78px; height: 78px; margin: -70px 0 0 -39px; pointer-events: none; animation: bob 2s ease-in-out infinite; z-index: 1; }
 .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 .steps li {
@@ -902,6 +922,27 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .map-shop img, .gold-ic { width: 30px; height: 30px; flex: none; }
 .map-shop b, .shop-gold b, .gold-got b { font-family: var(--font-num); font-weight: normal; color: var(--hud-ink); font-variant-numeric: tabular-nums; }
 .map-shop .plus { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #3fb950; color: #fff; font-size: 18px; line-height: 1; margin-left: 2px; }
+.map-mail { position: relative; width: 50px; height: 50px; padding: 0; flex: none; display: grid; place-items: center; }
+.map-mail svg { width: 28px; height: 28px; }
+.mail-n { position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 999px;
+  background: #e84040; color: #fff; font: normal 13px/22px var(--font-num); box-shadow: 0 0 0 2px #fff; }
+.mail-n[hidden] { display: none; }
+.mail-list { list-style: none; margin: 4px 0 8px; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: min(52vh, 420px); overflow: auto; }
+.mail-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 2px rgba(217, 87, 139, .22); text-align: left; color: var(--ink); }
+.mail-list li > img { width: 46px; height: 46px; flex: none; }
+.mail-list .nm { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 17px; line-height: 1.3; }
+.mail-list .nm, .noads-card .nm { word-break: keep-all; }
+.mail-list .nm b { color: var(--ink); }
+.mail-list .nm small { color: #4d4256; font-size: 14px; }
+.mail-list .nm em { font-style: normal; color: #9a4a00; font-size: 15px; font-weight: bold; }
+.mail-list .mail-due { color: #6e6275; font-size: 13px; }
+.mail-list button { flex: none; padding: 9px 14px; font-size: 16px; white-space: nowrap; }
+.noads-card { display: flex; align-items: center; gap: 10px; margin: 4px 0 8px; padding: 8px 10px; border-radius: 16px; background: #fff6d6; box-shadow: inset 0 0 0 2px #ffb300; text-align: left; color: var(--ink); }
+.noads-card img { width: 56px; height: 56px; flex: none; border-radius: 12px; }
+.noads-card .nm { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 17px; line-height: 1.3; }
+.noads-card .nm small { color: #4d4256; font-size: 14px; }
+.noads-card button { flex: none; padding: 8px 12px; font-size: 15px; white-space: nowrap; }
+.noads-own { flex: none; color: #1f7a33; font-size: 17px; font-weight: bold; }
 .gold-ic { display: inline-block; vertical-align: middle; width: 22px; height: 22px; }
 .shop-gold, .gold-got { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px 0 6px; font-size: 22px; }
 .shop-gold img, .gold-got img { width: 34px; height: 34px; }
@@ -956,7 +997,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
 .cal-item small { font-size: 12px; font-weight: bold; margin-left: -4px; align-self: flex-end; }
 .cal-moves { font-style: normal; font-family: var(--font-num); font-size: 19px; color: #2f9e44; padding: 0 3px; }
 .cal-check { position: absolute; right: 6px; top: 2px; color: #2f9e44; font-size: 18px; }
-.cal li .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.cal li .sr, .pre-goal .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .rank-tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 4px; }
 .rank-tabs .lang-chip { padding: 6px 14px; font-size: 15px; }
 .rank-name { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
@@ -1109,6 +1150,7 @@ button:not(:focus-visible) { outline: 2px dashed rgba(255, 255, 255, .7); outlin
   <div class="map-path" id="mapPath"></div>
   <div class="map-bar">
     <button type="button" id="mapShop" class="map-shop" aria-label="상점" data-t-aria="shop.title"><img src="assets/gold.png" alt=""><b id="mapGold">0</b><span class="plus" aria-hidden="true">+</span></button>
+    <button type="button" id="mapMail" class="opt-btn map-mail" aria-label="우편함" data-t-aria="mail.title"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="#fff"/><path d="M4 7l8 6.2L20 7" fill="none" stroke="#d9578b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><b id="mailN" class="mail-n" hidden>0</b></button>
     <button type="button" id="mapRank" class="map-rank primary" data-t="rank.title">랭킹</button>
   </div>
   <p class="zone-title" id="zoneTitle" aria-live="polite"></p>
@@ -2046,14 +2088,34 @@ const STR = {
   'daily.best': ['내 최고 {n}', 'Your best: {n}', 'ベスト {n}', '最佳 {n}'],
   'rank.title': ['랭킹', 'Ranking', 'ランキング', '排行榜'],
   'cal.title': ['출석 선물', 'Daily Gift', '出席ギフト', '签到礼物'],
-  'cal.sub': ['매일 들어오면 선물을 받아요. 선물은 다음 레벨을 시작할 때 써요', 'Come back every day for a gift. Gifts are used when your next level starts', '毎日来るとギフトがもらえます。次のレベル開始時に使います', '每天来就能领礼物，下一关开始时自动使用'],
+  'cal.sub': ['매일 들어오면 선물을 받아요. 선물은 레벨을 시작하기 전에 골라 써요', 'Come back every day for a gift. Pick gifts to use before a level starts', '毎日来るとギフトがもらえます。レベル開始前に選んで使えます', '每天来就能领礼物，开局前可以选择使用'],
   'cal.day': ['{n}일째', 'Day {n}', '{n}日目', '第{n}天'],
   'cal.get': ['선물 받기', 'Claim gift', 'ギフトを受け取る', '领取礼物'],
   'cal.ad': ['▶ 광고 보고 2배로 받기', '▶ Watch ad: 2× gift', '▶ 広告を見て2倍', '▶ 看广告 双倍领取'],
   'cal.got': ['출석 선물을 받았어요: {g}', 'Daily gift: {g}', '出席ギフト：{g}', '签到礼物：{g}'],
   'cal.have': ['가진 선물: {g}', 'Your gifts: {g}', '持っているギフト：{g}', '已有礼物：{g}'],
   'gift.moves': ['이동 +3', '+3 moves', '手数 +3', '步数 +3'],
-  'gift.used': ['선물을 썼어요: {g}', 'Gift used: {g}', 'ギフトを使いました：{g}', '已使用礼物：{g}'],
+  'pre.start': ['게임 시작!', 'Play!', 'スタート！', '开始游戏！'],
+  'noads.name': ['광고 제거 패키지', 'No-Ads Pack', '広告削除パック', '去广告礼包'],
+  'noads.desc': ['판 사이 광고 없음 + 골드 {n}', 'No ads between levels + {n} gold', 'レベル間の広告なし＋ゴールド{n}', '关卡间无广告＋{n}金币'],
+  'noads.own': ['구매함', 'Owned', '購入済み', '已购买'],
+  'noads.ok': ['광고가 사라졌어요! 골드 {n}도 받았어요', 'Ads removed! You also got {n} gold', '広告を削除しました！ゴールド{n}も獲得', '广告已移除！还获得了{n}金币'],
+  'mail.title': ['우편함', 'Mailbox', 'メールボックス', '邮箱'],
+  'mail.ad': ['오늘의 광고 선물', 'Daily ad gift', '今日の広告ギフト', '今日广告礼物'],
+  'mail.adSub': ['광고를 보면 골드 {n} (하루 한 번)', 'Watch an ad for {n} gold (once a day)', '広告を見てゴールド{n}（1日1回）', '看广告得{n}金币（每天一次）'],
+  'mail.watch': ['광고 보기', 'Watch ad', '広告を見る', '看广告'],
+  'mail.tomorrow': ['내일 또 와요', 'Back tomorrow', 'また明日', '明天再来'],
+  'mail.get': ['받기', 'Claim', '受け取る', '领取'],
+  'mail.all': ['모두 받기', 'Claim all', 'すべて受け取る', '全部领取'],
+  'mail.none': ['받을 우편이 없어요', 'No mail right now', 'メールはありません', '暂无邮件'],
+  'mail.ok': ['받았어요: {g}', 'Received: {g}', '受け取りました：{g}', '已领取：{g}'],
+  'mail.got': ['이미 받은 우편이에요', 'Already claimed', '受け取り済みです', '已经领取过了'],
+  'mail.left': ['{n}일 남음', '{n} days left', '残り{n}日', '剩{n}天'],
+  'mail.today': ['오늘까지', 'Ends today', '今日まで', '今天截止'],
+  'pre.boost': ['시작 부스터 (눌러서 고르기)', 'Starting boosters (tap to pick)', 'スタートブースター（タップで選ぶ）', '开局道具（点击选择）'],
+  'pre.moves': ['이동 {n}번', '{n} moves', '{n}手', '{n} 步'],
+  'pre.level': ['레벨 {n}', 'Level {n}', 'レベル {n}', '第 {n} 关'],
+  'gift.used': ['시작 부스터를 썼어요: {g}', 'Starting boosters: {g}', 'スタートブースター：{g}', '已使用开局道具：{g}'],
   'shop.title': ['상점', 'Shop', 'ショップ', '商店'],
   'shop.items': ['아이템', 'Items', 'アイテム', '道具'],
   'shop.gold': ['골드', 'Gold', 'ゴールド', '金币'],
@@ -2240,7 +2302,7 @@ let adLast = 0, adEnds = 0;
 // 토스판 판 끝 전면: 6레벨부터, 판이 두 번 끝날 때마다, 앞 광고(보상형 포함)에서 2분이 지났을 때만. 결과 창을 떠날 때 띄운다.
 // 미리 불러 둔 광고가 없으면 띄우지 않고 다음 편만 불러 둔다
 function adBetweenLevels() {
-  if (!TOSS || !TOSS.ads.hasInterstitial || S.levelIdx < 5) return;
+  if (!TOSS || !TOSS.ads.hasInterstitial || S.levelIdx < 5 || save.noads) return;   // 광고 제거 패키지를 샀으면 안 띄운다
   if (++adEnds % 2 || Date.now() - adLast < 120000) return;
   hush(true);
   TOSS.ads.showInterstitial().then(shown => {
@@ -2348,6 +2410,8 @@ function mergeSave(a, b) {
   if (a.top30 || b.top30) out.top30 = Math.max(a.top30 || 0, b.top30 || 0);
   out.wal = walMerge(a.wal, b.wal);
   out.orders = ordersMerge(a.orders, b.orders);
+  if (a.noads || b.noads) out.noads = 1;
+  if (a.mad || b.mad) out.mad = (a.mad || '') > (b.mad || '') ? a.mad : b.mad;
   for (const k of SETTINGS) out[k] = a[k];
   return out;
 }
@@ -4041,14 +4105,79 @@ function calendarGet(x = 1) {
   drawGiftIcons();
   [...overlay.querySelectorAll('.cal li.got')].pop()?.classList.add('pop');
 }
+// 레벨 시작 전 창 (2026-11-08 사용자): 레벨·목표·이동 수와 시작 부스터 4칸. 가진 선물은 미리 골라 두고, 없는 건 골드 값을 보여 줘 눌러 고르면 시작할 때 산다.
+// 1레벨 첫 판(튜토리얼)과 30수 랭킹 판은 이 창 없이 바로 시작한다
+const PRE_PRICE = { h: 100, wrap: 150, moves: 200, bomb: 250 };
+const PRE_KINDS = ['h', 'wrap', 'bomb', 'moves'];
+const preState = {};
+function openLevel(i) {
+  i = Math.max(0, Math.min(LEVELS.length - 1, i | 0));
+  if (SIM || SHOT || (i === 0 && !save.tut && !save.stars[0])) { startLevel(i); return; }
+  const L = LEVELS[i], inv = save.inv || {};
+  preState.i = i;
+  preState.pick = Object.fromEntries(PRE_KINDS.map(k => [k, inv[k] > 0]));
+  const goals = L.goals.map((g, n) => `<span class="pre-goal">${g.type === 'score' ? '' : `<canvas data-g="${n}" width="64" height="64" aria-hidden="true"></canvas>`}<b>${g.type === 'collect' ? g.count : g.type === 'score' ? pts(g.target) : escapeHtml(goalLabel(g))}</b>${g.type === 'score' ? '' : `<span class="sr">${escapeHtml(goalLabel(g))}</span>`}</span>`).join('');
+  showOverlay(`
+    <div class="panel pre-panel" role="dialog" aria-labelledby="ovTitle">
+      <p class="eyebrow">${T('pre.level', { n: i + 1 })}</p>
+      <h2 id="ovTitle">${escapeHtml(levelTitle(i))}</h2>
+      <div class="pre-goals">${goals}</div>
+      <p class="sub">${T('pre.moves', { n: L.moves })}</p>
+      <div class="pre-head"><p class="sub pre-title">${T('pre.boost')}</p><span class="pre-gold" aria-label="${T('shop.gold')}"><img src="assets/gold.png" alt=""><b id="preGold">${fmt(gold())}</b></span></div>
+      <div class="pre-boosts">${PRE_KINDS.map(k => `<button type="button" class="pre-b" data-act="pre-pick" data-k="${k}"></button>`).join('')}</div>
+      <div class="row"><button type="button" data-act="pre-close">${T('close')}</button><button type="button" class="primary" data-act="pre-start">${T('pre.start')}</button></div>
+    </div>`);
+  overlay.querySelectorAll('canvas[data-g]').forEach(cv => { const g = L.goals[+cv.dataset.g]; drawGoalIcon(cv.getContext('2d'), 64, g.type, g.color); });
+  drawPre();
+}
+function drawPre() {
+  const inv = save.inv || {};
+  let cost = 0;
+  for (const k of PRE_KINDS) if (preState.pick[k] && !(inv[k] > 0)) cost += PRE_PRICE[k];
+  overlay.querySelectorAll('.pre-b').forEach(b => {
+    const k = b.dataset.k, have = inv[k] || 0, on = !!preState.pick[k];
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on);
+    b.setAttribute('aria-label', giftName(k) + (have ? ` ×${have}` : `, ${T('shop.gold')} ${PRE_PRICE[k]}`));
+    b.innerHTML = (k === 'moves' ? '<i class="cal-moves">+3</i>' : '<canvas width="80" height="80" aria-hidden="true"></canvas>')
+      + (have ? `<b class="pre-n">${have}</b>` : `<b class="pre-price"><img src="assets/gold.png" alt="">${PRE_PRICE[k]}</b>`)
+      + (on ? '<span class="pre-check" aria-hidden="true">✓</span>' : '');
+    const cv = b.querySelector('canvas');
+    if (cv) drawCandy(cv.getContext('2d'), 80, k === 'bomb' ? -1 : k === 'wrap' ? 1 : 4, k);
+  });
+  const pg = overlay.querySelector('#preGold');
+  if (pg) pg.textContent = fmt(gold());   // 지금 가진 골드 (고른 값은 시작 버튼에)
+  const st = overlay.querySelector('[data-act="pre-start"]');
+  if (st) st.innerHTML = T('pre.start') + (cost ? ` <small class="pre-cost"><img src="assets/gold.png" alt="">${cost}</small>` : '');
+}
+function prePick(b) {
+  const k = b.dataset.k, inv = save.inv || {};
+  if (!preState.pick[k] && !(inv[k] > 0)) {
+    // 사려는 것: 지금 고른 것까지 합쳐 골드가 되는지 본다
+    let cost = PRE_PRICE[k];
+    for (const j of PRE_KINDS) if (preState.pick[j] && !(inv[j] > 0)) cost += PRE_PRICE[j];
+    if (gold() < cost) { sfx.bad(); toast(T('shop.short')); return; }
+  }
+  preState.pick[k] = !preState.pick[k];
+  sfx.tick();
+  drawPre();
+}
+function preStart() {
+  S.pre = { ...preState.pick };
+  startLevel(preState.i);
+}
 // 레벨을 시작할 때 가진 선물을 종류마다 하나씩 쓴다
 async function useGifts() {
   if (SIM || SHOT || S.daily || tutPending()) return;
   // 지도를 안 거치고 왔으면 여기서 받는다. 알림은 하나만 (받은 것 알림이 쓴 것 알림을 덮지 않게)
   const got = calDue() && claimGift();
+  // 시작 전 창에서 고른 것만 쓴다 (2026-11-08). 가진 게 없으면 그때 골드로 산다 (골드가 모자라면 건너뛴다)
+  const pick = S.pre || {}; S.pre = null;
   const inv = save.inv || {}, used = [];
   for (const k of GIFT_KINDS) {
-    if (!(inv[k] > 0)) continue;
+    if (!pick[k]) continue;
+    const buy = !(inv[k] > 0);
+    if (buy && gold() < PRE_PRICE[k]) continue;
     if (k === 'moves') {
       S.moves += 3;
       updateHUD();
@@ -4059,7 +4188,7 @@ async function useGifts() {
         if (!q.special && q.color >= 0 && !q.ice && !q.key && !q.ing && !q.timer && !S.choco[r][c] && !S.mer[r][c] && !S.box[r][c]
           && r > 0 && r < S.rows - 1 && c > 0 && c < S.cols - 1) cands.push([r, c]);
       });
-      if (!cands.length) continue;
+      if (!cands.length) continue;   // 놓을 자리가 없으면 쓰지도 사지도 않는다
       const [r, c] = cands[Math.floor(Math.random() * cands.length)], q = S.grid[r][c];
       q.special = k === 'h' ? (Math.random() < .5 ? 'h' : 'v') : k;
       if (k === 'bomb') q.color = -1;
@@ -4068,7 +4197,8 @@ async function useGifts() {
       sfx.tick();
       await wait(260);
     }
-    inv[k]--;
+    if (buy) { walAdd('g', -PRE_PRICE[k]); updateGold(); track('pre_buy', { kind: k, price: PRE_PRICE[k] }); }
+    else inv[k]--;
     used.push([k, 1]);
   }
   if (got) toast(T('cal.got', { g: giftText(got) }));
@@ -4236,13 +4366,31 @@ const Pay = TOSS?.iap?.available ? {
 } : TEST && !NATIVE ? {
   // ?test 웹: 결제 없이 바로 준다 (화면 확인용)
   kind: 'test', sku: p => 'test_' + p.gold,
-  products: async () => GOLD_PACKS.map(p => ({ sku: 'test_' + p.gold, price: '₩' + p.krw.toLocaleString() })),
+  products: async () => [...GOLD_PACKS.map(p => ({ sku: 'test_' + p.gold, price: '₩' + p.krw.toLocaleString() })), { sku: 'test_noads', price: '₩' + NOADS.krw.toLocaleString() }],
   buy: async (sku, grant) => (await wait(400), grant('test-' + Date.now()) ? 'ok' : 'fail'),
   pending: async () => [], complete: async () => true,
 } : null;
 const packOf = sku => GOLD_PACKS.find(p => Pay && Pay.sku(p) && Pay.sku(p) === sku);
+// 광고 제거 패키지 (2026-11-08 사용자): 토스 비소모품 5,500원. 판 사이 전면 광고를 영구히 없애고 골드 500을 준다. 보상형 광고(고르는 광고)는 그대로.
+// 안드로이드·원스토어는 전면 광고가 없어 팔지 않는다. 다시 깔면 토스 결제 기록(completed)으로 되찾는다
+const NOADS = { gold: 500, krw: 5500, toss: 'ait.0000092957.fd1f421b.69b4a18126.4134837951' };
+const noadsSku = () => Pay?.kind === 'toss' ? NOADS.toss : Pay?.kind === 'test' ? 'test_noads' : null;
+function grantNoAds(orderId) {
+  if (!orderId) return false;
+  save.orders = save.orders || [];
+  if (!save.orders.includes(orderId)) {
+    save.orders = ordersMerge(save.orders, [orderId]);
+    save.noads = 1;
+    walAdd('g', NOADS.gold);
+    track('noads_buy', { pay: Pay.kind });
+    toast(T('noads.ok', { n: fmt(NOADS.gold) }));
+    sfx.goal();
+  } else if (!save.noads) { save.noads = 1; persist(); }
+  return true;
+}
 // 주문 하나에 골드를 한 번만 준다. 돌려준 true 를 보고 토스·구글이 지급 완료로 친다
 function grantOrder(orderId, sku) {
+  if (sku && sku === noadsSku()) return grantNoAds(orderId);
   const p = packOf(sku);
   if (!p || !orderId) return false;
   save.orders = save.orders || [];
@@ -4264,7 +4412,12 @@ async function payRecover() {
   try {
     for (const o of await Pay.pending()) if (grantOrder(o.orderId, o.sku)) await Pay.complete(o.orderId);
     if (Pay.completed && (walletSync.pulled || !save.wal)) {
-      for (const o of await Pay.completed()) if (o.status === 'COMPLETED' && !(save.orders || []).includes(o.orderId) && grantOrder(o.orderId, o.sku)) track('gold_restore', { sku: o.sku });
+      const done = await Pay.completed();
+      for (const o of done) if (o.status === 'COMPLETED' && !(save.orders || []).includes(o.orderId) && grantOrder(o.orderId, o.sku)) track('gold_restore', { sku: o.sku });
+      // 광고 제거: 산 기록이 있으면 켜 두고, 환불만 남았으면 끈다
+      const na = done.filter(o => o.sku === noadsSku());
+      const own = na.some(o => o.status === 'COMPLETED') ? 1 : na.length ? 0 : null;
+      if (own !== null && !!save.noads !== !!own) { save.noads = own; persist(); }
     }
   } finally { payRecover.busy = false; }
 }
@@ -4290,7 +4443,10 @@ function shopGoldHTML(prices) {
   if (!prices) return `<p class="sub">${T('rank.loading')}</p>`;
   const list = GOLD_PACKS.map((p, i) => [p, i]).filter(([p]) => prices[Pay.sku(p)]);
   if (!list.length) return `<p class="sub">${T('shop.none')}</p>`;
-  return `<ul class="shop-packs">${list.map(([p, i]) => `<li><button type="button" data-act="buy-gold" data-sku="${Pay.sku(p)}">
+  const na = noadsSku(), naPrice = na && prices[na];
+  return (naPrice ? `<div class="noads-card"><img src="assets/noads.png" alt=""><span class="nm"><b>${T('noads.name')}</b><small>${T('noads.desc', { n: fmt(NOADS.gold) })}</small></span>
+      ${save.noads ? `<span class="noads-own">${T('noads.own')}</span>` : `<button type="button" class="primary" data-act="buy-gold" data-sku="${na}">${escapeHtml(naPrice)}</button>`}</div>` : '')
+    + `<ul class="shop-packs">${list.map(([p, i]) => `<li><button type="button" data-act="buy-gold" data-sku="${Pay.sku(p)}">
       <img src="assets/gold_${i + 1}.png" alt=""><b>${fmt(p.gold)}</b><span>${escapeHtml(prices[Pay.sku(p)])}</span></button></li>`).join('')}</ul>
     <p class="sub shop-note">${T('shop.note')}</p>`;
 }
@@ -4316,6 +4472,7 @@ async function showShop(tab = 'items') {
 function refreshShop() {
   const g = overlay.querySelector('#shopGold'); if (g) g.textContent = fmt(gold());
   const box = overlay.querySelector('#shopBox');
+  if (box && showShop.tab === 'gold' && shopPrices) box.innerHTML = shopGoldHTML(shopPrices);
   if (box && showShop.tab === 'items') {
     const top = box.querySelector('.shop-list')?.scrollTop || 0;
     box.innerHTML = shopItemsHTML();
@@ -4352,7 +4509,112 @@ async function buyGold(btn) {
   btns.forEach(b => b.disabled = false);
   if (r === 'ok') refreshShop();
   else if (r === 'pending' || r === 'PAYMENT_PENDING') toast(T('pay.pending'));
+  else if (r === 'ITEM_ALREADY_OWNED') { save.noads = 1; persist(); toast(T('noads.own')); refreshShop(); payRecover(); }
   else if (r !== 'cancel') { toast(T('pay.fail')); track('gold_buy_fail', { r }); }
+}
+// 우편함 (2026-11-08 사용자): 하루 한 번 광고 보고 골드 받기 + 운영자가 보낸 선물(랭킹 서버 /mail, 보내기는 mobile/scripts/mail.mjs).
+// 서버 우편은 받으면 서버가 사람마다 받은 것을 적어(mail_got) 두 번 못 받는다. 선물: g 골드, h·wrap·bomb·moves 시작 선물, hammer·shuffle·hand·cross 부스터
+const MAIL_AD_GOLD = 50;   // 우편함 광고 선물 골드
+const mailAdOn = () => !SHOT && adAvailable();
+const mailAdDue = () => mailAdOn() && save.mad !== kst();
+let mailList = null, mailAt = 0;
+async function mailLoad(force = false) {
+  if (SHOT || SIM) return [];
+  if (!force && mailList && Date.now() - mailAt < 60000) return mailList;
+  const uid = await rankUid();
+  const r = await rankFetch(`/mail?uid=${encodeURIComponent(uid)}${TEST ? '&dev=1' : ''}`);
+  if (Array.isArray(r?.mail)) { mailList = r.mail; mailAt = Date.now(); }
+  return mailList || [];
+}
+function mailBadge() {
+  const n = (mailList?.length || 0) + (mailAdDue() ? 1 : 0), b = $('mailN');
+  if (b) { b.textContent = n; b.hidden = !n; }
+}
+const mailStr = t => typeof t === 'string' ? t : (t?.[LANG] || t?.ko || '');
+const itemsText = it => Object.entries(it || {}).filter(([, n]) => n > 0).map(([k, n]) =>
+  k === 'g' ? `${T('shop.gold')} ${fmt(n)}` : (GIFT_KINDS.includes(k) ? giftName(k) : BOOSTERS[k]?.name || k) + ' ×' + n).join(', ');
+function giveItems(it) {
+  for (const [k, n] of Object.entries(it || {})) {
+    if (!(n > 0)) continue;
+    if (k === 'g') walAdd('g', n);
+    else if (GIFT_KINDS.includes(k)) { save.inv = save.inv || {}; save.inv[k] = (save.inv[k] || 0) + n; persist(); }
+    else if (SHOP_BOOST[k]) walAdd(k, n);
+  }
+}
+function mailHTML() {
+  const rows = [];
+  if (mailAdOn()) {
+    const due = mailAdDue();
+    rows.push(`<li><img src="assets/gold_gift.png" alt=""><span class="nm"><b>${T('mail.ad')}</b><small>${T('mail.adSub', { n: MAIL_AD_GOLD })}</small></span>
+      <button type="button" class="primary" data-act="mail-ad"${due ? '' : ' disabled'}>${T(due ? 'mail.watch' : 'mail.tomorrow')}</button></li>`);
+  }
+  for (const m of mailList || []) {
+    const days = Math.ceil((m.until - Date.now()) / 86400000);
+    rows.push(`<li><img src="assets/gold.png" alt=""><span class="nm"><b>${escapeHtml(mailStr(m.title))}</b>${mailStr(m.body) ? `<small>${escapeHtml(mailStr(m.body))}</small>` : ''}
+      <em>${escapeHtml(itemsText(m.items))}</em><small class="mail-due">${days <= 1 ? T('mail.today') : T('mail.left', { n: days })}</small></span>
+      <button type="button" class="primary" data-act="mail-get" data-id="${m.id}">${T('mail.get')}</button></li>`);
+  }
+  return rows.length ? `<ul class="mail-list">${rows.join('')}</ul>` : `<p class="sub">${T('mail.none')}</p>`;
+}
+function drawMail() {
+  const box = overlay.querySelector('#mailBox');
+  if (!box) return;
+  box.innerHTML = mailList ? mailHTML() : `<p class="sub">${T('rank.loading')}</p>`;
+  const all = overlay.querySelector('[data-act="mail-all"]');
+  if (all) all.hidden = (mailList?.length || 0) < 2;
+  mailBadge();
+}
+async function showMail() {
+  showOverlay(`
+    <div class="panel wide mail" role="dialog" aria-labelledby="ovTitle">
+      <h2 id="ovTitle">${T('mail.title')}</h2>
+      <div id="mailBox"></div>
+      <div class="row"><button type="button" data-act="mail-all" hidden>${T('mail.all')}</button><button type="button" class="primary" data-act="close">${T('close')}</button></div>
+    </div>`);
+  drawMail();
+  await mailLoad(true);
+  drawMail();
+}
+async function mailGet(id, quiet = false) {
+  const uid = await rankUid();
+  const r = await rankFetch('/mail/claim', { uid, id, dev: TEST || undefined });
+  if (r?.items) {
+    giveItems(r.items);
+    track('mail_get', { id });
+  } else if (r?.error !== 'got') { if (!quiet) toast(T('rank.off')); return null; }
+  else if (!quiet) toast(T('mail.got'));
+  mailList = (mailList || []).filter(m => m.id !== id);
+  return r.items || {};
+}
+async function mailClaim(b) {
+  b.disabled = true;
+  const it = await mailGet(+b.dataset.id);
+  if (!it) { b.disabled = false; return; }
+  if (Object.keys(it).length) { sfx.goal(); toast(T('mail.ok', { g: itemsText(it) })); }
+  drawMail();
+}
+async function mailAll(b) {
+  b.disabled = true;
+  const sum = {};
+  for (const m of [...(mailList || [])]) {
+    const it = await mailGet(m.id, true);
+    for (const [k, n] of Object.entries(it || {})) sum[k] = (sum[k] || 0) + n;
+  }
+  b.disabled = false;
+  if (Object.keys(sum).length) { sfx.goal(); toast(T('mail.ok', { g: itemsText(sum) })); }
+  drawMail();
+}
+async function mailAd(b) {
+  if (!mailAdDue()) return;
+  b.disabled = true;
+  const ok = await adRewarded();
+  if (!ok) { b.disabled = ok === null; if (ok === null) b.textContent = T('ad.none'); return; }
+  save.mad = kst();
+  walAdd('g', MAIL_AD_GOLD);
+  sfx.goal();
+  toast(T('mail.ok', { g: `${T('shop.gold')} ${MAIL_AD_GOLD}` }));
+  track('mail_ad', {});
+  drawMail();
 }
 // 결과 창 광고: 골드 +30 (한 판에 한 번)
 async function goldAd(btn) {
@@ -4766,6 +5028,8 @@ function showMap(anim = null) {
   setTimeout(syncStarsOnce, 1500);
   if (!showMap.pay) { showMap.pay = true; setTimeout(async () => { await walletSync(); await payRecover(); }, 1500); }
   updateGold();
+  mailBadge();
+  setTimeout(() => mailLoad().then(mailBadge), 1200);
   if (calDue() && !anim?.play) mapCalendar();
   mapAnim = null;
   tutorialEnd(false);
@@ -4840,7 +5104,7 @@ function showMap(anim = null) {
   } else {
     const target = box.querySelector(`[data-lv="${cur}"]`);
     requestAnimationFrame(() => { target && target.scrollIntoView({ block: 'center' }); mapZoneCheck(); });
-    if (anim && anim.play && anim.from + 1 < N) startLevel(anim.from + 1);
+    if (anim && anim.play && anim.from + 1 < N) openLevel(anim.from + 1);
   }
 }
 // 지도 위 다른 사람들 (2026-11-07 사용자): 별 랭킹 서버에서 내 칸 근처 사람(앞 4명·뒤 2명)을 받아 그 사람이 서 있는 레벨 옆에 과일 얼굴과 이름을 붙인다.
@@ -4974,7 +5238,7 @@ async function playMapAnim(a, node, next, opens, pts, spot) {
     sfx.goal();
   }
   mapBusy = false;
-  if (a.play && !$('map').hidden) { await wait(700); if (!$('map').hidden) startLevel(i + 1); }
+  if (a.play && !$('map').hidden) { await wait(700); if (!$('map').hidden) openLevel(i + 1); }
 }
 function showBoosterUnlock(k) {
   return new Promise(res => {
@@ -6296,7 +6560,7 @@ overlay.addEventListener('click', e => {
     S.over = true;
     track(S.daily ? 'daily_quit' : 'level_quit', { level: S.levelIdx + 1, via: act, progress: S.daily ? 0 : goalProgress(), moves_used: S.level.moves - S.moves });
   }
-  if (act === 'retry') startLevel(S.daily ? 'daily' : S.levelIdx);
+  if (act === 'retry') S.daily ? startLevel('daily') : openLevel(S.levelIdx);
   else if (act === 'daily') startLevel('daily');
   else if (act === 'rank') showRank();
   else if (act === 'rank-tab') showRank(b.dataset.tab);
@@ -6304,6 +6568,9 @@ overlay.addEventListener('click', e => {
   else if (act === 'shop') showShop();
   else if (act === 'shop-tab') showShop(b.dataset.tab);
   else if (act === 'buy-gold') buyGold(b);
+  else if (act === 'mail-get') mailClaim(b);
+  else if (act === 'mail-all') mailAll(b);
+  else if (act === 'mail-ad') mailAd(b);
   else if (act === 'gold-ad') goldAd(b);
   else if (act === 'buy-boost') {
     if (buyBoost(b.dataset.k, +b.dataset.n)) {
@@ -6312,11 +6579,14 @@ overlay.addEventListener('click', e => {
     }
   }
   else if (act === 'cal-ad') calendarAd(b);
+  else if (act === 'pre-pick') prePick(b);
+  else if (act === 'pre-start') preStart();
+  else if (act === 'pre-close') $('map').hidden ? showMap(mapAnim) : hideOverlay();   // 판 화면에서 열렸으면 지도로
   else if (act === 'rank-rename') showRename();
   else if (act === 'me-face') pickFace(b);
   else if (act === 'me-cancel') renameDone();
   else if (act === 'rank-name-save') saveName(b);
-  else if (act === 'next') mapAnim ? showMap({ ...mapAnim, play: true }) : startLevel(Math.min(LEVELS.length - 1, S.levelIdx + 1));
+  else if (act === 'next') mapAnim ? showMap({ ...mapAnim, play: true }) : openLevel(Math.min(LEVELS.length - 1, S.levelIdx + 1));
   else if (act === 'map') showMap(mapAnim);
   else if (act === 'close') hideOverlay();
   else if (act === 'ad-continue') adContinue(b);
@@ -6414,6 +6684,7 @@ $('btnOptions').addEventListener('click', () => { initAudio(); showOverlay(optio
 $('mapOptions').addEventListener('click', () => { initAudio(); showOverlay(optionsHTML()); });
 $('mapRank').addEventListener('click', () => { if (mapBusy) return; initAudio(); showRank(); });
 $('mapShop').addEventListener('click', () => { if (mapBusy) return; initAudio(); showShop(); });
+$('mapMail').addEventListener('click', () => { if (mapBusy) return; initAudio(); showMail(); });
 overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'nameIn') overlay.querySelector('[data-act="rank-name-save"]').click(); });
 
 /* ---------- 뒤로가기 (안드로이드 앱) ---------- */
@@ -6470,7 +6741,7 @@ $('mapPath').addEventListener('click', e => {
   const b = e.target.closest('.node');
   if (!b || b.classList.contains('locked') || mapBusy) return;
   initAudio();
-  startLevel(+b.dataset.lv);
+  openLevel(+b.dataset.lv);
 });
 let resizeTimer = 0;
 // 지도는 폭이 바뀔 때만 다시 그린다. 키보드가 뜨면 높이만 줄어드는데, 그때 showMap 이 떠 있는 창(이름 바꾸기)을 닫아 버렸다 (2026-11-07 사용자)
