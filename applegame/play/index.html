@@ -260,6 +260,41 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 }
 @keyframes rise { to { transform: translate(-50%, -170%); opacity: 0; } }
 
+/* first game in each mode: a ghost drag over one sum of 10 and a felt tag saying what to do (coach() below) */
+.coach { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.coach[hidden] { display: none; }
+.coach-box {
+  position: absolute; box-sizing: border-box;
+  border: 4px dashed var(--pick); border-radius: 16px; background: rgba(255, 211, 77, .16);
+  animation: coach-pulse 1.6s ease-in-out infinite;
+}
+@keyframes coach-pulse { 50% { background: rgba(255, 211, 77, .34); } }
+.coach-dot {
+  position: absolute; width: calc(var(--cell) * .6); aspect-ratio: 1; border-radius: 50%;
+  background: rgba(255, 250, 240, .9); border: 3px solid var(--ink); box-sizing: border-box;
+  box-shadow: 0 3px 8px var(--shade);
+  left: var(--x0); top: var(--y0); transform: translate(-50%, -50%);
+  animation: coach-drag 1.6s ease-in-out infinite;
+}
+@keyframes coach-drag {
+  0%, 12% { left: var(--x0); top: var(--y0); transform: translate(-50%, -50%) scale(1.15); opacity: 0; }
+  22% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  70% { left: var(--x1); top: var(--y1); transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  85%, 100% { left: var(--x1); top: var(--y1); transform: translate(-50%, -50%) scale(1.15); opacity: 0; }
+}
+.coach-tip {
+  position: absolute; left: 50%; transform: translate(-50%, -50%);
+  width: max-content; max-width: calc(100% - 16px); box-sizing: border-box; padding: 9px 14px 10px; border-radius: 14px;
+  background: var(--fuzz), var(--card); color: var(--ink); text-align: center;
+  box-shadow: 0 2px 0 var(--card-edge), 0 4px 10px var(--shade);
+  font-family: var(--display); font-size: 1.05rem; line-height: 1.35;
+}
+.coach-tip b { color: var(--red); font-weight: 400; }
+@media (prefers-reduced-motion: reduce) {
+  .coach-box { animation: none; }
+  .coach-dot { animation: none; left: var(--x1); top: var(--y1); }
+}
+
 /* ---- results: a stitched felt card ---- */
 .overlay {
   position: absolute; inset: 0; display: grid; place-items: center;
@@ -321,7 +356,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .copied { font-size: 0.8rem; color: var(--thread); text-align: center; white-space: pre-line; background: rgba(46, 34, 26, 0.62); border-radius: 12px; padding: 6px 10px; }
 .copied:empty { display: none; }
 
-.lb-result { font-size: 0.92rem; color: var(--thread); text-align: center; background: rgba(46, 34, 26, 0.62); border-radius: 12px; padding: 8px 10px; }
+.lb-result { font-size: 0.92rem; color: var(--thread); text-align: center; background: rgba(46, 34, 26, 0.62); border-radius: 12px; padding: 8px 10px; word-break: keep-all; }
 .lb-result .muted { display: block; font-size: 0.78rem; opacity: .8; margin-top: 2px; }
 .nick-row { display: flex; gap: 8px; }
 .nick-row input {
@@ -672,6 +707,47 @@ function render() {
   paintApples();
   layout();
   hud();
+  coach();
+}
+
+// ---------- first-game coach ----------
+// Until the player has harvested once in a mode, the board points at one sum of 10: a dashed yellow box,
+// a felt dot that drags across it, and a tag with the rule. It hides while a finger is down and goes away
+// for good with the first harvest in that mode.
+let coached = load('apple-coach', {});
+function coach() {
+  if (coached[S.mode] || S.started || S.over) return;
+  const drop = !!MODES[S.mode].drop;
+  const solid = m => m.n === (m.r2 - m.r1 + 1) * (m.c2 - m.c1 + 1);
+  const above = m => { let k = 0; for (let r = 0; r < m.r1; r++) if (S.g[r * S.C + m.c1]) k++; return k; };
+  const midR = (S.R - 1) / 2, midC = (S.C - 1) / 2;
+  const off = m => Math.abs((m.r1 + m.r2) / 2 - midR) + Math.abs((m.c1 + m.c2) / 2 - midC);
+  let ms = findMoves(S.g, S.R, S.C).filter(m => m.n === 2 && solid(m) && m.r1 >= 2 && m.r2 <= S.R - 2);
+  // in the falling mode a pair in one column with apples above shows what falls
+  if (drop) { const col = ms.filter(m => m.c1 === m.c2 && above(m) >= 2); if (col.length) ms = col; }
+  if (!ms.length) ms = findMoves(S.g, S.R, S.C);
+  const m = ms.sort((x, y) => off(x) - off(y))[0];
+  if (!m) return;
+  const at = (r, c) => [`calc(${c + 0.5} * var(--cw))`, `calc(${r + 0.5} * var(--ch))`];
+  const [x0, y0] = at(m.r1, m.c1), [x1, y1] = at(m.r2, m.c2);
+  const box = `left: calc(${m.c1} * var(--cw)); top: calc(${m.r1} * var(--ch));` +
+    `width: calc(${m.c2 - m.c1 + 1} * var(--cw)); height: calc(${m.r2 - m.r1 + 1} * var(--ch));`;
+  // the tag sits two rows above the box, or below it near the top edge
+  const tipRow = m.r1 >= 3 ? m.r1 - 1.6 : m.r2 + 2.6;
+  const el = document.createElement('div');
+  el.className = 'coach'; el.id = 'coach';
+  el.innerHTML = `<div class="coach-box" style="${box}"></div>` +
+    `<div class="coach-dot" style="--x0: ${x0}; --y0: ${y0}; --x1: ${x1}; --y1: ${y1}"></div>` +
+    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))">끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요` +
+    (drop ? '<br>딴 자리로 <b>위의 사과가 떨어져요</b>' : '') + '</div>';
+  board.appendChild(el);
+}
+function coachDone() {
+  const el = $('coach');
+  if (!el) return;
+  el.remove();
+  coached[S.mode] = true;
+  store('apple-coach', coached);
 }
 
 // ---------- art (optional) ----------
@@ -798,6 +874,7 @@ stage.addEventListener('pointerdown', e => {
   startClock();
   const p = cellAt(e);
   drag = { id: e.pointerId, a: p, b: p };
+  if ($('coach')) $('coach').hidden = true;
   showSel();
 });
 stage.addEventListener('pointermove', e => {
@@ -815,9 +892,12 @@ function release(e) {
   if (S.over) return;
   if (s === 10) harvest(m, n);
   else if (n >= 2) play('miss', 0.5);
+  if ($('coach')) $('coach').hidden = false; // missed: point at the pair again
 }
 stage.addEventListener('pointerup', release);
-stage.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; clearSel(); } });
+stage.addEventListener('pointercancel', e => {
+  if (drag && e.pointerId === drag.id) { drag = null; clearSel(); if ($('coach')) $('coach').hidden = false; }
+});
 
 function harvest(m, n) {
   for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) {
@@ -828,6 +908,7 @@ function harvest(m, n) {
     el.classList.add('gone');
     el.firstChild.addEventListener('animationend', () => el.classList.add('done'), { once: true });
   }
+  coachDone();
   if (MODES[S.mode].drop) fall();
   S.score += n;
   floatPlus(m, n);
@@ -897,8 +978,14 @@ function end(reason) {
   $('again-new').focus();
   $('nick-form').hidden = true;
   if (ranked) lbAfterGame();
-  else if (lbOn()) showLbResult('연습 판이라 순위에는 안 올라가요.' +
-    '<button class="linkish" type="button" data-open-lb>오늘 순위 보기</button>');
+  else if (lbOn()) {
+    // only the day's first finished game in each mode goes on the board; say which one did
+    const first = load('apple-daily-best', {})[todayKey() + '|' + S.mode];
+    showLbResult((first != null
+      ? `오늘의 순위는 하루 첫 판만 올라가요. 오늘 ${MODES[S.mode].label} 첫 판은 ${first}개였어요.`
+      : '오늘의 순위는 하루 첫 판만 올라가요. 이 판은 연습이에요.') +
+      '<button class="linkish" type="button" data-open-lb>오늘 순위 보기</button>');
+  }
   else $('lb-result').hidden = true;
   hud();
   // the site's feed player embeds games in an iframe and listens for these
