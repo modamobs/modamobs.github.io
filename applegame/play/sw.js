@@ -1,5 +1,5 @@
 // Offline support: the game shell is cached on install; fonts are cached the first time they load.
-const CACHE = 'apple-game-v8';
+const CACHE = 'apple-game-v9';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg'];
 
 self.addEventListener('install', e => {
