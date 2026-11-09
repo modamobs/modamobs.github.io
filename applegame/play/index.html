@@ -520,7 +520,7 @@ const MODE = 'box14';
 // Its board always stands tall, so 'down' is the same for every player whatever the screen shape.
 const DROP = 'drop14';
 // 'path14': the same 140 apples, but instead of a box the finger threads apples that touch one another
-// (sideways, up and down, or corner to corner) until they add up to 10.
+// (sideways, up and down, or corner to corner, or across picked spots) until they add up to 10.
 const PATH = 'path14';
 // key: what the best score, the day's ranked game and the server board are kept under. Games were 2 minutes
 // until 2026-11-09 (kept as box14 / drop14); 1-minute games start fresh bests and boards of their own.
@@ -598,20 +598,52 @@ function clearRect(g, C, m) {
   for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) g[r * C + c] = 0;
 }
 
-// 이어 긋기: is there still a chain of touching apples (8 ways round) that adds up to 10? Numbers are 1-9, so a
+// 이어 긋기: is there still a chain that adds up to 10? Two apples link when they touch (8 ways round) or when
+// both touch the same patch of empty cells, since the finger may cross picked spots. Numbers are 1-9, so a
 // chain is at most 10 long; a board so full of small numbers that the search runs long is not stuck anyway.
 const AROUND = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+function around(i, R, C) {
+  const r = Math.floor(i / C), c = i % C, out = [];
+  for (const [dr, dc] of AROUND) {
+    const rr = r + dr, cc = c + dc;
+    if (rr >= 0 && rr < R && cc >= 0 && cc < C) out.push(rr * C + cc);
+  }
+  return out;
+}
+function chainLinks(g, R, C) {
+  const patch = new Int32Array(R * C).fill(-1), edge = []; // edge[k]: the apples around empty patch k
+  for (let i = 0; i < g.length; i++) {
+    if (g[i] || patch[i] >= 0) continue;
+    const k = edge.length, seen = new Set(), todo = [i];
+    patch[i] = k;
+    while (todo.length) {
+      for (const j of around(todo.pop(), R, C)) {
+        if (g[j]) seen.add(j);
+        else if (patch[j] < 0) { patch[j] = k; todo.push(j); }
+      }
+    }
+    edge.push([...seen]);
+  }
+  const links = [];
+  for (let i = 0; i < g.length; i++) {
+    if (!g[i]) continue;
+    const set = new Set();
+    for (const j of around(i, R, C)) {
+      if (g[j]) set.add(j);
+      else for (const a of edge[patch[j]]) if (a !== i) set.add(a);
+    }
+    links[i] = [...set];
+  }
+  return links;
+}
 function hasChain(g, R, C) {
   let budget = 200000;
-  const used = new Uint8Array(R * C);
+  const used = new Uint8Array(R * C), links = chainLinks(g, R, C);
   const dfs = (i, s) => {
     if (--budget < 0) return true;
-    const r = Math.floor(i / C), c = i % C;
-    for (const [dr, dc] of AROUND) {
-      const rr = r + dr, cc = c + dc;
-      if (rr < 0 || rr >= R || cc < 0 || cc >= C) continue;
-      const j = rr * C + cc, v = g[j];
-      if (!v || used[j] || s + v > 10) continue;
+    for (const j of links[i]) {
+      const v = g[j];
+      if (used[j] || s + v > 10) continue;
       if (s + v === 10) return true;
       used[j] = 1;
       const found = dfs(j, s + v);
@@ -800,7 +832,7 @@ function coach() {
   el.innerHTML = `<div class="coach-box" style="${box}"></div>` +
     `<div class="coach-dot" style="--x0: ${x0}; --y0: ${y0}; --x1: ${x1}; --y1: ${y1}"></div>` +
     `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))">` +
-    (path ? '붙은 사과를 이어 그어요<br>대각선도 돼요. 합이 <b>10</b>이면 따요' : '끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요') +
+    (path ? '사과를 이어 그어요<br>대각선, 빈칸 건너도 돼요. 합이 <b>10</b>이면 따요' : '끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요') +
     (drop ? '<br>딴 자리로 <b>위의 사과가 떨어져요</b>' : '') + '</div>';
   board.appendChild(el);
 }
@@ -870,7 +902,7 @@ function hud() {
   $('timer').classList.toggle('low', S.time <= 20);
   $('timer').classList.toggle('urgent', S.started && !S.over && S.time <= 10);
   $('sub').textContent = (MODES[S.mode].drop ? '사과를 따면 위의 사과가 아래로 떨어져요. '
-    : MODES[S.mode].path ? '붙어 있는 사과를 이어 그어요. 대각선도 돼요. ' : '') +
+    : MODES[S.mode].path ? '사과를 이어 그어요. 대각선도, 빈칸을 건너서도 돼요. ' : '') +
     (!lbOn() ? '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.'
       : rankedToday(S.mode) ? '오늘 순위전은 끝났어요. 지금은 연습이에요.'
       : '이번 판이 오늘의 순위전이에요.');
@@ -941,8 +973,8 @@ function clearSel() {
   for (const el of els) el.classList.remove('on');
 }
 
-// 이어 긋기: the finger threads apples one at a time. Going back onto the apple before the last takes the
-// last one off. A cell only counts once the finger is near its middle, so a corner-to-corner step does not
+// 이어 긋기: the finger threads apples one at a time, across picked (empty) spots too. Going back onto the
+// apple before the last takes the last one off. A cell only counts once the finger is near its middle, so a corner-to-corner step does not
 // catch the apples beside it, and a fast swipe is followed in small steps so no apple is skipped.
 const toCells = e => { const b = board.getBoundingClientRect(); return [(e.clientX - b.left) / (b.width / S.C), (e.clientY - b.top) / (b.height / S.R)]; };
 function pathCell(x, y) {
@@ -951,12 +983,19 @@ function pathCell(x, y) {
   const dx = x - c - 0.5, dy = y - r - 0.5;
   return dx * dx + dy * dy <= 0.42 * 0.42 ? r * S.C + c : -1;
 }
+// drag.cur is the cell under the finger; drag.walk says the finger has come from the last apple of the chain
+// over empty cells only, so the next apple it reaches may join even though it does not touch the last one.
 function stepPath(i) {
-  const p = drag.path, last = p[p.length - 1];
-  if (i < 0 || i === last) return;
-  if (p.length >= 2 && i === p[p.length - 2]) { p.pop(); return; }
-  if (!S.g[i] || p.includes(i)) return;
-  if (last == null || (Math.abs(Math.floor(i / S.C) - Math.floor(last / S.C)) <= 1 && Math.abs(i % S.C - last % S.C) <= 1)) p.push(i);
+  if (i < 0 || i === drag.cur) return;
+  const p = drag.path, last = p[p.length - 1], from = drag.cur;
+  drag.cur = i;
+  if (last == null) { if (S.g[i]) { p.push(i); drag.walk = true; } return; }
+  const cameOver = drag.walk && (from === last || (from >= 0 && !S.g[from]));
+  if (!S.g[i]) { drag.walk = cameOver; return; }
+  if (i === last) { drag.walk = true; return; }
+  if (p.length >= 2 && i === p[p.length - 2]) { p.pop(); drag.walk = true; return; }
+  if (cameOver && !p.includes(i)) p.push(i);
+  drag.walk = p[p.length - 1] === i; // an apple that could not join breaks the walk
 }
 function tracePath(e) {
   const [x, y] = toCells(e), [x0, y0] = drag.at;
@@ -1001,7 +1040,7 @@ stage.addEventListener('pointerdown', e => {
   if ($('coach')) $('coach').hidden = true;
   if (MODES[S.mode].path) {
     // the first apple is caught anywhere in its cell
-    drag = { id: e.pointerId, path: [], at: toCells(e) };
+    drag = { id: e.pointerId, path: [], at: toCells(e), cur: -1, walk: false };
     stepPath(p.r * S.C + p.c);
     showPath();
     return;
