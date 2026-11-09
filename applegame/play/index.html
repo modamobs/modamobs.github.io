@@ -990,8 +990,7 @@ function hud() {
   $('sub').textContent = (MODES[S.mode].drop ? '사과를 따면 위의 사과가 아래로 떨어져요.\n'
     : MODES[S.mode].path ? '대각선도, 빈칸을 건너서도 이어 그어요.\n' : '') +
     (!lbOn() ? '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.'
-      : rankedToday(S.mode) ? '오늘 순위전은 끝났어요. 지금은 연습이에요.'
-      : '이번 판이 오늘의 순위전이에요.');
+      : '끝낸 판은 모두 순위에 올라가요. 오늘 최고 기록으로 겨뤄요.');
   for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', b.dataset.mode === S.mode);
   $('sound').setAttribute('aria-pressed', prefs.sound);
   $('sound').textContent = prefs.sound ? '소리 켬' : '소리 끔';
@@ -1307,14 +1306,10 @@ function end(reason) {
   if (!S.restored && first) askReview(before > 0 && S.score > before);
   $('over-title').textContent = { time: '시간 종료', stuck: MODES[S.mode].path ? '더 이을 사과가 없어요' : '더 묶을 사과가 없어요', all: '완판!' }[reason];
   $('over-score').innerHTML = S.score + '개' + (S.extra ? '<small>+30초</small>' : '');
-  // the first game finished each day is the ranked one; later games are practice,
-  // so playing more does not buy more chances at the board
-  const ranked = lbOn() && !S.restored && (S.ranked ? !!S.extra : !rankedToday(S.mode));
-  if (ranked) {
-    S.ranked = true;
-    if (S.extra) markExtra(S.day, rankKey(S.mode));
-    markRanked(S.day, rankKey(S.mode), S.score);
-  }
+  // every finished game goes to the board, which keeps each player's best of the day; after the extra
+  // 30 seconds the same game goes again with its higher score
+  const ranked = lbOn() && !S.restored;
+  if (ranked) markRanked(S.day, rankKey(S.mode), S.score, !!S.extra);
   if (!S.restored && first) track('game_complete', { mode: S.mode, score: S.score, reason, ranked });
   $('timer').classList.remove('urgent');
   play('bell', 0.8);
@@ -1327,14 +1322,6 @@ function end(reason) {
   $('again-new').focus();
   $('nick-form').hidden = true;
   if (ranked) lbAfterGame();
-  else if (lbOn()) {
-    // only the day's first finished game in each mode goes on the board; say which one did
-    const first = load('apple-daily-best', {})[todayKey() + '|' + rankKey(S.mode)];
-    showLbResult((first != null
-      ? `오늘의 순위는 하루 첫 판만 올라가요. 오늘 ${MODES[S.mode].label} 첫 판은 ${first}개였어요.`
-      : '오늘의 순위는 하루 첫 판만 올라가요. 이 판은 연습이에요.') +
-      '<button class="linkish" type="button" data-open-lb>오늘 순위 보기</button>');
-  }
   else $('lb-result').hidden = true;
   hud();
   // the site's feed player embeds games in an iframe and listens for these
@@ -1477,20 +1464,19 @@ function rename(n) {
   for (const m of Object.keys(MODES)) { const k = todayKey() + '|' + rankKey(m); if (best[k] != null) q[k] = Math.max(q[k] || 0, best[k]); }
   store('apple-pending', q);
 }
-// today's ranked score per board (rankKey); the first finished game of the day goes here and to the server
-const rankedToday = mode => load('apple-daily-best', {})[todayKey() + '|' + rankKey(mode)] != null;
-function markRanked(day, mode, score) {
-  const db = load('apple-daily-best', {});
-  db[day + '|' + mode] = score;
-  store('apple-daily-best', db);
+// The day's best per board (rankKey) and whether it used the extra 30 seconds (sent as p_extra; the board
+// shows +30초). Every finished game comes here and goes to the server, which keeps the best.
+function markRanked(day, mode, score, extra) {
+  const k = day + '|' + mode, db = load('apple-daily-best', {});
+  if (db[k] == null || score > db[k]) {
+    db[k] = score;
+    store('apple-daily-best', db);
+    const x = load('apple-extra', {}), today = todayKey();
+    for (const j of Object.keys(x)) if (Date.parse(today) - Date.parse(j.split('|')[0]) > 864e5) delete x[j];
+    if (extra) x[k] = true; else delete x[k];
+    store('apple-extra', x);
+  }
   queueScore(day, mode, score); // sent right after; stays queued if the player is offline
-}
-// today's ranked scores that used the extra 30 seconds (sent along as p_extra; the board shows +30초)
-function markExtra(day, mode) {
-  const x = load('apple-extra', {}), today = todayKey();
-  for (const k of Object.keys(x)) if (Date.parse(today) - Date.parse(k.split('|')[0]) > 864e5) delete x[k];
-  x[day + '|' + mode] = true;
-  store('apple-extra', x);
 }
 const dayLabel = d => `${+d.slice(5, 7)}월 ${+d.slice(8)}일`;
 
@@ -1500,8 +1486,9 @@ function queueScore(day, mode, score) {
   q[k] = Math.max(q[k] || 0, score);
   store('apple-pending', q);
 }
-async function submitScore(day, mode, score) {
-  const extra = !!load('apple-extra', {})[day + '|' + mode];
+// extra: whether this game used the extra 30 seconds; left out for a queued best, whose flag is kept with it
+async function submitScore(day, mode, score, extra) {
+  if (extra == null) extra = !!load('apple-extra', {})[day + '|' + mode];
   const [r] = await lbFetch('rpc/apple_submit_score', {
     p_day: day, p_mode: mode, p_player: playerId(), p_nickname: nickname(), p_score: score, ...(extra ? { p_extra: true } : {}),
   });
@@ -1522,7 +1509,7 @@ async function flushPending() {
 
 function showLbResult(html) { const el = $('lb-result'); el.hidden = false; el.innerHTML = html; }
 async function lbAfterGame() {
-  const game = { day: S.day, mode: rankKey(S.mode), score: S.score };
+  const game = { day: S.day, mode: rankKey(S.mode), score: S.score, extra: !!S.extra };
   $('nick-form').hidden = true;
   if (!lbOn()) { $('lb-result').hidden = true; return; }
   // the name can be changed right here; the new one goes up with today's scores
@@ -1540,7 +1527,7 @@ async function lbAfterGame() {
 async function sendGame(g) {
   showLbResult('순위에 올리는 중…');
   try {
-    const r = await submitScore(g.day, g.mode, g.score);
+    const r = await submitScore(g.day, g.mode, g.score, g.extra);
     showLbResult(`오늘 ${r.rank}위 <span class="muted">${r.total}명 중 · 오늘 내 최고 ${r.best}개 · ${esc(nickname())}</span>` +
       '<button class="linkish" type="button" data-open-lb>전체 순위 보기</button>' +
       '<button class="linkish" type="button" data-rename>닉네임 바꾸기</button>');
@@ -1568,7 +1555,7 @@ async function openBoard(mode) {
     if (seq !== lbSeq) return;
     const me = mine[0];
     list.textContent = '';
-    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>오늘 첫 판을 끝내면 여기에 올라가요.</li>';
+    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>한 판을 끝내면 여기에 올라가요.</li>';
     rows.forEach((r, i) => {
       const li = document.createElement('li');
       if (me && me.rank === i + 1) li.className = 'me';
