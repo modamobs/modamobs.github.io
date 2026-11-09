@@ -154,11 +154,33 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   border-radius: 22px;
   background:
     var(--fuzz),
+    linear-gradient(var(--tint, transparent), var(--tint, transparent)),
     linear-gradient(var(--lift-board), var(--lift-board)),
     url("art/felt-board.jpg") center / cover,
     var(--board);
   box-shadow: 0 4px 0 var(--board-deep), 0 12px 24px var(--shade);
 }
+/* each mode has its own felt, so a glance at the tray tells which one is being played */
+.crate[data-mode="drop14"] { --tint: rgba(28, 92, 150, .38); }
+.crate[data-mode="path14"] { --tint: rgba(150, 104, 30, .40); }
+/* the mode's name pops up over a new board and goes at the first touch (modeTag() below) */
+.mode-tag {
+  position: absolute; left: 50%; top: 42%; z-index: 3; pointer-events: none;
+  transform: translate(-50%, -50%); width: max-content; max-width: calc(100% - 24px); box-sizing: border-box;
+  padding: 12px 22px 13px; border-radius: 16px; text-align: center;
+  background: var(--fuzz), var(--card); color: var(--ink);
+  box-shadow: 0 3px 0 var(--card-edge), 0 6px 14px var(--shade);
+  animation: mode-tag 1.9s ease-out forwards;
+}
+.mode-tag b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.7rem; line-height: 1.1; color: var(--red); }
+.mode-tag span { display: block; margin-top: 4px; font-size: .85rem; color: var(--muted); }
+@keyframes mode-tag {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.8); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+  20%, 72% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(.96); }
+}
+.coach-tip .mode { display: block; font-size: .8rem; color: var(--muted); }
 .crate::before {
   /* stitched hem around the tray */
   content: ""; position: absolute; inset: calc(var(--frame) * .4); pointer-events: none;
@@ -300,9 +322,25 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   font-family: var(--display); font-size: 1.05rem; line-height: 1.35;
 }
 .coach-tip b { color: var(--red); font-weight: 400; }
+/* 이어 긋기 coach: a ring on each apple of a chain, a dashed thread through them, and the dot running along it */
+.coach-ring {
+  position: absolute; width: calc(var(--cell) * .98); aspect-ratio: 1; transform: translate(-50%, -50%);
+  border: 4px dashed var(--pick); border-radius: 50%; box-sizing: border-box; background: rgba(255, 211, 77, .16);
+  animation: coach-pulse 1.6s ease-in-out infinite;
+}
+.coach-line { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.coach-line polyline { fill: none; stroke: var(--pick); stroke-width: 5px; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1px 10px; }
+.coach-dot.thread { animation: coach-thread 2.4s ease-in-out infinite; }
+@keyframes coach-thread {
+  0%, 8% { left: var(--x0); top: var(--y0); transform: translate(-50%, -50%) scale(1.15); opacity: 0; }
+  16% { left: var(--x0); top: var(--y0); transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  44% { left: var(--x1); top: var(--y1); }
+  72% { left: var(--x2); top: var(--y2); transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  86%, 100% { left: var(--x2); top: var(--y2); transform: translate(-50%, -50%) scale(1.15); opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .coach-box { animation: none; }
-  .coach-dot { animation: none; left: var(--x1); top: var(--y1); }
+  .coach-box, .coach-ring { animation: none; }
+  .coach-dot, .coach-dot.thread { animation: none; left: var(--x1); top: var(--y1); }
 }
 
 /* ---- results: a stitched felt card ---- */
@@ -528,9 +566,9 @@ const PATH = 'path14';
 // key: what the best score, the day's ranked game and the server board are kept under. Games were 2 minutes
 // until 2026-11-09 (kept as box14 / drop14); 1-minute games start fresh bests and boards of their own.
 const MODES = {
-  [MODE]: { r: 10, c: 14, label: '기본', key: 'box60' }, // canonical shape: wide, turned to fit the screen
-  [DROP]: { r: 14, c: 10, label: '떨어지기', drop: true, key: 'drop60' },
-  [PATH]: { r: 10, c: 14, label: '이어 긋기', path: true, key: 'path60' },
+  [MODE]: { r: 10, c: 14, label: '기본', rule: '네모로 묶어 합 10', key: 'box60' }, // canonical shape: wide, turned to fit the screen
+  [DROP]: { r: 14, c: 10, label: '떨어지기', rule: '딴 자리로 위의 사과가 떨어져요', drop: true, key: 'drop60' },
+  [PATH]: { r: 10, c: 14, label: '이어 긋기', rule: '대각선도, 빈칸 건너서도 이어 그어요', path: true, key: 'path60' },
 };
 const TIME = 60;
 const rankKey = m => MODES[m].key;
@@ -767,6 +805,7 @@ function render() {
   board.textContent = '';
   els = [];
   crate.classList.toggle('drop', !!MODES[S.mode].drop);
+  crate.dataset.mode = S.mode;
   for (let r = 0; r < S.R; r++) for (let c = 0; c < S.C; c++) {
     const v = S.g[r * S.C + c];
     const d = document.createElement('div');
@@ -803,6 +842,17 @@ function render() {
   layout();
   hud();
   coach();
+  modeTag();
+}
+
+// A new board says which mode it is, unless the first-game coach is up (its tip names the mode instead).
+function modeTag() {
+  if (S.started || S.over || $('coach')) return;
+  const m = MODES[S.mode], el = document.createElement('div');
+  el.className = 'mode-tag'; el.id = 'mode-tag';
+  el.innerHTML = `<b>${m.label}</b><span>${m.rule}</span>`;
+  el.addEventListener('animationend', () => el.remove());
+  board.appendChild(el);
 }
 
 // ---------- first-game coach ----------
@@ -812,16 +862,16 @@ function render() {
 let coached = load('apple-coach', {});
 function coach() {
   if (coached[S.mode] || S.started || S.over) return;
+  if (MODES[S.mode].path) return pathCoach();
   const drop = !!MODES[S.mode].drop;
   const solid = m => m.n === (m.r2 - m.r1 + 1) * (m.c2 - m.c1 + 1);
   const above = m => { let k = 0; for (let r = 0; r < m.r1; r++) if (S.g[r * S.C + m.c1]) k++; return k; };
   const midR = (S.R - 1) / 2, midC = (S.C - 1) / 2;
   const off = m => Math.abs((m.r1 + m.r2) / 2 - midR) + Math.abs((m.c1 + m.c2) / 2 - midC);
-  const path = !!MODES[S.mode].path;
-  let ms = (path ? pairs() : findMoves(S.g, S.R, S.C)).filter(m => m.n === 2 && solid(m) && m.r1 >= 2 && m.r2 <= S.R - 2);
+  let ms = findMoves(S.g, S.R, S.C).filter(m => m.n === 2 && solid(m) && m.r1 >= 2 && m.r2 <= S.R - 2);
   // in the falling mode a pair in one column with apples above shows what falls
   if (drop) { const col = ms.filter(m => m.c1 === m.c2 && above(m) >= 2); if (col.length) ms = col; }
-  if (!ms.length) ms = path ? pairs() : findMoves(S.g, S.R, S.C);
+  if (!ms.length) ms = findMoves(S.g, S.R, S.C);
   const m = ms.sort((x, y) => off(x) - off(y))[0];
   if (!m) return;
   const at = (r, c) => [`calc(${c + 0.5} * var(--cw))`, `calc(${r + 0.5} * var(--ch))`];
@@ -834,21 +884,49 @@ function coach() {
   el.className = 'coach'; el.id = 'coach';
   el.innerHTML = `<div class="coach-box" style="${box}"></div>` +
     `<div class="coach-dot" style="--x0: ${x0}; --y0: ${y0}; --x1: ${x1}; --y1: ${y1}"></div>` +
-    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))">` +
-    (path ? '사과를 이어 그어요<br>대각선, 빈칸 건너도 돼요. 합이 <b>10</b>이면 따요' : '끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요') +
+    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))"><span class="mode">${MODES[S.mode].label}</span>끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요` +
     (drop ? '<br>딴 자리로 <b>위의 사과가 떨어져요</b>' : '') + '</div>';
   board.appendChild(el);
 }
-// side-by-side and stacked pairs that make 10, shaped like findMoves' rectangles (for the path coach)
-function pairs() {
-  const out = [];
-  for (let r = 0; r < S.R; r++) for (let c = 0; c < S.C; c++) {
-    const v = S.g[r * S.C + c];
-    if (!v) continue;
-    if (c + 1 < S.C && v + S.g[r * S.C + c + 1] === 10) out.push({ r1: r, c1: c, r2: r, c2: c + 1, n: 2 });
-    if (r + 1 < S.R && v + S.g[(r + 1) * S.C + c] === 10) out.push({ r1: r, c1: c, r2: r + 1, c2: c, n: 2 });
+// 이어 긋기: show three apples that make 10, the first step corner to corner and the second straight, so one
+// look teaches both "diagonal is fine" and "keep going past two". Near the middle, clear of the edges.
+function pathCoach() {
+  const { R, C, g } = S, cell = i => [Math.floor(i / C), i % C];
+  const ok = i => { const [r, c] = cell(i); return g[i] && r >= 2 && r <= R - 3 && c >= 1 && c <= C - 2; };
+  const midR = (R - 1) / 2, midC = (C - 1) / 2;
+  let best = null, bk = Infinity;
+  for (let b = 0; b < g.length; b++) {
+    if (!ok(b)) continue;
+    const [rb, cb] = cell(b);
+    for (const [dr, dc] of AROUND) {
+      if (!dr || !dc) continue; // a comes in on the diagonal
+      const a = (rb + dr) * C + cb + dc;
+      if (!ok(a) || g[a] + g[b] >= 10) continue;
+      for (const [er, ec] of AROUND) {
+        if (er && ec) continue; // c goes on straight
+        const c = (rb + er) * C + cb + ec;
+        // c away from a, so the three read as a bent line and not a huddle
+        if (!ok(c) || (Math.abs(er - dr) <= 1 && Math.abs(ec - dc) <= 1) || g[a] + g[b] + g[c] !== 10) continue;
+        const k = Math.abs(rb - midR) + Math.abs(cb - midC);
+        if (k < bk) { bk = k; best = [a, b, c]; }
+      }
+    }
   }
-  return out;
+  if (!best) return;
+  const pt = i => { const [r, c] = cell(i); return [`calc(${c + 0.5} * var(--cw))`, `calc(${r + 0.5} * var(--ch))`]; };
+  const p = best.map(pt);
+  const top = Math.min(...best.map(i => cell(i)[0])), bottom = Math.max(...best.map(i => cell(i)[0]));
+  const tipRow = top >= 3 ? top - 1.6 : bottom + 2.6;
+  const el = document.createElement('div');
+  el.className = 'coach'; el.id = 'coach';
+  el.innerHTML =
+    `<svg class="coach-line" viewBox="0 0 ${C} ${R}" preserveAspectRatio="none"><polyline vector-effect="non-scaling-stroke" points="` +
+    best.map(i => { const [r, c] = cell(i); return `${c + 0.5},${r + 0.5}`; }).join(' ') + '"/></svg>' +
+    p.map(([x, y]) => `<div class="coach-ring" style="left: ${x}; top: ${y}"></div>`).join('') +
+    `<div class="coach-dot thread" style="--x0: ${p[0][0]}; --y0: ${p[0][1]}; --x1: ${p[1][0]}; --y1: ${p[1][1]}; --x2: ${p[2][0]}; --y2: ${p[2][1]}"></div>` +
+    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))"><span class="mode">${MODES[S.mode].label}</span>사과를 이어 그어요. 대각선도 돼요<br>` +
+    `${best.map(i => g[i]).join(' + ')} = <b>10</b>이면 따요</div>`;
+  board.appendChild(el);
 }
 function coachDone() {
   const el = $('coach');
@@ -1041,6 +1119,7 @@ stage.addEventListener('pointerdown', e => {
   unlockAudio();
   startClock();
   const p = cellAt(e);
+  $('mode-tag')?.remove();
   if ($('coach')) $('coach').hidden = true;
   if (MODES[S.mode].path) {
     // the first apple is caught anywhere in its cell
