@@ -139,7 +139,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   width: min(250px, calc(100vw - 32px)); padding: 12px; box-sizing: border-box;
 }
 .menu .sub { margin: 0; padding: 2px 4px; font-size: 0.78rem; line-height: 1.4; color: var(--muted); }
-.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .modes .chip[aria-pressed="true"] { background: var(--fuzz), var(--red); color: var(--thread); box-shadow: 0 2px 0 var(--red-deep), 0 3px 6px var(--shade); }
 .modes .chip[aria-pressed="true"]::after { border-color: var(--thread); opacity: .8; }
 
@@ -242,15 +242,24 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   background: rgba(255, 250, 240, .1);
 }
 .sel.hit { border-color: var(--pick); border-width: 4px; background: rgba(255, 211, 77, .16); }
-.sel .sum {
+.sel .sum, .psum {
   position: absolute; top: -16px; right: -12px;
   min-width: 34px; padding: 3px 9px 4px; box-sizing: border-box; border-radius: 12px;
   background: var(--fuzz), var(--card); box-shadow: 0 2px 0 var(--card-edge), 0 3px 6px var(--shade);
   font-family: var(--display); font-size: 1.3rem; line-height: 1; text-align: center; color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-.sel.hit .sum { background: var(--fuzz), var(--red); box-shadow: 0 2px 0 var(--red-deep); color: var(--thread); }
-.sel.over .sum { text-decoration: line-through; color: var(--muted); }
+.sel.hit .sum, .psum.hit { background: var(--fuzz), var(--red); box-shadow: 0 2px 0 var(--red-deep); color: var(--thread); }
+.sel.over .sum, .psum.over { text-decoration: line-through; color: var(--muted); }
+
+/* 이어 긋기: a cream thread through the picked apples, yellow when they make 10; the sum rides on the last apple */
+.path { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; } /* under the apples */
+.path polyline {
+  fill: none; stroke: var(--thread); stroke-width: 7px; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1px 11px; filter: drop-shadow(0 1px 1px var(--shade));
+}
+.path.hit polyline { stroke: var(--pick); stroke-width: 9px; }
+.psum { position: absolute; right: auto; z-index: 2; pointer-events: none; transform: translate(-10%, -135%); }
 
 .plus {
   position: absolute; pointer-events: none; transform: translate(-50%, -50%);
@@ -434,6 +443,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
       <div class="modes" role="group" aria-label="모드">
         <button class="chip" data-mode="box14" aria-pressed="true">기본</button>
         <button class="chip" data-mode="drop14" aria-pressed="false">떨어지기</button>
+        <button class="chip" data-mode="path14" aria-pressed="false">이어 긋기</button>
       </div>
       <button class="chip" id="sound" aria-pressed="true">소리 켬</button>
       <button class="chip" id="restart">새 판</button>
@@ -461,6 +471,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
           <div class="modes">
             <button class="chip" data-pick="box14" aria-pressed="true">기본</button>
             <button class="chip" data-pick="drop14" aria-pressed="false">떨어지기</button>
+            <button class="chip" data-pick="path14" aria-pressed="false">이어 긋기</button>
           </div>
         </div>
         <div class="row">
@@ -483,6 +494,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
           <div class="modes lb-tabs" role="group" aria-label="순위표">
             <button class="chip" data-lb="box14" aria-pressed="true">기본</button>
             <button class="chip" data-lb="drop14" aria-pressed="false">떨어지기</button>
+            <button class="chip" data-lb="path14" aria-pressed="false">이어 긋기</button>
           </div>
           <hr>
           <ol class="lb-list" id="lb-list"></ol>
@@ -507,11 +519,15 @@ const MODE = 'box14';
 // 'drop14': the same 140 apples, but harvesting lets the apples above fall into the gap (no new apples come in).
 // Its board always stands tall, so 'down' is the same for every player whatever the screen shape.
 const DROP = 'drop14';
+// 'path14': the same 140 apples, but instead of a box the finger threads apples that touch one another
+// (sideways, up and down, or corner to corner) until they add up to 10.
+const PATH = 'path14';
 // key: what the best score, the day's ranked game and the server board are kept under. Games were 2 minutes
 // until 2026-11-09 (kept as box14 / drop14); 1-minute games start fresh bests and boards of their own.
 const MODES = {
   [MODE]: { r: 10, c: 14, label: '기본', key: 'box60' }, // canonical shape: wide, turned to fit the screen
   [DROP]: { r: 14, c: 10, label: '떨어지기', drop: true, key: 'drop60' },
+  [PATH]: { r: 10, c: 14, label: '이어 긋기', path: true, key: 'path60' },
 };
 const TIME = 60;
 const rankKey = m => MODES[m].key;
@@ -582,6 +598,39 @@ function clearRect(g, C, m) {
   for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) g[r * C + c] = 0;
 }
 
+// 이어 긋기: is there still a chain of touching apples (8 ways round) that adds up to 10? Numbers are 1-9, so a
+// chain is at most 10 long; a board so full of small numbers that the search runs long is not stuck anyway.
+const AROUND = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+function hasChain(g, R, C) {
+  let budget = 200000;
+  const used = new Uint8Array(R * C);
+  const dfs = (i, s) => {
+    if (--budget < 0) return true;
+    const r = Math.floor(i / C), c = i % C;
+    for (const [dr, dc] of AROUND) {
+      const rr = r + dr, cc = c + dc;
+      if (rr < 0 || rr >= R || cc < 0 || cc >= C) continue;
+      const j = rr * C + cc, v = g[j];
+      if (!v || used[j] || s + v > 10) continue;
+      if (s + v === 10) return true;
+      used[j] = 1;
+      const found = dfs(j, s + v);
+      used[j] = 0;
+      if (found) return true;
+    }
+    return false;
+  };
+  for (let i = 0; i < g.length; i++) {
+    if (!g[i]) continue;
+    used[i] = 1;
+    const found = dfs(i, g[i]);
+    used[i] = 0;
+    if (found) return true;
+  }
+  return false;
+}
+const anyMove = () => MODES[S.mode].path ? hasChain(S.g, S.R, S.C) : findMoves(S.g, S.R, S.C).length > 0;
+
 // Falling mode: every apple drops straight down into the gaps below it, so the empty cells end up at the
 // top of each column. Returns the [from, to] cell moves.
 function settle(g, R, C) {
@@ -623,9 +672,11 @@ function estimate(g, R, C, rng, drop) {
 
 // Generate boards until the computer clears at least 80% of the apples; keep the best one seen.
 function makeBoard(mode) {
-  const { r: R, c: C, drop } = MODES[mode];
+  const { r: R, c: C, drop, path } = MODES[mode];
   const seed = (Math.random() * 2 ** 32) >>> 0;
   const rng = mulberry32(seed);
+  // chains reach almost any apple, so any board will do
+  if (path) return { R, C, g: randomGrid(R, C, rng), est: R * C };
   let pick = null;
   for (let t = 0; t < 8; t++) {
     const g = randomGrid(R, C, rng);
@@ -706,6 +757,12 @@ function render() {
   sel.className = 'sel'; sel.id = 'sel'; sel.hidden = true;
   sel.innerHTML = '<span class="sum" id="sum"></span>';
   board.appendChild(sel);
+  if (MODES[S.mode].path) {
+    board.insertAdjacentHTML('afterbegin', // first, so the thread runs under the apples
+      `<svg class="path" id="path" viewBox="0 0 ${S.C} ${S.R}" preserveAspectRatio="none" hidden>` +
+      '<polyline vector-effect="non-scaling-stroke"/></svg>');
+    board.insertAdjacentHTML('beforeend', '<span class="psum" id="psum" hidden></span>');
+  }
   $('over').hidden = !S.over;
   paintApples();
   layout();
@@ -725,10 +782,11 @@ function coach() {
   const above = m => { let k = 0; for (let r = 0; r < m.r1; r++) if (S.g[r * S.C + m.c1]) k++; return k; };
   const midR = (S.R - 1) / 2, midC = (S.C - 1) / 2;
   const off = m => Math.abs((m.r1 + m.r2) / 2 - midR) + Math.abs((m.c1 + m.c2) / 2 - midC);
-  let ms = findMoves(S.g, S.R, S.C).filter(m => m.n === 2 && solid(m) && m.r1 >= 2 && m.r2 <= S.R - 2);
+  const path = !!MODES[S.mode].path;
+  let ms = (path ? pairs() : findMoves(S.g, S.R, S.C)).filter(m => m.n === 2 && solid(m) && m.r1 >= 2 && m.r2 <= S.R - 2);
   // in the falling mode a pair in one column with apples above shows what falls
   if (drop) { const col = ms.filter(m => m.c1 === m.c2 && above(m) >= 2); if (col.length) ms = col; }
-  if (!ms.length) ms = findMoves(S.g, S.R, S.C);
+  if (!ms.length) ms = path ? pairs() : findMoves(S.g, S.R, S.C);
   const m = ms.sort((x, y) => off(x) - off(y))[0];
   if (!m) return;
   const at = (r, c) => [`calc(${c + 0.5} * var(--cw))`, `calc(${r + 0.5} * var(--ch))`];
@@ -741,9 +799,21 @@ function coach() {
   el.className = 'coach'; el.id = 'coach';
   el.innerHTML = `<div class="coach-box" style="${box}"></div>` +
     `<div class="coach-dot" style="--x0: ${x0}; --y0: ${y0}; --x1: ${x1}; --y1: ${y1}"></div>` +
-    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))">끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요` +
+    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))">` +
+    (path ? '붙은 사과를 이어 그어요<br>대각선도 돼요. 합이 <b>10</b>이면 따요' : '끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요') +
     (drop ? '<br>딴 자리로 <b>위의 사과가 떨어져요</b>' : '') + '</div>';
   board.appendChild(el);
+}
+// side-by-side and stacked pairs that make 10, shaped like findMoves' rectangles (for the path coach)
+function pairs() {
+  const out = [];
+  for (let r = 0; r < S.R; r++) for (let c = 0; c < S.C; c++) {
+    const v = S.g[r * S.C + c];
+    if (!v) continue;
+    if (c + 1 < S.C && v + S.g[r * S.C + c + 1] === 10) out.push({ r1: r, c1: c, r2: r, c2: c + 1, n: 2 });
+    if (r + 1 < S.R && v + S.g[(r + 1) * S.C + c] === 10) out.push({ r1: r, c1: c, r2: r + 1, c2: c, n: 2 });
+  }
+  return out;
 }
 function coachDone() {
   const el = $('coach');
@@ -799,7 +869,8 @@ function hud() {
   $('fill').style.transform = `scaleX(${Math.max(0, S.time) / TIME})`;
   $('timer').classList.toggle('low', S.time <= 20);
   $('timer').classList.toggle('urgent', S.started && !S.over && S.time <= 10);
-  $('sub').textContent = (MODES[S.mode].drop ? '사과를 따면 위의 사과가 아래로 떨어져요. ' : '') +
+  $('sub').textContent = (MODES[S.mode].drop ? '사과를 따면 위의 사과가 아래로 떨어져요. '
+    : MODES[S.mode].path ? '붙어 있는 사과를 이어 그어요. 대각선도 돼요. ' : '') +
     (!lbOn() ? '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.'
       : rankedToday(S.mode) ? '오늘 순위전은 끝났어요. 지금은 연습이에요.'
       : '이번 판이 오늘의 순위전이에요.');
@@ -870,6 +941,56 @@ function clearSel() {
   for (const el of els) el.classList.remove('on');
 }
 
+// 이어 긋기: the finger threads apples one at a time. Going back onto the apple before the last takes the
+// last one off. A cell only counts once the finger is near its middle, so a corner-to-corner step does not
+// catch the apples beside it, and a fast swipe is followed in small steps so no apple is skipped.
+const toCells = e => { const b = board.getBoundingClientRect(); return [(e.clientX - b.left) / (b.width / S.C), (e.clientY - b.top) / (b.height / S.R)]; };
+function pathCell(x, y) {
+  const c = Math.floor(x), r = Math.floor(y);
+  if (r < 0 || r >= S.R || c < 0 || c >= S.C) return -1;
+  const dx = x - c - 0.5, dy = y - r - 0.5;
+  return dx * dx + dy * dy <= 0.42 * 0.42 ? r * S.C + c : -1;
+}
+function stepPath(i) {
+  const p = drag.path, last = p[p.length - 1];
+  if (i < 0 || i === last) return;
+  if (p.length >= 2 && i === p[p.length - 2]) { p.pop(); return; }
+  if (!S.g[i] || p.includes(i)) return;
+  if (last == null || (Math.abs(Math.floor(i / S.C) - Math.floor(last / S.C)) <= 1 && Math.abs(i % S.C - last % S.C) <= 1)) p.push(i);
+}
+function tracePath(e) {
+  const [x, y] = toCells(e), [x0, y0] = drag.at;
+  const steps = Math.max(1, Math.ceil(Math.hypot(x - x0, y - y0) / 0.15));
+  for (let k = 1; k <= steps; k++) stepPath(pathCell(x0 + (x - x0) * k / steps, y0 + (y - y0) * k / steps));
+  drag.at = [x, y];
+}
+function showPath() {
+  const p = drag.path;
+  let s = 0;
+  for (const i of p) s += S.g[i];
+  const on = new Set(p);
+  els.forEach((el, i) => el.classList.toggle('on', on.has(i)));
+  const svg = $('path'), sum = $('psum');
+  svg.toggleAttribute('hidden', !p.length); // an <svg> has no .hidden property
+  sum.hidden = !p.length;
+  svg.firstChild.setAttribute('points', p.map(i => `${i % S.C + 0.5},${Math.floor(i / S.C) + 0.5}`).join(' '));
+  svg.classList.toggle('hit', s === 10);
+  if (p.length) {
+    const last = p[p.length - 1];
+    sum.textContent = s;
+    sum.style.left = `calc(${last % S.C + 0.5} * var(--cw))`;
+    sum.style.top = `calc(${Math.floor(last / S.C) + 0.5} * var(--ch))`;
+    sum.classList.toggle('hit', s === 10);
+    sum.classList.toggle('over', s > 10);
+  }
+  return { s, n: p.length };
+}
+function clearPath() {
+  $('path').setAttribute('hidden', '');
+  $('psum').hidden = true;
+  for (const el of els) el.classList.remove('on');
+}
+
 stage.addEventListener('pointerdown', e => {
   if (!S || S.over || e.target.closest('.overlay')) return;
   e.preventDefault();
@@ -877,12 +998,20 @@ stage.addEventListener('pointerdown', e => {
   unlockAudio();
   startClock();
   const p = cellAt(e);
-  drag = { id: e.pointerId, a: p, b: p };
   if ($('coach')) $('coach').hidden = true;
+  if (MODES[S.mode].path) {
+    // the first apple is caught anywhere in its cell
+    drag = { id: e.pointerId, path: [], at: toCells(e) };
+    stepPath(p.r * S.C + p.c);
+    showPath();
+    return;
+  }
+  drag = { id: e.pointerId, a: p, b: p };
   showSel();
 });
 stage.addEventListener('pointermove', e => {
   if (!drag || e.pointerId !== drag.id) return;
+  if (drag.path) { tracePath(e); showPath(); return; }
   const p = cellAt(e);
   if (p.r === drag.b.r && p.c === drag.b.c) return;
   drag.b = p;
@@ -890,36 +1019,55 @@ stage.addEventListener('pointermove', e => {
 });
 function release(e) {
   if (!drag || e.pointerId !== drag.id) return;
-  const { m, s, n } = showSel();
-  drag = null;
-  clearSel();
-  if (S.over) return;
-  if (s === 10) harvest(m, n);
-  else if (n >= 2) play('miss', 0.5);
+  if (drag.path) {
+    const { s, n } = showPath(), cells = drag.path.slice();
+    drag = null;
+    clearPath();
+    if (S.over) return;
+    if (s === 10) {
+      const last = cells[cells.length - 1];
+      take(cells, last % S.C + 0.5, Math.floor(last / S.C) + 0.5);
+    } else if (n >= 2) play('miss', 0.5);
+  } else {
+    const { m, s, n } = showSel();
+    drag = null;
+    clearSel();
+    if (S.over) return;
+    if (s === 10) harvest(m);
+    else if (n >= 2) play('miss', 0.5);
+  }
   if ($('coach')) $('coach').hidden = false; // missed: point at the pair again
 }
 stage.addEventListener('pointerup', release);
 stage.addEventListener('pointercancel', e => {
-  if (drag && e.pointerId === drag.id) { drag = null; clearSel(); if ($('coach')) $('coach').hidden = false; }
+  if (!drag || e.pointerId !== drag.id) return;
+  if (drag.path) clearPath(); else clearSel();
+  drag = null;
+  if ($('coach')) $('coach').hidden = false;
 });
 
-function harvest(m, n) {
-  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) {
-    const i = r * S.C + c;
-    if (!S.g[i]) continue;
+function harvest(m) {
+  const cells = [];
+  for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) if (S.g[r * S.C + c]) cells.push(r * S.C + c);
+  take(cells, (m.c1 + m.c2 + 1) / 2, (m.r1 + m.r2 + 1) / 2);
+}
+// picks the apples in cells; the +n floats up from (x, y), counted in cells
+function take(cells, x, y) {
+  for (const i of cells) {
     S.g[i] = 0;
     const el = els[i];
     el.classList.add('gone');
     el.firstChild.addEventListener('animationend', () => el.classList.add('done'), { once: true });
   }
+  const n = cells.length;
   coachDone();
   if (MODES[S.mode].drop) fall();
   S.score += n;
-  floatPlus(m, n);
+  floatPlus(x, y, n);
   if (n >= 3) play('harvest-big', 0.9);
   else play('harvest-' + (1 + Math.floor(Math.random() * 3)), 0.9);
   hud();
-  if (!findMoves(S.g, S.R, S.C).length) end(S.g.some(v => v) ? 'stuck' : 'all');
+  if (!anyMove()) end(S.g.some(v => v) ? 'stuck' : 'all');
 }
 
 // Move the apple elements along with settle(): each falling apple jumps to its new row and slides there from
@@ -951,12 +1099,12 @@ function fall() {
   els = next;
 }
 
-function floatPlus(m, n) {
+function floatPlus(x, y, n) {
   const p = document.createElement('div');
   p.className = 'plus';
   p.textContent = '+' + n;
-  p.style.left = `calc(${(m.c1 + m.c2 + 1) / 2} * var(--cw))`;
-  p.style.top = `calc(${(m.r1 + m.r2 + 1) / 2} * var(--ch))`;
+  p.style.left = `calc(${x} * var(--cw))`;
+  p.style.top = `calc(${y} * var(--ch))`;
   board.appendChild(p);
   p.addEventListener('animationend', () => p.remove());
 }
@@ -1000,7 +1148,7 @@ function end(reason) {
   const best = Math.max(before, S.score);
   store(bestKey(S.mode), best);
   if (!S.restored) askReview(before > 0 && S.score > before);
-  $('over-title').textContent = { time: '시간 종료', stuck: '더 묶을 사과가 없어요', all: '완판!' }[reason];
+  $('over-title').textContent = { time: '시간 종료', stuck: MODES[S.mode].path ? '더 이을 사과가 없어요' : '더 묶을 사과가 없어요', all: '완판!' }[reason];
   $('over-score').textContent = S.score + '개';
   // the first game finished each day is the ranked one; later games are practice,
   // so playing more does not buy more chances at the board
@@ -1035,7 +1183,7 @@ function end(reason) {
 
 function shareText() {
   const ratio = Math.round((S.score / S.total) * 10);
-  return `사과 게임${MODES[S.mode].drop ? ' 떨어지기' : ''}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개`;
+  return `사과 게임${S.mode !== MODE ? ' ' + MODES[S.mode].label : ''}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개`;
 }
 // Share the result: Toss's own share sheet in Toss (with a link that opens the game there), the Capacitor
 // share sheet in the Android app, the browser's (Web Share) elsewhere; with none of those, copy it.
