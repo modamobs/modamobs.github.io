@@ -83,5 +83,55 @@
     next();
   };
 
-  if (AdMob) setTimeout(prepare, 4000);
+  // Rewarded ads: the "광고 보고 30초 더" button when a game's time runs out (timeUp() in index.html).
+  // AdMob in the Android app, Toss in the mini-app (window.tossRewarded, from toss/bridge); none on the web and
+  // in the ONE store game, where ready() is false and the game simply ends. Emptying REAL_REWARDED shows
+  // Google's test ad.
+  const TEST_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
+  const REAL_REWARDED = ''; // applegame_rewarded: fill in once the AdMob unit is made
+  let rewardReady = false;
+  let rewardLoading = false;
+  function prepareReward() {
+    if (!AdMob || rewardReady || rewardLoading) return;
+    rewardLoading = true;
+    init()
+      .then(ok => ok && AdMob.prepareRewardVideoAd({ adId: REAL_REWARDED || TEST_REWARDED, isTesting: !REAL_REWARDED }))
+      .then(ok => { if (ok) rewardReady = true; }, () => {})
+      .finally(() => { rewardLoading = false; });
+  }
+  // AdMob: true once the ad is closed after the reward was earned
+  async function showAdMobReward() {
+    if (!rewardReady) { prepareReward(); return false; }
+    rewardReady = false;
+    let earned = false;
+    const subs = [];
+    try {
+      return await new Promise(resolve => {
+        subs.push(AdMob.addListener('onRewardedVideoAdReward', () => { earned = true; }));
+        subs.push(AdMob.addListener('onRewardedVideoAdDismissed', () => resolve(earned)));
+        subs.push(AdMob.addListener('onRewardedVideoAdFailedToShow', () => resolve(false)));
+        AdMob.showRewardVideoAd().then(() => { earned = true; }, () => resolve(false));
+      });
+    } finally {
+      for (const s of subs) Promise.resolve(s).then(h => h && h.remove()).catch(() => {});
+      prepareReward();
+    }
+  }
+  window.rewardedAd = {
+    ready() {
+      if (AdMob) { prepareReward(); return rewardReady; }
+      return !!(window.tossRewarded && window.tossRewarded.ready());
+    },
+    async show() {
+      const ok = AdMob ? await showAdMobReward() : !!(window.tossRewarded && await window.tossRewarded.show());
+      played = 0; // no interstitial right after a rewarded ad
+      lastShown = Date.now();
+      return ok;
+    },
+  };
+
+  if (AdMob) {
+    setTimeout(prepare, 4000);
+    setTimeout(prepareReward, 6000);
+  }
 })();

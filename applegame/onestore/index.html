@@ -384,6 +384,15 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   max-width: 45%; text-align: center; line-height: 1.15;
 }
 .sheet .row { display: flex; gap: 8px; }
+/* time is up: watch an ad for 30 more seconds (timeUp() below) */
+.receipt.more { text-align: center; }
+.receipt.more p { margin: 10px 0 0; }
+.more-score { font-size: 1rem; }
+.more-score b { font-family: var(--display); font-weight: 400; font-size: 1.3rem; color: var(--red); }
+.more-note { font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+/* a game that used the extra 30 seconds, on the receipt and the board */
+.receipt .total dd small { font-size: 0.8rem; color: var(--muted); margin-left: 4px; }
+.ext { font-style: normal; font-size: 0.7rem; color: var(--muted); margin-right: 5px; }
 /* the result sheet: which mode the next game is in */
 .pick .modes { gap: 8px; }
 .lb-tabs { margin-top: 10px; }
@@ -524,6 +533,17 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
         </form>
         <button class="btn" id="share">공유하기</button>
         <div class="copied" id="copied" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="overlay" id="more" hidden>
+      <div class="sheet" role="dialog" aria-labelledby="more-title">
+        <div class="receipt more">
+          <h2 class="shop" id="more-title">시간 종료</h2>
+          <p class="more-score">지금 <b id="more-score">0</b>개 · 사과가 <b id="more-left">0</b>개 남았어요</p>
+          <p class="more-note">광고를 보면 이 판을 30초 더 할 수 있어요.<br>한 판에 한 번이고, 순위에도 들어가요.</p>
+        </div>
+        <button class="btn primary" id="more-yes">광고 보고 30초 더</button>
+        <button class="btn" id="more-no">그만하고 결과 보기</button>
       </div>
     </div>
     <div class="overlay" id="lb" hidden>
@@ -788,6 +808,7 @@ function orient(b, mode) {
 
 function newGame(sameBoard) {
   stopClock();
+  $('more').hidden = true;
   const day = sameBoard && S ? S.day : todayKey();
   const base = sameBoard && S ? S.base : makeBoard(prefs.mode);
   const o = orient(base, prefs.mode);
@@ -1007,7 +1028,7 @@ function tick(now) {
   S.time -= (now - lastTick) / 1000;
   lastTick = now;
   if (Math.ceil(S.time) < before && before <= 10 && S.time > 0) play('tick', 0.6);
-  if (S.time <= 0) { S.time = 0; hud(); return end('time'); }
+  if (S.time <= 0) { S.time = 0; hud(); return timeUp(); }
   hud();
   raf = requestAnimationFrame(tick);
 }
@@ -1262,6 +1283,53 @@ function askReview(newBest) {
   }, 1500);
 }
 
+// ---------- 30 more seconds ----------
+// Time ran out: once a game, with a rewarded ad loaded (the Android app and Toss; www/ads.js), offer 30 more
+// seconds for watching it. The game only finishes (end()) after that, so the ranked score includes them;
+// the board marks such scores "+30초".
+const EXTRA = 30;
+function timeUp() {
+  stopClock();
+  const ad = window.rewardedAd;
+  if (S.extra || S.restored || !ad || !ad.ready()) return end('time');
+  S.over = true; // nothing moves behind the sheet
+  S.asking = true;
+  S.rung = true;
+  $('more-score').textContent = S.score;
+  $('more-left').textContent = S.g.filter(v => v).length;
+  $('timer').classList.remove('urgent');
+  play('bell', 0.8);
+  $('more-yes').disabled = false;
+  $('more').hidden = false;
+  $('more-yes').focus();
+}
+async function moreTime() {
+  if (!S.asking) return;
+  const g = S;
+  $('more-yes').disabled = true;
+  let ok = false;
+  try { ok = await window.rewardedAd.show(); } catch (e) { ok = false; }
+  if (S !== g || !S.asking) return; // another game was started meanwhile
+  S.asking = false;
+  $('more').hidden = true;
+  if (!ok) return end('time'); // closed before the reward, or no ad after all
+  S.over = false;
+  S.extra = true;
+  S.rung = false;
+  S.time = EXTRA;
+  hud();
+  lastTick = performance.now();
+  raf = requestAnimationFrame(tick);
+}
+function noMoreTime() {
+  if (!S.asking) return;
+  S.asking = false;
+  $('more').hidden = true;
+  end('time');
+}
+$('more-yes').addEventListener('click', moreTime);
+$('more-no').addEventListener('click', noMoreTime);
+
 // ---------- end ----------
 function end(reason) {
   stopClock();
@@ -1275,10 +1343,15 @@ function end(reason) {
   // the first game finished each day is the ranked one; later games are practice,
   // so playing more does not buy more chances at the board
   const ranked = lbOn() && !S.ranked && !rankedToday(S.mode) && !S.restored;
-  if (ranked) { S.ranked = true; markRanked(S.day, rankKey(S.mode), S.score); }
+  if (ranked) {
+    S.ranked = true;
+    if (S.extra) markExtra(S.day, rankKey(S.mode));
+    markRanked(S.day, rankKey(S.mode), S.score);
+  }
   if (!S.restored) track('game_complete', { mode: S.mode, score: S.score, reason, ranked });
   $('timer').classList.remove('urgent');
-  play('bell', 0.8);
+  if (!S.rung) play('bell', 0.8);
+  if (S.extra) $('over-score').innerHTML = S.score + '개<small>+30초</small>';
   $('over-best').textContent = best + '개';
   $('copied').textContent = '';
   $('over').hidden = false;
@@ -1444,6 +1517,13 @@ function markRanked(day, mode, score) {
   store('apple-daily-best', db);
   queueScore(day, mode, score); // sent right after; stays queued if the player is offline
 }
+// today's ranked scores that used the extra 30 seconds (sent along as p_extra; the board shows +30초)
+function markExtra(day, mode) {
+  const x = load('apple-extra', {}), today = todayKey();
+  for (const k of Object.keys(x)) if (Date.parse(today) - Date.parse(k.split('|')[0]) > 864e5) delete x[k];
+  x[day + '|' + mode] = true;
+  store('apple-extra', x);
+}
 const dayLabel = d => `${+d.slice(5, 7)}월 ${+d.slice(8)}일`;
 
 // Scores that could not be sent (offline) wait here, best per day and mode, and go out on the next chance.
@@ -1453,7 +1533,10 @@ function queueScore(day, mode, score) {
   store('apple-pending', q);
 }
 async function submitScore(day, mode, score) {
-  const [r] = await lbFetch('rpc/apple_submit_score', { p_day: day, p_mode: mode, p_player: playerId(), p_nickname: nickname(), p_score: score });
+  const extra = !!load('apple-extra', {})[day + '|' + mode];
+  const [r] = await lbFetch('rpc/apple_submit_score', {
+    p_day: day, p_mode: mode, p_player: playerId(), p_nickname: nickname(), p_score: score, ...(extra ? { p_extra: true } : {}),
+  });
   const q = load('apple-pending', {});
   delete q[day + '|' + mode];
   store('apple-pending', q);
@@ -1512,7 +1595,7 @@ async function openBoard(mode) {
   $('lb-me').textContent = '';
   await flushPending();
   try {
-    const rows = await lbFetch(`apple_daily_scores?select=nickname,score,plays&day=eq.${day}&mode=eq.${rankKey(lbMode)}&order=score.desc,updated_at.asc&limit=100`);
+    const rows = await lbFetch(`apple_daily_scores?select=nickname,score,plays,extra&day=eq.${day}&mode=eq.${rankKey(lbMode)}&order=score.desc,updated_at.asc&limit=100`);
     const mine = await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: rankKey(lbMode), p_player: playerId() });
     if (seq !== lbSeq) return;
     const me = mine[0];
@@ -1525,6 +1608,7 @@ async function openBoard(mode) {
       li.children[0].textContent = i + 1;
       li.children[1].textContent = r.nickname;
       li.children[2].textContent = r.score + '개';
+      if (r.extra) li.children[2].insertAdjacentHTML('afterbegin', '<em class="ext">+30초</em>');
       list.appendChild(li);
     });
     $('lb-me').textContent = me ? `내 순위 ${me.rank}위 / ${me.total}명 · 최고 ${me.best}개` : '오늘 아직 기록이 없어요.';
@@ -1601,6 +1685,7 @@ window.AppleGame = {
   // back button: close an open sheet and say so; false lets the app ask whether to quit
   back() {
     if (!menu.hidden) { setMenu(false); return true; }
+    if (!$('more').hidden) { noMoreTime(); return true; }
     if (!$('lb').hidden) { $('lb').hidden = true; return true; }
     return false;
   },
