@@ -383,12 +383,9 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   max-width: 45%; text-align: center; line-height: 1.15;
 }
 .sheet .row { display: flex; gap: 8px; }
-/* time is up: watch an ad for 30 more seconds (timeUp() below) */
-.receipt.more { text-align: center; }
-.receipt.more p { margin: 10px 0 0; }
-.more-score { font-size: 1rem; }
-.more-score b { font-family: var(--display); font-weight: 400; font-size: 1.3rem; color: var(--red); }
-.more-note { font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+/* time is up: watch an ad for 30 more seconds on the same board (moreTime() below) */
+.btn.more { background: var(--fuzz), var(--pick); }
+.btn.more small { display: block; margin-top: 3px; font-family: inherit; font-size: 0.72rem; color: var(--ink); opacity: .75; }
 /* a game that used the extra 30 seconds, on the receipt and the board */
 .receipt .total dd small { font-size: 0.8rem; color: var(--muted); margin-left: 4px; }
 .ext { font-style: normal; font-size: 0.7rem; color: var(--muted); margin-right: 5px; }
@@ -514,6 +511,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
             <dt>내 최고 기록</dt><dd id="over-best">0개</dd>
           </dl>
         </div>
+        <button class="btn more" id="more-yes" hidden>광고 보고 이 판 30초 더 하기<small>한 판에 한 번 · 늘어난 점수도 순위에 들어가요</small></button>
         <div class="pick" role="group" aria-label="다음 판 모드">
           <div class="modes">
             <button class="chip" data-pick="box14" aria-pressed="true">기본</button>
@@ -532,17 +530,6 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
         </form>
         <button class="btn" id="share">공유하기</button>
         <div class="copied" id="copied" aria-live="polite"></div>
-      </div>
-    </div>
-    <div class="overlay" id="more" hidden>
-      <div class="sheet" role="dialog" aria-labelledby="more-title">
-        <div class="receipt more">
-          <h2 class="shop" id="more-title">시간 종료</h2>
-          <p class="more-score">지금 <b id="more-score">0</b>개 · 사과가 <b id="more-left">0</b>개 남았어요</p>
-          <p class="more-note">광고를 보면 이 판을 30초 더 할 수 있어요.<br>한 판에 한 번이고, 순위에도 들어가요.</p>
-        </div>
-        <button class="btn primary" id="more-yes">광고 보고 30초 더</button>
-        <button class="btn" id="more-no">그만하고 결과 보기</button>
       </div>
     </div>
     <div class="overlay" id="lb" hidden>
@@ -805,7 +792,6 @@ function orient(b, mode) {
 
 function newGame(sameBoard) {
   stopClock();
-  $('more').hidden = true;
   const day = sameBoard && S ? S.day : todayKey();
   const base = sameBoard && S ? S.base : makeBoard(prefs.mode);
   const o = orient(base, prefs.mode);
@@ -1025,7 +1011,7 @@ function tick(now) {
   S.time -= (now - lastTick) / 1000;
   lastTick = now;
   if (Math.ceil(S.time) < before && before <= 10 && S.time > 0) play('tick', 0.6);
-  if (S.time <= 0) { S.time = 0; hud(); return timeUp(); }
+  if (S.time <= 0) { S.time = 0; hud(); return end('time'); }
   hud();
   raf = requestAnimationFrame(tick);
 }
@@ -1281,51 +1267,33 @@ function askReview(newBest) {
 }
 
 // ---------- 30 more seconds ----------
-// Time ran out: once a game, with a rewarded ad loaded (the Android app and Toss; www/ads.js), offer 30 more
-// seconds for watching it. The game only finishes (end()) after that, so the ranked score includes them;
-// the board marks such scores "+30초".
+// When time runs out the result sheet offers, once a game and only with a rewarded ad loaded (the Android app
+// and Toss; www/ads.js), 30 more seconds on the same board for watching it. The score at that point is already
+// on the board; the longer game replaces it there, marked "+30초".
 const EXTRA = 30;
-function timeUp() {
-  stopClock();
+function canExtend(reason) {
   const ad = window.rewardedAd;
-  if (S.extra || S.restored || !ad || !ad.ready()) return end('time');
-  S.over = true; // nothing moves behind the sheet
-  S.asking = true;
-  S.rung = true;
-  $('more-score').textContent = S.score;
-  $('more-left').textContent = S.g.filter(v => v).length;
-  $('timer').classList.remove('urgent');
-  play('bell', 0.8);
-  $('more-yes').disabled = false;
-  $('more').hidden = false;
-  $('more-yes').focus();
+  return reason === 'time' && !S.extra && !S.restored && !!ad && ad.ready();
 }
 async function moreTime() {
-  if (!S.asking) return;
+  if (!S.over || S.extra) return;
   const g = S;
   $('more-yes').disabled = true;
   let ok = false;
   try { ok = await window.rewardedAd.show(); } catch (e) { ok = false; }
-  if (S !== g || !S.asking) return; // another game was started meanwhile
-  S.asking = false;
-  $('more').hidden = true;
-  if (!ok) return end('time'); // closed before the reward, or no ad after all
+  if (S !== g) return; // another game was started meanwhile
+  $('more-yes').hidden = true;
+  if (!ok) return; // closed before the reward: the result stays as it is
+  $('over').hidden = true;
+  $('nick-form').hidden = true;
   S.over = false;
   S.extra = true;
-  S.rung = false;
   S.time = EXTRA;
   hud();
   lastTick = performance.now();
   raf = requestAnimationFrame(tick);
 }
-function noMoreTime() {
-  if (!S.asking) return;
-  S.asking = false;
-  $('more').hidden = true;
-  end('time');
-}
 $('more-yes').addEventListener('click', moreTime);
-$('more-no').addEventListener('click', noMoreTime);
 
 // ---------- end ----------
 function end(reason) {
@@ -1334,22 +1302,25 @@ function end(reason) {
   const before = load(bestKey(S.mode), 0);
   const best = Math.max(before, S.score);
   store(bestKey(S.mode), best);
-  if (!S.restored) askReview(before > 0 && S.score > before);
+  const first = !S.ended; // the end after the extra 30 seconds is the same game's second
+  S.ended = true;
+  if (!S.restored && first) askReview(before > 0 && S.score > before);
   $('over-title').textContent = { time: '시간 종료', stuck: MODES[S.mode].path ? '더 이을 사과가 없어요' : '더 묶을 사과가 없어요', all: '완판!' }[reason];
-  $('over-score').textContent = S.score + '개';
+  $('over-score').innerHTML = S.score + '개' + (S.extra ? '<small>+30초</small>' : '');
   // the first game finished each day is the ranked one; later games are practice,
   // so playing more does not buy more chances at the board
-  const ranked = lbOn() && !S.ranked && !rankedToday(S.mode) && !S.restored;
+  const ranked = lbOn() && !S.restored && (S.ranked ? !!S.extra : !rankedToday(S.mode));
   if (ranked) {
     S.ranked = true;
     if (S.extra) markExtra(S.day, rankKey(S.mode));
     markRanked(S.day, rankKey(S.mode), S.score);
   }
-  if (!S.restored) track('game_complete', { mode: S.mode, score: S.score, reason, ranked });
+  if (!S.restored && first) track('game_complete', { mode: S.mode, score: S.score, reason, ranked });
   $('timer').classList.remove('urgent');
-  if (!S.rung) play('bell', 0.8);
-  if (S.extra) $('over-score').innerHTML = S.score + '개<small>+30초</small>';
+  play('bell', 0.8);
   $('over-best').textContent = best + '개';
+  $('more-yes').hidden = !canExtend(reason);
+  $('more-yes').disabled = false;
   $('copied').textContent = '';
   $('over').hidden = false;
   pickMode(S.mode);
@@ -1682,7 +1653,6 @@ window.AppleGame = {
   // back button: close an open sheet and say so; false lets the app ask whether to quit
   back() {
     if (!menu.hidden) { setMenu(false); return true; }
-    if (!$('more').hidden) { noMoreTime(); return true; }
     if (!$('lb').hidden) { $('lb').hidden = true; return true; }
     return false;
   },
