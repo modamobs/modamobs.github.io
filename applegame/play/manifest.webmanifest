@@ -1,7 +1,7 @@
 {
   "name": "사과 게임",
   "short_name": "사과 게임",
-  "description": "합이 10이 되게 사과를 묶어 따는 2분 퍼즐",
+  "description": "합이 10이 되게 사과를 묶어 따는 1분 퍼즐",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",

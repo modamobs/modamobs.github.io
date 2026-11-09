@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>사과 게임</title>
-<meta name="description" content="합이 10이 되게 사과를 묶어 따는 2분 퍼즐">
+<meta name="description" content="합이 10이 되게 사과를 묶어 따는 1분 퍼즐">
 <meta name="theme-color" content="#efe6d4">
 <meta name="color-scheme" content="light">
 <meta name="mobile-web-app-capable" content="yes">
@@ -421,7 +421,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
         <circle cx="12" cy="13.5" r="8"/><path d="M12 13.5V9.5M9.5 2.5h5M12 2.5v3M18.5 6.5l1.5-1.5"/>
       </svg>
-      <span class="t" id="time">2:00</span><span class="fill" id="fill"></span>
+      <span class="t" id="time">1:00</span><span class="fill" id="fill"></span>
     </div>
     <div class="hud score felt"><span class="k">딴 사과</span><span class="v" id="score">0</span></div>
     <button class="chip icon-btn" id="redo" aria-label="다시하기">
@@ -507,11 +507,14 @@ const MODE = 'box14';
 // 'drop14': the same 140 apples, but harvesting lets the apples above fall into the gap (no new apples come in).
 // Its board always stands tall, so 'down' is the same for every player whatever the screen shape.
 const DROP = 'drop14';
+// key: what the best score, the day's ranked game and the server board are kept under. Games were 2 minutes
+// until 2026-11-09 (kept as box14 / drop14); 1-minute games start fresh bests and boards of their own.
 const MODES = {
-  [MODE]: { r: 10, c: 14, label: '기본' }, // canonical shape: wide, turned to fit the screen
-  [DROP]: { r: 14, c: 10, label: '떨어지기', drop: true },
+  [MODE]: { r: 10, c: 14, label: '기본', key: 'box60' }, // canonical shape: wide, turned to fit the screen
+  [DROP]: { r: 14, c: 10, label: '떨어지기', drop: true, key: 'drop60' },
 };
-const TIME = 120;
+const TIME = 60;
+const rankKey = m => MODES[m].key;
 
 const $ = id => document.getElementById(id);
 const stage = $('stage'), crate = $('crate'), board = $('board');
@@ -648,7 +651,7 @@ let raf = 0, lastTick = 0;
 
 function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 function load(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
-const bestKey = m => 'apple-best-' + m;
+const bestKey = m => 'apple-best-' + rankKey(m);
 
 // Show the board tall on portrait screens and wide on landscape ones. Transposing keeps every rectangle a rectangle.
 function orient(b, mode) {
@@ -1002,7 +1005,7 @@ function end(reason) {
   // the first game finished each day is the ranked one; later games are practice,
   // so playing more does not buy more chances at the board
   const ranked = lbOn() && !S.ranked && !rankedToday(S.mode) && !S.restored;
-  if (ranked) { S.ranked = true; markRanked(S.day, S.mode, S.score); }
+  if (ranked) { S.ranked = true; markRanked(S.day, rankKey(S.mode), S.score); }
   if (!S.restored) track('game_complete', { mode: S.mode, score: S.score, reason, ranked });
   $('timer').classList.remove('urgent');
   play('bell', 0.8);
@@ -1015,7 +1018,7 @@ function end(reason) {
   if (ranked) lbAfterGame();
   else if (lbOn()) {
     // only the day's first finished game in each mode goes on the board; say which one did
-    const first = load('apple-daily-best', {})[todayKey() + '|' + S.mode];
+    const first = load('apple-daily-best', {})[todayKey() + '|' + rankKey(S.mode)];
     showLbResult((first != null
       ? `오늘의 순위는 하루 첫 판만 올라가요. 오늘 ${MODES[S.mode].label} 첫 판은 ${first}개였어요.`
       : '오늘의 순위는 하루 첫 판만 올라가요. 이 판은 연습이에요.') +
@@ -1160,11 +1163,11 @@ function rename(n) {
   store('apple-nick', n.trim().slice(0, 12));
   const q = load('apple-pending', {});
   const best = load('apple-daily-best', {});
-  for (const m of Object.keys(MODES)) { const k = todayKey() + '|' + m; if (best[k] != null) q[k] = Math.max(q[k] || 0, best[k]); }
+  for (const m of Object.keys(MODES)) { const k = todayKey() + '|' + rankKey(m); if (best[k] != null) q[k] = Math.max(q[k] || 0, best[k]); }
   store('apple-pending', q);
 }
-// today's ranked score per mode; the first finished game of the day goes here and to the server
-const rankedToday = mode => load('apple-daily-best', {})[todayKey() + '|' + mode] != null;
+// today's ranked score per board (rankKey); the first finished game of the day goes here and to the server
+const rankedToday = mode => load('apple-daily-best', {})[todayKey() + '|' + rankKey(mode)] != null;
 function markRanked(day, mode, score) {
   const db = load('apple-daily-best', {});
   db[day + '|' + mode] = score;
@@ -1198,7 +1201,7 @@ async function flushPending() {
 
 function showLbResult(html) { const el = $('lb-result'); el.hidden = false; el.innerHTML = html; }
 async function lbAfterGame() {
-  const game = { day: S.day, mode: S.mode, score: S.score };
+  const game = { day: S.day, mode: rankKey(S.mode), score: S.score };
   $('nick-form').hidden = true;
   if (!lbOn()) { $('lb-result').hidden = true; return; }
   // the name can be changed right here; the new one goes up with today's scores
@@ -1239,8 +1242,8 @@ async function openBoard(mode) {
   $('lb-me').textContent = '';
   await flushPending();
   try {
-    const rows = await lbFetch(`apple_daily_scores?select=nickname,score,plays&day=eq.${day}&mode=eq.${lbMode}&order=score.desc,updated_at.asc&limit=100`);
-    const mine = await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() });
+    const rows = await lbFetch(`apple_daily_scores?select=nickname,score,plays&day=eq.${day}&mode=eq.${rankKey(lbMode)}&order=score.desc,updated_at.asc&limit=100`);
+    const mine = await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: rankKey(lbMode), p_player: playerId() });
     if (seq !== lbSeq) return;
     const me = mine[0];
     list.textContent = '';
