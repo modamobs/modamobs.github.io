@@ -35,19 +35,19 @@
 <body>
 
 <h1>사과 게임 개인정보 처리방침</h1>
-<p class="meta">시행일: 2026년 10월 26일</p>
+<p class="meta">시행일: 2026년 11월 9일</p>
 
 <p>사과 게임(패키지 <code>com.mobs.applegame</code>, 이하 "본 게임")은 가입이나 로그인 없이 바로 시작합니다.
-결제, 채팅, 사용 통계·오류 보고 도구는 없습니다.
+결제, 채팅, 오류 보고 도구는 없습니다. 토스 앱에서 할 때는 게임 시작·종료 횟수와 점수를 토스(앱인토스) 통계로 보냅니다.
 "오늘의 순위"를 위해 닉네임과 점수를 Supabase에 저장하고, 안드로이드 앱의 광고는 Google AdMob이 처리합니다.</p>
 
 <h2>1. 개발자가 수집하는 정보 (오늘의 순위)</h2>
-<p>그날(한국 시간) 처음 끝낸 한 판이 오늘의 순위전입니다. 이 판이 끝나고 이용자가 닉네임을 정해 두었을 때만 아래 정보를 보냅니다.
-닉네임을 정하지 않으면 아무것도 보내지 않습니다.</p>
+<p>그날(한국 시간) 처음 끝낸 한 판이 오늘의 순위전입니다. 이 판이 끝나면 아래 정보를 보냅니다.
+닉네임은 처음에 "새콤한사과0420"처럼 무작위로 정해지고, 결과 화면이나 순위표에서 언제든 바꿀 수 있습니다.</p>
 <div class="wrap"><table>
   <tr><th>정보</th><th>설명</th><th>목적</th></tr>
   <tr><td>플레이어 ID</td><td>기기에서 무작위로 만든 식별번호(UUID). 이름·기기 정보와 연결되지 않습니다.</td><td>같은 사람의 기록을 하나로 묶고 내 순위를 보여 주기 위해</td></tr>
-  <tr><td>닉네임</td><td>이용자가 직접 입력한 12자 이하의 이름</td><td>순위표에 표시</td></tr>
+  <tr><td>닉네임</td><td>무작위로 정해지거나 이용자가 직접 입력한 12자 이하의 이름</td><td>순위표에 표시</td></tr>
   <tr><td>점수와 날짜</td><td>그날 순위전에서 딴 사과 수, 날짜, 기록 시각, 판 수</td><td>순위 계산과 표시</td></tr>
 </table></div>
 <p>이 정보는 Supabase(Supabase, Inc.)의 데이터베이스에 암호화된 연결(TLS)로 전송·저장됩니다.
@@ -106,24 +106,24 @@
 <hr>
 
 <h1>Apple Game Privacy Policy</h1>
-<p class="meta">Effective: October 26, 2026</p>
+<p class="meta">Effective: November 9, 2026</p>
 
 <p>Apple Game (사과 게임, package <code>com.mobs.applegame</code>, "the Game") needs no sign-up or login.
-It has no payments, no chat and no analytics or crash-reporting tools.
+It has no payments, no chat and no crash-reporting tools. When played inside the Toss app, game starts, game ends and scores are reported to Toss (Apps in Toss) statistics.
 For the daily leaderboard ("오늘의 순위") it stores a nickname and score on Supabase; ads in the Android app are served by Google AdMob.</p>
 
 <h2>1. Data the developer collects (daily leaderboard)</h2>
-<p>Your first finished game of each day (Korea time) is your ranked game. Only when that game ends and you have set a nickname, the Game sends:</p>
+<p>Your first finished game of each day (Korea time) is your ranked game. When that game ends, the Game sends the data below. A random nickname (for example "새콤한사과0420") is set at first and can be changed on the result screen or the leaderboard at any time.</p>
 <div class="wrap"><table>
   <tr><th>Data</th><th>Description</th><th>Purpose</th></tr>
   <tr><td>Player ID</td><td>A random identifier (UUID) created on your device, not linked to your name or device details</td><td>Group your records and show your rank</td></tr>
-  <tr><td>Nickname</td><td>A name of up to 12 characters that you type</td><td>Shown on the leaderboard</td></tr>
+  <tr><td>Nickname</td><td>A random or self-chosen name of up to 12 characters</td><td>Shown on the leaderboard</td></tr>
   <tr><td>Score and date</td><td>Apples picked in the ranked game, the date, the time it was recorded, number of plays</td><td>Ranking</td></tr>
 </table></div>
 <p>This data is sent over an encrypted connection (TLS) to and stored in a database hosted by Supabase, Inc.
 Only the nickname, score and play count are public on the leaderboard; the player ID is never shown.
 Please do not use personal information such as your real name or contact details as a nickname.
-If you never set a nickname, nothing is sent. We do not collect your name, e-mail, phone number, location, contacts, photos, camera or microphone data.</p>
+We do not collect your name, e-mail, phone number, location, contacts, photos, camera or microphone data.</p>
 
 <h2>2. Retention and deletion</h2>
 <p>Leaderboard records are kept while the leaderboard is operated. To have a record or nickname deleted, e-mail us with the nickname and date; we will delete it promptly.</p>

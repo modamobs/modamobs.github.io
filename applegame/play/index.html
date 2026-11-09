@@ -470,7 +470,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
         <div class="lb-result" id="lb-result" hidden></div>
         <form class="nick-row" id="nick-form" hidden>
           <input id="nick" maxlength="12" placeholder="닉네임" autocomplete="nickname" enterkeyhint="done" aria-label="닉네임">
-          <button class="btn primary" type="submit">순위에 올리기</button>
+          <button class="btn primary" type="submit">바꾸기</button>
         </form>
         <button class="btn" id="share">공유하기</button>
         <div class="copied" id="copied" aria-live="polite"></div>
@@ -809,6 +809,7 @@ function hud() {
 function startClock() {
   if (S.started || S.over) return;
   S.started = true;
+  track('game_start', { mode: S.mode });
   lastTick = performance.now();
   raf = requestAnimationFrame(tick);
 }
@@ -957,18 +958,52 @@ function floatPlus(m, n) {
   p.addEventListener('animationend', () => p.remove());
 }
 
+// ---------- host analytics ----------
+// Toss records these for its 핵심 지표 (toss/bridge/index.js); elsewhere there is no window.Toss.track
+function track(name, params) {
+  try { window.Toss?.track?.(name, params); } catch { /* analytics never stops the game */ }
+}
+
+// ---------- store review ----------
+// Ask for a rating at a happy moment: a game that beats the player's own best, after at least 3 finished
+// games, and not again for 30 days. Toss (requestReview) and the Android app (Play in-app review) decide
+// for themselves whether the sheet really shows; the web has neither, so nothing happens there.
+const REVIEW_AFTER = 3, REVIEW_GAP = 30 * 864e5;
+function reviewer() {
+  if (window.Toss?.review) return () => window.Toss.review();
+  const cap = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.InAppReview;
+  return cap ? () => cap.requestReview() : null;
+}
+function askReview(newBest) {
+  const r = load('apple-review', { games: 0, at: 0 });
+  r.games++;
+  const ask = reviewer();
+  const due = ask && newBest && r.games >= REVIEW_AFTER && Date.now() - r.at > REVIEW_GAP;
+  if (due) r.at = Date.now();
+  store('apple-review', r);
+  if (!due) return;
+  // after the receipt has settled, and not while the player is typing a new nickname
+  setTimeout(() => {
+    if (!S.over || !$('nick-form').hidden) return;
+    Promise.resolve().then(ask).catch(() => {});
+  }, 1500);
+}
+
 // ---------- end ----------
 function end(reason) {
   stopClock();
   S.over = true;
-  const best = Math.max(load(bestKey(S.mode), 0), S.score);
+  const before = load(bestKey(S.mode), 0);
+  const best = Math.max(before, S.score);
   store(bestKey(S.mode), best);
+  if (!S.restored) askReview(before > 0 && S.score > before);
   $('over-title').textContent = { time: '시간 종료', stuck: '더 묶을 사과가 없어요', all: '완판!' }[reason];
   $('over-score').textContent = S.score + '개';
   // the first game finished each day is the ranked one; later games are practice,
   // so playing more does not buy more chances at the board
   const ranked = lbOn() && !S.ranked && !rankedToday(S.mode) && !S.restored;
   if (ranked) { S.ranked = true; markRanked(S.day, S.mode, S.score); }
+  if (!S.restored) track('game_complete', { mode: S.mode, score: S.score, reason, ranked });
   $('timer').classList.remove('urgent');
   play('bell', 0.8);
   $('over-best').textContent = best + '개';
@@ -1107,14 +1142,34 @@ function playerId() {
   }
   return id;
 }
-const nickname = () => load('apple-nick', '');
+// Everyone's ranked game goes on the board. A player who never chose a name gets one like "새콤한사과0420"
+// (made once, kept on the device) and can change it from the result or the board.
+const NICK_WORDS = ['빨간', '새콤한', '달콤한', '아삭한', '탐스런', '싱싱한', '반짝이는', '말랑한'];
+function nickname() {
+  let n = load('apple-nick', '');
+  if (!n) {
+    const [a, b] = crypto.getRandomValues(new Uint16Array(2));
+    n = NICK_WORDS[a % NICK_WORDS.length] + '사과' + String(b % 10000).padStart(4, '0');
+    store('apple-nick', n);
+  }
+  return n;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// a new name re-sends today's ranked scores so the board shows it
+function rename(n) {
+  store('apple-nick', n.trim().slice(0, 12));
+  const q = load('apple-pending', {});
+  const best = load('apple-daily-best', {});
+  for (const m of Object.keys(MODES)) { const k = todayKey() + '|' + m; if (best[k] != null) q[k] = Math.max(q[k] || 0, best[k]); }
+  store('apple-pending', q);
+}
 // today's ranked score per mode; the first finished game of the day goes here and to the server
 const rankedToday = mode => load('apple-daily-best', {})[todayKey() + '|' + mode] != null;
 function markRanked(day, mode, score) {
   const db = load('apple-daily-best', {});
   db[day + '|' + mode] = score;
   store('apple-daily-best', db);
-  queueScore(day, mode, score); // sent now if there is a nickname, otherwise once one is set
+  queueScore(day, mode, score); // sent right after; stays queued if the player is offline
 }
 const dayLabel = d => `${+d.slice(5, 7)}월 ${+d.slice(8)}일`;
 
@@ -1132,7 +1187,7 @@ async function submitScore(day, mode, score) {
   return r;
 }
 async function flushPending() {
-  if (!lbOn() || !nickname()) return;
+  if (!lbOn()) return;
   const q = load('apple-pending', {}), today = todayKey();
   for (const k of Object.keys(q)) {
     const [day, mode] = k.split('|');
@@ -1146,27 +1201,25 @@ async function lbAfterGame() {
   const game = { day: S.day, mode: S.mode, score: S.score };
   $('nick-form').hidden = true;
   if (!lbOn()) { $('lb-result').hidden = true; return; }
-  if (!nickname()) {
-    showLbResult('오늘 순위에 올릴 닉네임을 정해요.');
-    $('nick-form').hidden = false;
-    $('nick-form').onsubmit = e => {
-      e.preventDefault();
-      const n = $('nick').value.trim();
-      if (!n) return $('nick').focus();
-      store('apple-nick', n);
-      $('nick-form').hidden = true;
-      sendGame(game);
-    };
-    return;
-  }
+  // the name can be changed right here; the new one goes up with today's scores
+  $('nick-form').onsubmit = async e => {
+    e.preventDefault();
+    const n = $('nick').value.trim();
+    if (!n) return $('nick').focus();
+    $('nick-form').hidden = true;
+    rename(n);
+    await sendGame(game);
+    flushPending();
+  };
   sendGame(game);
 }
 async function sendGame(g) {
   showLbResult('순위에 올리는 중…');
   try {
     const r = await submitScore(g.day, g.mode, g.score);
-    showLbResult(`오늘 ${r.rank}위 <span class="muted">${r.total}명 중 · 오늘 내 최고 ${r.best}개</span>` +
-      '<button class="linkish" type="button" data-open-lb>전체 순위 보기</button>');
+    showLbResult(`오늘 ${r.rank}위 <span class="muted">${r.total}명 중 · 오늘 내 최고 ${r.best}개 · ${esc(nickname())}</span>` +
+      '<button class="linkish" type="button" data-open-lb>전체 순위 보기</button>' +
+      '<button class="linkish" type="button" data-rename>닉네임 바꾸기</button>');
   } catch (e) {
     queueScore(g.day, g.mode, g.score);
     showLbResult('지금은 순위에 못 올렸어요. <span class="muted">연결되면 자동으로 올릴게요.</span>');
@@ -1187,11 +1240,11 @@ async function openBoard(mode) {
   await flushPending();
   try {
     const rows = await lbFetch(`apple_daily_scores?select=nickname,score,plays&day=eq.${day}&mode=eq.${lbMode}&order=score.desc,updated_at.asc&limit=100`);
-    const mine = nickname() ? await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() }) : [];
+    const mine = await lbFetch('rpc/apple_my_rank', { p_day: day, p_mode: lbMode, p_player: playerId() });
     if (seq !== lbSeq) return;
     const me = mine[0];
     list.textContent = '';
-    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>오늘 첫 판을 끝내고 닉네임을 정하면 여기에 올라가요.</li>';
+    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>오늘 첫 판을 끝내면 여기에 올라가요.</li>';
     rows.forEach((r, i) => {
       const li = document.createElement('li');
       if (me && me.rank === i + 1) li.className = 'me';
@@ -1201,7 +1254,7 @@ async function openBoard(mode) {
       li.children[2].textContent = r.score + '개';
       list.appendChild(li);
     });
-    $('lb-me').textContent = me ? `내 순위 ${me.rank}위 / ${me.total}명 · 최고 ${me.best}개` : (nickname() ? '오늘 아직 기록이 없어요.' : '');
+    $('lb-me').textContent = me ? `내 순위 ${me.rank}위 / ${me.total}명 · 최고 ${me.best}개` : '오늘 아직 기록이 없어요.';
     list.querySelector('.me')?.scrollIntoView({ block: 'nearest' });
   } catch (e) {
     if (seq !== lbSeq) return;
@@ -1213,6 +1266,12 @@ $('rank').hidden = !lbOn();
 $('rank').addEventListener('click', () => openBoard(prefs.mode));
 $('lb-result').addEventListener('click', e => {
   if (e.target.closest('[data-open-lb]')) openBoard(S.mode);
+  if (e.target.closest('[data-rename]')) {
+    $('nick').value = nickname();
+    $('nick-form').hidden = false;
+    $('nick').focus();
+    $('nick').select();
+  }
 });
 // 기본 and 떨어지기 each have their own daily board
 for (const b of document.querySelectorAll('[data-lb]')) b.addEventListener('click', () => { if (b.dataset.lb !== lbMode) openBoard(b.dataset.lb); });
@@ -1225,12 +1284,7 @@ $('lb-play').addEventListener('click', () => { // plays the mode of the board on
 $('lb-rename').addEventListener('click', () => {
   const n = prompt('새 닉네임 (12자까지)', nickname());
   if (n == null || !n.trim()) return;
-  store('apple-nick', n.trim().slice(0, 12));
-  const q = load('apple-pending', {});
-  const best = load('apple-daily-best', {});
-  // re-send today's ranked score so the new name shows up on the board
-  for (const m of Object.keys(MODES)) { const k = todayKey() + '|' + m; if (best[k] != null) q[k] = Math.max(q[k] || 0, best[k]); }
-  store('apple-pending', q);
+  rename(n);
   openBoard();
 });
 
