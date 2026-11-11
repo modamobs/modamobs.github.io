@@ -800,8 +800,14 @@ button.primary:active { box-shadow: 0 1px 0 #d98300; }
 :root { --felt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 -.18'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"); }
 .hud, .boosters { background: var(--felt), linear-gradient(180deg, var(--hud-hi), var(--hud-lo)); }
 .panel { background: var(--felt), linear-gradient(180deg, #ffffff, #fff0f6); }
-.hud, .boosters { outline: 2px dashed rgba(255, 255, 255, .85); outline-offset: -8px; }
+/* 안쪽 바느질 선. outline 으로 그리면 그 안에서 무엇이든 움직일 때(팝이 날갯짓·점수 막대·결과 창 별) 화면 전체를 매 프레임
+   다시 그렸다 (2026-11-11 갤럭시 S24 웹뷰 실측: 클리어 창에서 GPU 스레드가 꽉 참) → 따로 붙인 층의 점선 테두리로 그린다 */
+.hud, .boosters { position: relative; }
+.hud::after, .boosters::after { content: ''; position: absolute; inset: 3px; border: 2px dashed rgba(255, 255, 255, .85); border-radius: 16px; pointer-events: none; }
+.boosters::after { border-radius: 999px; }
 .panel { outline: 2px dashed rgba(236, 90, 150, .45); outline-offset: -10px; }
+.celebrate .panel, .gloomy .panel { outline: none; }
+.celebrate .panel::after, .gloomy .panel::after { content: ''; position: absolute; inset: 4px; border: 2px dashed rgba(236, 90, 150, .45); border-radius: 18px; pointer-events: none; }
 /* 알약 버튼: 펠트 동그라미 그림의 양 끝을 모자로 쓰고, 가운데 털 부분은 이어 붙인다 */
 .controls button, .row button, .opt-list button,
 .controls button:active, .row button:active, .opt-list button:active {
@@ -2570,8 +2576,10 @@ let dpr = 1, cell = 56, pad = 12, W = 0, H = 0;
 // 빔이 여러 개 동시에 터질 때 프레임이 뚝 떨어졌다(실기기에서 133ms). 대신 넓은 반투명 띠로 빛을 낸다
 const LOW_FX = matchMedia('(pointer: coarse)').matches;
 const GLOW = LOW_FX ? 0 : 1;
-const MAX_PARTICLES = LOW_FX ? 450 : 900;
-let boardLayer = null, clipPath = null, spriteCache = {};
+const MAX_PARTICLES = LOW_FX ? 300 : 900;
+let boardLayer = null, clipPath = null, spriteCache = {}, stampCache = new Map();
+// 이번 프레임 판 흔들림 (기기 픽셀, 정수)
+let boardOX = 0, boardOY = 0;
 let tweens = [], fx = [], particles = [], texts = [], dying = [];
 let shakeAmt = 0, flashAmt = 0, now = 0, nextId = 1;
 // 보드 밖까지 퍼지는 효과는 화면 전체를 덮는 캔버스에 그린다
@@ -3685,7 +3693,14 @@ async function specialCombo(a, b) {
       const t = pickFlyTarget(r, c, true, skip); if (!t) break;
       skip.add(key(...t));
       const tp = S.grid[t[0]][t[1]];
-      if (other !== 'fly') { tp.special = other === 'wrap' ? 'wrap' : (rnd() < .5 ? 'h' : 'v'); tp.consumed = false; }
+      if (other !== 'fly') {
+        const carry = other === 'wrap' ? 'wrap' : (rnd() < .5 ? 'h' : 'v');
+        // 얼음 낀 과일·벌집·상자 칸에 업혀 가면 그 칸 과일은 터지지 않아(얼음만 깨짐) 특수 효과가 사라졌다 (2026-11-11 사용자: 나비+한 줄은 한 줄이 안 터짐).
+        // 그런 칸이면 업고 간 특수 과일의 효과를 그 자리에서 바로 터뜨린다
+        if (tp && !tp.ice && !tp.ing && !S.hive[t[0]][t[1]] && !S.box[t[0]][t[1]]) { tp.special = carry; tp.consumed = false; }
+        else for (const [rr, cc] of specialArea({ special: carry, color: (P.special === 'fly' ? Q : P).color }, t[0], t[1], effects))
+          initial.push([rr, cc, 26 * Math.hypot(rr - t[0], cc - t[1])]);
+      }
       fx.push({ type: 'flyer', r, c, r2: t[0], c2: t[1], color: P.special === 'fly' ? P.color : Q.color, life: 0, max: 420 });
       initial.push(t);
     }
@@ -5749,6 +5764,26 @@ function getSprite(color, special) {
   }
   return s;
 }
+// 판 칸에 매 프레임 찍는 그림(얼음·젤리·상자·머랭·벌집·초코)은 기기 픽셀 크기 그림으로 한 번 만들어 두고 그대로 찍는다.
+// 폰 웹뷰의 판 캔버스는 CPU 로 그려서, 큰 그림을 줄여 찍거나 경로를 매번 그리면 한 칸에 수십~수백 µs 씩 든다
+// (2026-11-11 갤럭시 S24 실측: 판 한 번 그리는 데 8ms). draw(g) 는 칸 왼쪽 위가 (0, 0), 한 변 cell 인 좌표로 그린다
+function stamp(key, x, y, draw) {
+  let c = stampCache.get(key);
+  if (!c) {
+    const m = Math.ceil(cell * .25);
+    c = document.createElement('canvas');
+    c.width = c.height = Math.ceil((cell + m * 2) * dpr);
+    const g = c.getContext('2d');
+    g.scale(dpr, dpr); g.translate(m, m);
+    draw(g);
+    c.m = m;
+    stampCache.set(key, c);
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(c, Math.round((x - c.m) * dpr + boardOX), Math.round((y - c.m) * dpr + boardOY));
+  ctx.restore();
+}
 
 /* ---------- 레이아웃 ---------- */
 function layout() {
@@ -5771,10 +5806,10 @@ function layout() {
   canvas.height = Math.round(H * dpr);
   document.documentElement.style.setProperty('--bw', W + 'px');
   fxW = window.innerWidth; fxH = window.innerHeight;
-  fxDpr = LOW_FX ? Math.min(1.25, dpr) : dpr;   // 화면 전체 효과 층이라 폰에서는 해상도를 낮춘다 (2026-11-06 프레임 드랍)
+  fxDpr = LOW_FX ? 1 : dpr;   // 화면 전체 효과 층이라 폰에서는 해상도를 낮춘다 (2026-11-06 프레임 드랍. 2026-11-11 웹뷰는 이 캔버스도 CPU 로 그려서 1 로)
   fxCanvas.width = Math.round(fxW * fxDpr); fxCanvas.height = Math.round(fxH * fxDpr);
   render.fxEmpty = false;
-  spriteCache = {};
+  spriteCache = {}; stampCache = new Map();
   buildBoardLayer();
   tutorialPlace();
 }
@@ -5795,6 +5830,11 @@ function buildBoardLayer() {
     roundRectPath(g, pad + k * cell + 1.5, pad + r * cell + 1.5, cell - 3, cell - 3, cell * .16);
     g.fill();
   });
+  // 판 바탕은 .88 불투명도로 깐다. 매 프레임 반투명으로 섞어 찍지 않게 여기서 미리 곱해 둔다
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = 'destination-in';
+  g.fillStyle = 'rgba(0, 0, 0, .88)';
+  g.fillRect(0, 0, c.width, c.height);
   boardLayer = c;
   clipPath = new Path2D();
   cells.forEach(([r, k]) => clipPath.rect(pad + k * cell, pad + r * cell, cell, cell));
@@ -5820,10 +5860,21 @@ function drawPiece(p) {
   if (S.hint && (S.hint[0] === p || S.hint[1] === p) && now % 1400 < 600) rot += Math.sin(now / 55) * .16;
   ctx.save();
   ctx.globalAlpha = p.alpha;
-  ctx.translate(cx(p.x), cy(p.y));
-  if (rot) ctx.rotate(rot);
-  ctx.scale(sx, sy);
-  ctx.drawImage(spr, -cell / 2, -cell / 2, cell, cell);
+  if (!rot && sx === 1 && sy === 1) {
+    // 늘이거나 돌리지 않은 과일은 기기 픽셀에 맞춰 그대로 찍는다 (폰 웹뷰 캔버스는 CPU 로 그려서 소수 위치·늘이기는 몇 배 느리다)
+    const x0 = cx(p.x) - cell / 2, y0 = cy(p.y) - cell / 2;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(spr, Math.round(x0 * dpr + boardOX), Math.round(y0 * dpr + boardOY));
+    ctx.setTransform(dpr, 0, 0, dpr, boardOX, boardOY);
+    if (p.ice) stamp('ice' + p.ice + !!XIMG.ice, x0, y0, g => drawIce(g, 0, 0, cell, p.ice));
+    ctx.translate(cx(p.x), cy(p.y));
+  } else {
+    ctx.translate(cx(p.x), cy(p.y));
+    if (rot) ctx.rotate(rot);
+    ctx.scale(sx, sy);
+    ctx.drawImage(spr, -cell / 2, -cell / 2, cell, cell);
+    if (p.ice) drawIce(ctx, -cell / 2, -cell / 2, cell, p.ice);
+  }
   if (p.armed) {
     ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = .35 + .25 * Math.sin(now / 55);
@@ -5831,7 +5882,6 @@ function drawPiece(p) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = p.alpha;
   }
-  if (p.ice) drawIce(ctx, -cell / 2, -cell / 2, cell, p.ice);
   if (p.key) drawKey(ctx, cell * .24, cell * .2, cell * .42);
   if (p.timer) {
     const beat = p.timer <= 3 ? 1 + .08 * Math.sin(now / 90) : 1;
@@ -5885,10 +5935,10 @@ function drawPortal(g, x, y, w, t, out) {
 function drawBlockers() {
   for (let r = 0; r < S.rows; r++) for (let c = 0; c < S.cols; c++) {
     const x = pad + c * cell, y = pad + r * cell, k = key(r, c);
-    if (S.choco[r][c]) drawChoco(ctx, x, y, cell, S.grow.has(k) ? S.grow.get(k).s : 1);
-    if (S.box[r][c] || S.boxOpening.has(k)) drawBox(ctx, x, y, cell);
-    if (S.hive[r][c]) drawHive(ctx, x, y, cell, S.hiveShake.get(k));
-    if (S.mer[r][c]) drawMer(ctx, x, y, cell, S.mer[r][c]);
+    if (S.choco[r][c]) { if (S.grow.has(k)) drawChoco(ctx, x, y, cell, S.grow.get(k).s); else stamp('choco' + !!XIMG.choco, x, y, g => drawChoco(g, 0, 0, cell)); }
+    if (S.box[r][c] || S.boxOpening.has(k)) stamp('box' + !!XIMG.box, x, y, g => drawBox(g, 0, 0, cell));
+    if (S.hive[r][c]) { if (S.hiveShake.has(k)) drawHive(ctx, x, y, cell, S.hiveShake.get(k)); else stamp('hive' + !!XIMG.hive, x, y, g => drawHive(g, 0, 0, cell)); }
+    if (S.mer[r][c]) { const n = S.mer[r][c]; stamp('mer' + n + !!XIMG['mer' + n], x, y, g => drawMer(g, 0, 0, cell, n)); }
   }
   // 병아리 알이 남아 있으면 각 줄 맨 아래에 둥지를 그린다
   if (S.ingTotal > S.ingGot) for (let c = 0; c < S.cols; c++) {
@@ -5931,8 +5981,7 @@ function drawJelly() {
     const n = S.jelly[r][c]; if (!n) continue;
     const x = pad + c * cell, y = pad + r * cell, ins = cell * .05;
     if (IMG.ok) {
-      ctx.globalAlpha = n === 2 ? .95 : .5;
-      ctx.drawImage(IMG.jelly, x + ins * .4, y + ins * .4, cell - ins * .8, cell - ins * .8);
+      stamp('jelly' + n, x, y, g => { g.globalAlpha = n === 2 ? .95 : .5; g.drawImage(IMG.jelly, ins * .4, ins * .4, cell - ins * .8, cell - ins * .8); });
       continue;
     }
     ctx.globalAlpha = n === 2 ? .92 : .55;
@@ -6190,6 +6239,22 @@ function drawFx() {
     fc.restore();
   }
 }
+// 별·점 조각은 색마다 작은 그림을 한 번 만들어 찍는다 (폰 웹뷰는 효과 캔버스도 CPU 로 그려서, 조각 수백 개를 경로로 채우면 수 ms 씩 들었다)
+const partSprites = new Map();
+function partSprite(kind, color) {
+  const k = kind + color;
+  let c = partSprites.get(k);
+  if (!c) {
+    const n = 32, g = (c = document.createElement('canvas')).getContext('2d');
+    c.width = c.height = n;
+    g.fillStyle = color; g.translate(n / 2, n / 2); g.beginPath();
+    if (kind === 'star') for (let i = 0; i < 8; i++) { const rad = i % 2 ? n * .17 : n * .48, a = i * Math.PI / 4; i ? g.lineTo(Math.cos(a) * rad, Math.sin(a) * rad) : g.moveTo(rad, 0); }
+    else g.arc(0, 0, n * .48, 0, Math.PI * 2);
+    g.closePath(); g.fill();
+    partSprites.set(k, c);
+  }
+  return c;
+}
 function drawParticles() {
   for (const q of particles) {
     if (q.life < 0) continue;
@@ -6205,11 +6270,10 @@ function drawParticles() {
     } else if (q.kind === 'star') {
       fc.save(); fc.translate(q.x, q.y); fc.rotate(q.life / 120);
       const s = q.size * 1.8;
-      fc.beginPath();
-      for (let i = 0; i < 8; i++) { const rad = i % 2 ? s * .35 : s, a = i * Math.PI / 4; i ? fc.lineTo(Math.cos(a) * rad, Math.sin(a) * rad) : fc.moveTo(rad, 0); }
-      fc.closePath(); fc.fill(); fc.restore();
+      fc.drawImage(partSprite('star', q.color), -s, -s, s * 2, s * 2);
+      fc.restore();
     } else {
-      fc.beginPath(); fc.arc(q.x, q.y, q.size, 0, Math.PI * 2); fc.fill();
+      fc.drawImage(partSprite('dot', q.color), q.x - q.size, q.y - q.size, q.size * 2, q.size * 2);
     }
   }
   fc.globalAlpha = 1;
@@ -6251,23 +6315,38 @@ function drawTexts() {
     fc.restore();
   }
 }
+// 폰 웹뷰의 판 캔버스는 GPU 가 아니라 CPU 로 그린다 (2026-11-11 갤럭시 S24 실측: 판 한 번 8ms, 메인 스레드의 절반).
+// 그래서 흔들림까지 기기 픽셀에 맞추고, 바탕·과일·얼음·장애물은 미리 만든 그림을 늘이지 않고 그대로 찍는다.
+// 판 모양대로 잘라 내는 clip 은 비싸서, 칸 밖에 걸친 과일(위에서 새로 들어오는 것 등)에만 건다
 function drawBoard(shx, shy) {
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, W, H);
-  ctx.translate(shx, shy);
-  if (boardLayer) { ctx.globalAlpha = .88; ctx.drawImage(boardLayer, 0, 0, W, H); ctx.globalAlpha = 1; }
+  boardOX = Math.round(shx * dpr); boardOY = Math.round(shy * dpr);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // 바탕을 'copy' 로 찍으면 지우기와 깔기가 한 번에 된다 (바탕 밖은 투명해진다)
+  if (boardLayer) { ctx.globalCompositeOperation = 'copy'; ctx.drawImage(boardLayer, boardOX, boardOY); ctx.globalCompositeOperation = 'source-over'; }
+  else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(dpr, 0, 0, dpr, boardOX, boardOY);
   drawJelly();
   drawMarks();
-  ctx.save();
-  if (clipPath) ctx.clip(clipPath);
-  for (let r = 0; r < S.rows; r++) for (let c = 0; c < S.cols; c++) { const p = S.grid[r] && S.grid[r][c]; if (p) drawPiece(p); }
-  for (const p of dying) drawPiece(p);
-  ctx.restore();
+  const late = [];
+  for (let r = 0; r < S.rows; r++) for (let c = 0; c < S.cols; c++) { const p = S.grid[r] && S.grid[r][c]; if (p) { if (onCells(p)) drawPiece(p); else late.push(p); } }
+  for (const p of dying) { if (onCells(p)) drawPiece(p); else late.push(p); }
+  if (late.length) {
+    ctx.save();
+    if (clipPath) ctx.clip(clipPath);
+    for (const p of late) drawPiece(p);
+    ctx.restore();
+  }
   for (const P of S.portals) {
     drawPortal(ctx, cx(P.c1), pad + (P.r1 + 1) * cell, cell * .9, now, false);
     drawPortal(ctx, cx(P.c2), pad + P.r2 * cell, cell * .9, now, true);
   }
   drawBlockers();
+}
+// 과일이 판 칸들 위에만 걸쳐 있으면 판 모양으로 잘라 낼 필요가 없다
+function onCells(p) {
+  const m = (r, c) => r >= 0 && r < S.rows && c >= 0 && c < S.cols && S.mask[r][c];
+  const r0 = Math.floor(p.y), r1 = Math.ceil(p.y), c0 = Math.floor(p.x), c1 = Math.ceil(p.x);
+  return m(r0, c0) && m(r0, c1) && m(r1, c0) && m(r1, c1);
 }
 function render() {
   if (!$('map').hidden || !$('login').hidden || !S.mask.length) {
@@ -6301,10 +6380,15 @@ function render() {
   }
 }
 let last = performance.now();
+// 120Hz 화면(갤럭시·아이폰 프로)에서는 한 번 걸러 그린다 (초당 60번). 2026-11-11 갤럭시 S24 실측: 판 캔버스를 한 번 그리는 데 4~5ms 라
+// 120번 그리면 8.3ms 한 프레임에 꽉 차서 터질 때·떨어질 때·클리어 창에서 프레임이 밀렸다. 90Hz 이하는 그대로 매번 그린다
 function frame(t) {
   requestAnimationFrame(frame);
+  if (t - frame.prev < 10) return;
+  frame.prev = t;
   try { step(t); } catch (err) { console.error(err && err.stack || err); }
 }
+frame.prev = 0;
 function step(t) {
   const dt = Math.max(0, Math.min(50, t - last));
   last = t; now = t;
