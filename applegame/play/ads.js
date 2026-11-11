@@ -88,7 +88,7 @@
   // in the ONE store game, where ready() is false and the game simply ends. Emptying REAL_REWARDED shows
   // Google's test ad.
   const TEST_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
-  const REAL_REWARDED = ''; // applegame_rewarded: fill in once the AdMob unit is made
+  const REAL_REWARDED = 'ca-app-pub-3012351240086302/4284563542'; // applegame_rewarded (made 2026-11-10, reward 30 초)
   let rewardReady = false;
   let rewardLoading = false;
   function prepareReward() {

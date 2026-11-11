@@ -39,16 +39,16 @@
 
 <p>사과 게임(패키지 <code>com.mobs.applegame</code>, 이하 "본 게임")은 가입이나 로그인 없이 바로 시작합니다.
 결제, 채팅, 오류 보고 도구는 없습니다. 토스 앱에서 할 때는 게임 시작·종료 횟수와 점수를 토스(앱인토스) 통계로 보냅니다.
-"오늘의 순위"를 위해 닉네임과 점수를 Supabase에 저장하고, 안드로이드 앱의 광고는 Google AdMob이 처리합니다.</p>
+"주간 순위"를 위해 닉네임과 점수를 Supabase에 저장하고, 안드로이드 앱의 광고는 Google AdMob이 처리합니다.</p>
 
-<h2>1. 개발자가 수집하는 정보 (오늘의 순위)</h2>
-<p>한 판이 끝날 때마다 아래 정보를 보냅니다. 순위표에는 그날(한국 시간) 가장 높은 점수가 남습니다.
+<h2>1. 개발자가 수집하는 정보 (주간 순위)</h2>
+<p>한 판이 끝날 때마다 아래 정보를 보냅니다. 순위표에는 그 주(월요일~일요일, 한국 시간) 가장 높은 점수가 남습니다.
 닉네임은 처음에 "새콤한사과0420"처럼 무작위로 정해지고, 결과 화면이나 순위표에서 언제든 바꿀 수 있습니다.</p>
 <div class="wrap"><table>
   <tr><th>정보</th><th>설명</th><th>목적</th></tr>
   <tr><td>플레이어 ID</td><td>기기에서 무작위로 만든 식별번호(UUID). 이름·기기 정보와 연결되지 않습니다.</td><td>같은 사람의 기록을 하나로 묶고 내 순위를 보여 주기 위해</td></tr>
   <tr><td>닉네임</td><td>무작위로 정해지거나 이용자가 직접 입력한 12자 이하의 이름</td><td>순위표에 표시</td></tr>
-  <tr><td>점수와 날짜</td><td>그날 가장 높은 점수(딴 사과 수)와 광고를 보고 30초 더 했는지, 날짜, 기록 시각, 판 수</td><td>순위 계산과 표시</td></tr>
+  <tr><td>점수와 날짜</td><td>그 주 가장 높은 점수(딴 사과 수)와 광고를 보고 30초 더 했는지, 날짜, 기록 시각, 판 수</td><td>순위 계산과 표시</td></tr>
 </table></div>
 <p>이 정보는 Supabase(Supabase, Inc.)의 데이터베이스에 암호화된 연결(TLS)로 전송·저장됩니다.
 순위표에는 닉네임, 점수, 판 수만 공개되며 플레이어 ID는 공개되지 않습니다.
@@ -63,7 +63,7 @@
 <p>아래 정보는 기기 안(웹 버전은 브라우저 저장소)에만 저장되고 다른 곳으로 보내지 않습니다.</p>
 <ul>
   <li>소리 켬·끔 설정</li>
-  <li>내 최고 기록, 그날 모드별 최고 점수</li>
+  <li>내 최고 기록, 이번 주 모드별 최고 점수</li>
   <li>닉네임과 플레이어 ID(순위에 올릴 때 위 1항처럼 전송)</li>
   <li>인터넷이 끊겨 아직 올리지 못한 점수</li>
 </ul>
@@ -85,7 +85,7 @@
 정보는 암호화된 네트워크(TLS)로 전송됩니다.</p>
 
 <h2>5. 원스토어·웹 버전</h2>
-<p>원스토어 앱에서 여는 버전과 modamobs.github.io의 웹 버전에는 광고와 결제가 없습니다. 오늘의 순위는 1항과 같이 동작합니다.
+<p>원스토어 앱에서 여는 버전과 modamobs.github.io의 웹 버전에는 광고와 결제가 없습니다. 주간 순위는 1항과 같이 동작합니다.
 페이지는 GitHub Pages가 제공하며, 글꼴을 Google Fonts(fonts.googleapis.com)에서 받습니다.
 이 과정에서 각 회사는 일반적인 웹 접속처럼 IP 주소와 브라우저 정보를 받을 수 있습니다.
 원스토어 앱 안에서 실행할 때 원스토어 계정 정보는 본 게임이 받지 않습니다.</p>
@@ -110,15 +110,15 @@
 
 <p>Apple Game (사과 게임, package <code>com.mobs.applegame</code>, "the Game") needs no sign-up or login.
 It has no payments, no chat and no crash-reporting tools. When played inside the Toss app, game starts, game ends and scores are reported to Toss (Apps in Toss) statistics.
-For the daily leaderboard ("오늘의 순위") it stores a nickname and score on Supabase; ads in the Android app are served by Google AdMob.</p>
+For the weekly leaderboard ("주간 순위") it stores a nickname and score on Supabase; ads in the Android app are served by Google AdMob.</p>
 
-<h2>1. Data the developer collects (daily leaderboard)</h2>
-<p>Your first finished game of each day (Korea time) is your ranked game. When that game ends, the Game sends the data below. A random nickname (for example "새콤한사과0420") is set at first and can be changed on the result screen or the leaderboard at any time.</p>
+<h2>1. Data the developer collects (weekly leaderboard)</h2>
+<p>Each time a game ends, the Game sends the data below. The leaderboard keeps your best score of the week (Monday to Sunday, Korea time). A random nickname (for example "새콤한사과0420") is set at first and can be changed on the result screen or the leaderboard at any time.</p>
 <div class="wrap"><table>
   <tr><th>Data</th><th>Description</th><th>Purpose</th></tr>
   <tr><td>Player ID</td><td>A random identifier (UUID) created on your device, not linked to your name or device details</td><td>Group your records and show your rank</td></tr>
   <tr><td>Nickname</td><td>A random or self-chosen name of up to 12 characters</td><td>Shown on the leaderboard</td></tr>
-  <tr><td>Score and date</td><td>Apples picked in the ranked game, the date, the time it was recorded, number of plays</td><td>Ranking</td></tr>
+  <tr><td>Score and date</td><td>Your best score of the week (apples picked) and whether it used the extra 30 seconds from an ad, the date, the time it was recorded, number of plays</td><td>Ranking</td></tr>
 </table></div>
 <p>This data is sent over an encrypted connection (TLS) to and stored in a database hosted by Supabase, Inc.
 Only the nickname, score and play count are public on the leaderboard; the player ID is never shown.
@@ -129,7 +129,7 @@ We do not collect your name, e-mail, phone number, location, contacts, photos, c
 <p>Leaderboard records are kept while the leaderboard is operated. To have a record or nickname deleted, e-mail us with the nickname and date; we will delete it promptly.</p>
 
 <h2>3. Data stored only on your device</h2>
-<p>The sound setting, your best score, whether you played today's ranked game and its score, your nickname and player ID, and any ranked score not yet sent (offline)
+<p>The sound setting, your best score, your best score of the week in each mode, your nickname and player ID, and any score not yet sent (offline)
 are stored only on the device (browser storage for the web version). They are deleted when you uninstall the app or clear the site data.</p>
 
 <h2>4. Data collected by ads (Google AdMob, Android app)</h2>
