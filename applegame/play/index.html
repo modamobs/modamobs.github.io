@@ -140,6 +140,13 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 }
 .menu .sub { margin: 0; padding: 2px 4px; font-size: 0.78rem; line-height: 1.4; color: var(--muted); white-space: pre-line; word-break: keep-all; }
 .modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+/* the language picker (hidden in Toss and the ONE store, which are Korean only) */
+.menu select.lang { appearance: none; -webkit-appearance: none; font: inherit; color: inherit; text-align: center; text-align-last: center; }
+.menu select.lang[hidden] { display: none; }
+/* Jua and Gowun Dodum are Korean and Latin only: kana and hanzi come from these */
+:root:lang(ja) { --display: "Jua", "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif; --body: "Gowun Dodum", "M PLUS Rounded 1c", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif; }
+:root:lang(zh-Hans) { --display: "Jua", "PingFang SC", "Microsoft YaHei", sans-serif; --body: "Gowun Dodum", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; }
+:root:lang(zh-Hant) { --display: "Jua", "PingFang TC", "Microsoft JhengHei", sans-serif; --body: "Gowun Dodum", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif; }
 .modes .chip[aria-pressed="true"] { background: var(--fuzz), var(--red); color: var(--thread); box-shadow: 0 2px 0 var(--red-deep), 0 3px 6px var(--shade); }
 .modes .chip[aria-pressed="true"]::after { border-color: var(--thread); opacity: .8; }
 
@@ -410,6 +417,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .copied:empty { display: none; }
 
 .lb-result { font-size: 0.92rem; color: var(--thread); text-align: center; background: rgba(46, 34, 26, 0.62); border-radius: 12px; padding: 8px 10px; word-break: keep-all; }
+#lb-title small { display: block; margin-top: 2px; font-family: var(--body); font-size: .8rem; color: var(--muted); }
 .lb-result .muted { display: block; font-size: 0.78rem; opacity: .8; margin-top: 2px; }
 /* the rank went up (sendGame below): a felt badge, the old place struck out, the new one counting down to it */
 .lb-result .up {
@@ -437,6 +445,11 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
   box-shadow: inset 0 2px 0 var(--card-edge);
 }
 .lb-sheet { width: min(360px, 100%); }
+/* on a short screen the list gives up height first, so the buttons under the card stay in view */
+.lb-sheet > * { flex-shrink: 0; }
+.lb-sheet > .receipt { flex-shrink: 1; min-height: 0; display: flex; flex-direction: column; }
+.lb-sheet > .receipt > * { flex-shrink: 0; }
+.lb-sheet > .receipt > .lb-list { flex-shrink: 1; }
 .lb-list {
   list-style: none; margin: 0; padding: 0; overflow: auto; touch-action: pan-y; overscroll-behavior: none;
   max-height: min(44vh, 400px); min-height: 3em; position: relative; z-index: 1;
@@ -484,35 +497,36 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 
 <div class="app">
   <header class="bar">
-    <button class="chip icon-btn" id="menu-btn" aria-label="메뉴" aria-haspopup="true" aria-expanded="false" aria-controls="menu">
+    <button class="chip icon-btn" id="menu-btn" aria-label="메뉴" data-ta="menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
         <circle cx="12" cy="12" r="7.6" stroke-width="3.4" stroke-dasharray="3 2.97"/>
         <circle cx="12" cy="12" r="5.6" stroke-width="2.4"/>
         <circle cx="12" cy="12" r="1.9" stroke-width="2"/>
       </svg>
     </button>
-    <div class="hud timer felt" id="timer" role="timer" aria-label="남은 시간">
+    <div class="hud timer felt" id="timer" role="timer" aria-label="남은 시간" data-ta="timeLeft">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
         <circle cx="12" cy="13.5" r="8"/><path d="M12 13.5V9.5M9.5 2.5h5M12 2.5v3M18.5 6.5l1.5-1.5"/>
       </svg>
       <span class="t" id="time">1:00</span><span class="fill" id="fill"></span>
     </div>
-    <div class="hud score felt"><span class="k">딴 사과</span><span class="v" id="score">0</span></div>
-    <button class="chip icon-btn" id="redo" aria-label="다시하기">
+    <div class="hud score felt"><span class="k" data-t="hudPicked">딴 사과</span><span class="v" id="score">0</span></div>
+    <button class="chip icon-btn" id="redo" aria-label="다시하기" data-ta="redo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 4.2v4.6h-4.6"/>
       </svg>
     </button>
     <div class="menu felt" id="menu" hidden>
       <p class="sub" id="sub"></p>
-      <div class="modes" role="group" aria-label="모드">
-        <button class="chip" data-mode="box14" aria-pressed="true">기본</button>
-        <button class="chip" data-mode="drop14" aria-pressed="false">떨어지기</button>
-        <button class="chip" data-mode="path14" aria-pressed="false">이어 긋기</button>
+      <div class="modes" role="group" aria-label="모드" data-ta="modes">
+        <button class="chip" data-mode="box14" aria-pressed="true" data-t="mode.box">기본</button>
+        <button class="chip" data-mode="drop14" aria-pressed="false" data-t="mode.drop">떨어지기</button>
+        <button class="chip" data-mode="path14" aria-pressed="false" data-t="mode.path">이어 긋기</button>
       </div>
       <button class="chip" id="sound" aria-pressed="true">소리 켬</button>
-      <button class="chip" id="restart">새 판</button>
-      <button class="chip" id="rank" hidden>주간 순위</button>
+      <button class="chip" id="restart" data-t="newGame">새 판</button>
+      <button class="chip" id="rank" hidden data-t="weekly">주간 순위</button>
+      <select class="chip lang" id="lang" aria-label="Language" hidden></select>
     </div>
   </header>
 
@@ -521,35 +535,35 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
     <div class="overlay" id="over" hidden>
       <div class="sheet" role="dialog" aria-labelledby="over-title">
         <div class="receipt">
-          <h2 class="shop">사과상회</h2>
+          <h2 class="shop" data-t="shop">사과상회</h2>
           <div class="mark" id="over-title">시간 종료</div>
           <hr>
           <dl class="total">
-            <dt>딴 사과</dt><dd id="over-score">0개</dd>
+            <dt data-t="picked">딴 사과</dt><dd id="over-score">0개</dd>
           </dl>
           <hr>
           <dl>
-            <dt>내 최고 기록</dt><dd id="over-best">0개</dd>
+            <dt data-t="myBest">내 최고 기록</dt><dd id="over-best">0개</dd>
           </dl>
         </div>
-        <button class="btn more" id="more-yes" hidden>광고 보고 이 판 30초 더 하기<small>한 판에 한 번 · 늘어난 점수도 순위에 들어가요</small></button>
-        <div class="pick" role="group" aria-label="다음 판 모드">
+        <button class="btn more" id="more-yes" hidden data-th="more">광고 보고 이 판 30초 더 하기<small>한 판에 한 번 · 늘어난 점수도 순위에 들어가요</small></button>
+        <div class="pick" role="group" aria-label="다음 판 모드" data-ta="nextMode">
           <div class="modes">
-            <button class="chip" data-pick="box14" aria-pressed="true">기본</button>
-            <button class="chip" data-pick="drop14" aria-pressed="false">떨어지기</button>
-            <button class="chip" data-pick="path14" aria-pressed="false">이어 긋기</button>
+            <button class="chip" data-pick="box14" aria-pressed="true" data-t="mode.box">기본</button>
+            <button class="chip" data-pick="drop14" aria-pressed="false" data-t="mode.drop">떨어지기</button>
+            <button class="chip" data-pick="path14" aria-pressed="false" data-t="mode.path">이어 긋기</button>
           </div>
         </div>
         <div class="row">
-          <button class="btn" id="again-same">같은 판 다시</button>
-          <button class="btn primary" id="again-new">새 판</button>
+          <button class="btn" id="again-same" data-t="sameBoard">같은 판 다시</button>
+          <button class="btn primary" id="again-new" data-t="newGame">새 판</button>
         </div>
         <div class="lb-result" id="lb-result" hidden></div>
         <form class="nick-row" id="nick-form" hidden>
-          <input id="nick" maxlength="12" placeholder="닉네임" autocomplete="nickname" enterkeyhint="done" aria-label="닉네임">
-          <button class="btn primary" type="submit">바꾸기</button>
+          <input id="nick" maxlength="12" placeholder="닉네임" autocomplete="nickname" enterkeyhint="done" aria-label="닉네임" data-tp="nick" data-ta="nick">
+          <button class="btn primary" type="submit" data-t="change">바꾸기</button>
         </form>
-        <button class="btn" id="share">공유하기</button>
+        <button class="btn" id="share" data-t="share">공유하기</button>
         <div class="copied" id="copied" aria-live="polite"></div>
       </div>
     </div>
@@ -557,10 +571,10 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
       <div class="sheet lb-sheet" role="dialog" aria-labelledby="lb-title">
         <div class="receipt">
           <h2 class="shop" id="lb-title">주간 순위</h2>
-          <div class="modes lb-tabs" role="group" aria-label="순위표">
-            <button class="chip" data-lb="box14" aria-pressed="true">기본</button>
-            <button class="chip" data-lb="drop14" aria-pressed="false">떨어지기</button>
-            <button class="chip" data-lb="path14" aria-pressed="false">이어 긋기</button>
+          <div class="modes lb-tabs" role="group" aria-label="순위표" data-ta="board">
+            <button class="chip" data-lb="box14" aria-pressed="true" data-t="mode.box">기본</button>
+            <button class="chip" data-lb="drop14" aria-pressed="false" data-t="mode.drop">떨어지기</button>
+            <button class="chip" data-lb="path14" aria-pressed="false" data-t="mode.path">이어 긋기</button>
           </div>
           <hr>
           <ol class="lb-list" id="lb-list"></ol>
@@ -568,10 +582,10 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
           <div class="lb-me" id="lb-me"></div>
         </div>
         <div class="row">
-          <button class="btn" id="lb-close">닫기</button>
-          <button class="btn primary" id="lb-play">한 판 하기</button>
+          <button class="btn" id="lb-close" data-t="close">닫기</button>
+          <button class="btn primary" id="lb-play" data-t="playOne">한 판 하기</button>
         </div>
-        <button class="linkish" id="lb-rename">닉네임 바꾸기</button>
+        <button class="linkish" id="lb-rename" data-t="renameNick">닉네임 바꾸기</button>
       </div>
     </div>
   </main>
@@ -592,9 +606,9 @@ const PATH = 'path14';
 // drop14), then 1 minute on daily boards (box60 / drop60 / path60); since 2026-11-11 they are 1 minute 20 seconds
 // on weekly boards, with fresh bests and boards of their own.
 const MODES = {
-  [MODE]: { r: 10, c: 14, label: '기본', rule: '네모로 묶어 합 10', key: 'box80' }, // canonical shape: wide, turned to fit the screen
-  [DROP]: { r: 14, c: 10, label: '떨어지기', rule: '딴 자리로 위의 사과가 떨어져요', drop: true, key: 'drop80' },
-  [PATH]: { r: 10, c: 14, label: '이어 긋기', rule: '대각선도, 빈칸 건너서도 이어 그어요', path: true, key: 'path80' },
+  [MODE]: { r: 10, c: 14, get label() { return t('mode.box'); }, get rule() { return t('rule.box'); }, key: 'box80' }, // canonical shape: wide, turned to fit the screen
+  [DROP]: { r: 14, c: 10, get label() { return t('mode.drop'); }, get rule() { return t('rule.drop'); }, drop: true, key: 'drop80' },
+  [PATH]: { r: 10, c: 14, get label() { return t('mode.path'); }, get rule() { return t('rule.path'); }, path: true, key: 'path80' },
 };
 const TIME = 80;
 const rankKey = m => MODES[m].key;
@@ -807,6 +821,138 @@ let raf = 0, lastTick = 0;
 
 function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 function load(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+
+// ---------- language ----------
+// Korean is the original. The web game and the Android app follow the device language (or the menu's picker);
+// Toss and the ONE store are Korean-only stores, so they stay Korean.
+const LANGS = { ko: '한국어', en: 'English', ja: '日本語', zh: '简体中文', zht: '繁體中文' };
+const LOCALE = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', zht: 'zh-TW' };
+const T = {
+  title: ['사과 게임', 'Apple Game', 'りんごゲーム', '苹果游戏', '蘋果遊戲'],
+  menu: ['메뉴', 'Menu', 'メニュー', '菜单', '選單'],
+  timeLeft: ['남은 시간', 'Time left', '残り時間', '剩余时间', '剩餘時間'],
+  hudPicked: ['딴 사과', 'Apples', 'りんご', '苹果', '蘋果'],
+  redo: ['다시하기', 'New board', 'やり直す', '重来', '重來'],
+  modes: ['모드', 'Mode', 'モード', '模式', '模式'],
+  'mode.box': ['기본', 'Classic', 'ベーシック', '基本', '基本'],
+  'mode.drop': ['떨어지기', 'Falling', 'おちもの', '掉落', '掉落'],
+  'mode.path': ['이어 긋기', 'Chain', 'つなげる', '连线', '連線'],
+  'rule.box': ['네모로 묶어 합 10', 'Box apples that add up to 10', '四角で囲んで合計10', '框住总和为10的苹果', '框住總和為10的蘋果'],
+  'rule.drop': ['딴 자리로 위의 사과가 떨어져요', 'Apples above fall into the gaps', 'とった所に上のりんごが落ちる', '上方的苹果会落下补位', '上方的蘋果會落下補位'],
+  'rule.path': ['대각선도, 빈칸 건너서도 이어 그어요', 'Link apples, even diagonally or across gaps', 'ななめも、空きマスごしにもつなげる', '可以斜着连，也能隔着空格连', '可以斜著連，也能隔著空格連'],
+  soundOn: ['소리 켬', 'Sound on', 'サウンド オン', '声音：开', '聲音：開'],
+  soundOff: ['소리 끔', 'Sound off', 'サウンド オフ', '声音：关', '聲音：關'],
+  newGame: ['새 판', 'New game', '新しいゲーム', '新一局', '新一局'],
+  weekly: ['주간 순위', 'Weekly ranking', '週間ランキング', '每周排行', '每週排行'],
+  'sub.drop': ['사과를 따면 위의 사과가 아래로 떨어져요.', 'Picking apples lets the ones above fall.', 'りんごをとると上のりんごが落ちてきます。', '摘下苹果后，上方的苹果会掉下来。', '摘下蘋果後，上方的蘋果會掉下來。'],
+  'sub.path': ['대각선도, 빈칸을 건너서도 이어 그어요.', 'Link apples diagonally or across gaps, too.', 'ななめも、空きマスごしにもつなげます。', '可以斜着连，也能隔着空格连。', '可以斜著連，也能隔著空格連。'],
+  'sub.local': ['드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.', 'Drag to box apples that add up to 10. The clock starts with your first drag.',
+    'ドラッグして合計10になるように囲みます。最初のドラッグから時間が進みます。', '拖动框住总和为10的苹果。第一次拖动后开始计时。', '拖動框住總和為10的蘋果。第一次拖動後開始計時。'],
+  'sub.ranked': ['끝낸 판은 모두 순위에 올라가요. 이번 주 최고 기록으로 겨뤄요.', 'Every finished game counts. Your best this week is your ranking score.',
+    '終えたゲームはすべてランキングに載ります。今週のベストで競います。', '每局结束都会计入排行，以本周最高分比拼。', '每局結束都會計入排行，以本週最高分比拚。'],
+  'coach.box': ['끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요', 'Drag a box around apples<br>If they add up to <b>10</b>, you pick them',
+    'ドラッグして四角く囲もう<br>合計<b>10</b>でりんごがとれる', '拖动框住苹果<br>总和为<b>10</b>就能摘下', '拖動框住蘋果<br>總和為<b>10</b>就能摘下'],
+  'coach.drop': ['<br>딴 자리로 <b>위의 사과가 떨어져요</b>', '<br><b>Apples above fall</b> into the gaps', '<br>とった所に<b>上のりんごが落ちる</b>', '<br><b>上方的苹果会落下</b>补位', '<br><b>上方的蘋果會落下</b>補位'],
+  'coach.path': ['사과를 이어 그어요. 대각선도 돼요<br>{sum} = <b>10</b>이면 따요', 'Link apples, diagonals too<br>{sum} = <b>10</b> picks them',
+    'りんごをつなげよう。ななめもOK<br>{sum} = <b>10</b>でとれる', '把苹果连起来，斜着也行<br>{sum} = <b>10</b>就能摘下', '把蘋果連起來，斜著也行<br>{sum} = <b>10</b>就能摘下'],
+  shop: ['사과상회', 'Apple Shop', 'りんご屋', '苹果商店', '蘋果商店'],
+  'over.time': ['시간 종료', "Time's up", '時間切れ', '时间到', '時間到'],
+  'over.stuckBox': ['더 묶을 사과가 없어요', 'No more boxes', 'もう囲めない', '没有能框的了', '沒有能框的了'],
+  'over.stuckPath': ['더 이을 사과가 없어요', 'No more chains', 'もうつなげない', '没有能连的了', '沒有能連的了'],
+  'over.all': ['완판!', 'Sold out!', '完売！', '全部摘完！', '全部摘完！'],
+  picked: ['딴 사과', 'Apples picked', 'とったりんご', '摘到的苹果', '摘到的蘋果'],
+  myBest: ['내 최고 기록', 'My best', '自己ベスト', '我的最高纪录', '我的最高紀錄'],
+  count: ['{n}개', '{n}', '{n}個', '{n}个', '{n}個'],
+  extra: ['+30초', '+30s', '+30秒', '+30秒', '+30秒'],
+  more: ['광고 보고 이 판 30초 더 하기<small>한 판에 한 번 · 늘어난 점수도 순위에 들어가요</small>',
+    'Watch an ad for 30 more seconds<small>Once a game · the extra score counts too</small>',
+    '広告を見てこのゲームを30秒延長<small>1ゲーム1回・増えたスコアもランキングに入ります</small>',
+    '看广告，本局再玩30秒<small>每局一次 · 增加的分数也计入排行</small>',
+    '看廣告，本局再玩30秒<small>每局一次 · 增加的分數也計入排行</small>'],
+  nextMode: ['다음 판 모드', "Next game's mode", '次のゲームのモード', '下一局模式', '下一局模式'],
+  sameBoard: ['같은 판 다시', 'Same board', '同じ盤で再戦', '同一盘再来', '同一盤再來'],
+  nick: ['닉네임', 'Nickname', 'ニックネーム', '昵称', '暱稱'],
+  change: ['바꾸기', 'Change', '変更', '修改', '修改'],
+  share: ['공유하기', 'Share', 'シェア', '分享', '分享'],
+  copied: ['결과를 복사했어요. 붙여 넣어 공유해요.', 'Result copied. Paste it to share.', '結果をコピーしました。貼り付けてシェアしてね。', '结果已复制，粘贴即可分享。', '結果已複製，貼上即可分享。'],
+  board: ['순위표', 'Leaderboard', 'ランキング', '排行榜', '排行榜'],
+  close: ['닫기', 'Close', '閉じる', '关闭', '關閉'],
+  playOne: ['한 판 하기', 'Play', '1ゲーム遊ぶ', '玩一局', '玩一局'],
+  renameNick: ['닉네임 바꾸기', 'Change nickname', 'ニックネーム変更', '修改昵称', '修改暱稱'],
+  seeAll: ['전체 순위 보기', 'Full ranking', 'ランキングを見る', '查看完整排行', '查看完整排行'],
+  rank: ['{n}위', '#{n}', '{n}位', '第{n}名', '第{n}名'],
+  thisWeek: ['이번 주', 'This week', '今週', '本周', '本週'],
+  firstWeek: ['이번 주 첫 기록', 'First score this week', '今週初記録', '本周首个成绩', '本週首個成績'],
+  firstPlace: ['1등!', '1st!', '1位！', '第一！', '第一！'],
+  toNext: ['{rank}까지 {n}개 남았어요', '{n} more to reach {rank}', '{rank}まであと{n}個', '离{rank}还差{n}个', '離{rank}還差{n}個'],
+  meta: ['{total}명 중 · 이번 주 내 최고 {best} · {nick}', '{total} players · my best this week {best} · {nick}', '{total}人中・今週の自己ベスト {best}・{nick}',
+    '共{total}人 · 本周我的最高 {best} · {nick}', '共{total}人 · 本週我的最高 {best} · {nick}'],
+  posting: ['순위에 올리는 중…', 'Posting your score…', 'ランキングに登録中…', '正在上传成绩…', '正在上傳成績…'],
+  offline: ['지금은 순위에 못 올렸어요. <span class="muted">연결되면 자동으로 올릴게요.</span>', "Couldn't post your score. <span class=\"muted\">It'll go up once you're online.</span>",
+    'ランキングに登録できませんでした。<span class="muted">つながったら自動で登録します。</span>', '暂时无法上传成绩。<span class="muted">联网后会自动上传。</span>', '暫時無法上傳成績。<span class="muted">連網後會自動上傳。</span>'],
+  weekTitle: ['{range} 주간 순위', 'Weekly ranking<small>{range}</small>', '週間ランキング<small>{range}</small>', '每周排行<small>{range}</small>', '每週排行<small>{range}</small>'],
+  loading: ['불러오는 중…', 'Loading…', '読み込み中…', '加载中…', '載入中…'],
+  empty: ['아직 기록이 없어요.<br>한 판을 끝내면 여기에 올라가요.', 'No scores yet.<br>Finish a game to show up here.', 'まだ記録がありません。<br>1ゲーム終えるとここに載ります。',
+    '还没有纪录。<br>玩完一局就会出现在这里。', '還沒有紀錄。<br>玩完一局就會出現在這裡。'],
+  myRank: ['내 순위 {rank} / {total}명 · 최고 {best}', 'My rank {rank} of {total} · best {best}', '自分の順位 {rank} / {total}人・ベスト {best}',
+    '我的排名 {rank} / 共{total}人 · 最高 {best}', '我的排名 {rank} / 共{total}人 · 最高 {best}'],
+  noRecord: ['이번 주 아직 기록이 없어요.', 'No score this week yet.', '今週はまだ記録がありません。', '本周还没有成绩。', '本週還沒有成績。'],
+  loadFail: ['순위를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.', "Couldn't load the ranking. Check your connection.", 'ランキングを読み込めませんでした。接続を確認してください。',
+    '无法加载排行，请检查网络连接。', '無法載入排行，請檢查網路連線。'],
+  newNick: ['새 닉네임 (12자까지)', 'New nickname (up to 12 characters)', '新しいニックネーム（12文字まで）', '新昵称（最多12个字）', '新暱稱（最多12個字）'],
+};
+// a random nickname for players who never chose one: word + apple + 4 digits, 12 characters at most
+const NICKS = {
+  ko: [['빨간', '새콤한', '달콤한', '아삭한', '탐스런', '싱싱한', '반짝이는', '말랑한'], '사과'],
+  en: [['Red', 'Big', 'Top', 'Fun', 'Zen', 'Wee', 'Sly', 'Hot'], 'Apple'],
+  ja: [['あかい', 'あまい', 'すっぱい', 'しゃきっと', 'つやつや', 'もぎたて', 'ほっこり', 'ぴかぴか'], 'りんご'],
+  zh: [['红', '甜', '脆', '酸甜', '新鲜', '闪亮', '多汁', '软软'], '苹果'],
+  zht: [['紅', '甜', '脆', '酸甜', '新鮮', '閃亮', '多汁', '軟軟'], '蘋果'],
+};
+const KO_ONLY = !!(window.Toss || window.ONESTORE);
+function deviceLang() {
+  for (const l of navigator.languages || [navigator.language || '']) {
+    const x = String(l).toLowerCase();
+    if (x.startsWith('ko')) return 'ko';
+    if (x.startsWith('ja')) return 'ja';
+    if (x.startsWith('zh')) return /hant|tw|hk|mo/.test(x) ? 'zht' : 'zh';
+    if (x.startsWith('en')) return 'en';
+  }
+  return 'en';
+}
+let lang = KO_ONLY ? 'ko' : (LANGS[load('apple-prefs', {}).lang] ? load('apple-prefs', {}).lang : deviceLang());
+function t(k, v) {
+  const row = T[k], s = row ? row[Object.keys(LANGS).indexOf(lang)] ?? row[0] : k;
+  return v ? s.replace(/\{(\w+)\}/g, (_, n) => v[n]) : s;
+}
+let jaFont = false;
+function applyLang() {
+  document.documentElement.lang = { ko: 'ko', en: 'en', ja: 'ja', zh: 'zh-Hans', zht: 'zh-Hant' }[lang];
+  document.title = t('title');
+  for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
+  for (const el of document.querySelectorAll('[data-th]')) el.innerHTML = t(el.dataset.th);
+  for (const el of document.querySelectorAll('[data-ta]')) el.setAttribute('aria-label', t(el.dataset.ta));
+  for (const el of document.querySelectorAll('[data-tp]')) el.placeholder = t(el.dataset.tp);
+  if (lang === 'ja' && !jaFont) { // rounded kana to sit beside Jua; Google serves only the glyphs in use
+    jaFont = true;
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700&display=swap';
+    document.head.appendChild(l);
+  }
+  const pick = $('lang');
+  pick.hidden = KO_ONLY;
+  if (!pick.options.length) for (const [k, name] of Object.entries(LANGS)) pick.add(new Option(name, k));
+  pick.value = lang;
+}
+$('lang').addEventListener('change', e => {
+  lang = e.target.value;
+  prefs.lang = lang;
+  store('apple-prefs', prefs);
+  applyLang();
+  if (S) hud();
+});
+applyLang();
 const bestKey = m => 'apple-best-' + rankKey(m);
 
 // Show the board tall on portrait screens and wide on landscape ones. Transposing keeps every rectangle a rectangle.
@@ -916,8 +1062,8 @@ function coach() {
   el.className = 'coach'; el.id = 'coach';
   el.innerHTML = `<div class="coach-box" style="${box}"></div>` +
     `<div class="coach-dot" style="--x0: ${x0}; --y0: ${y0}; --x1: ${x1}; --y1: ${y1}"></div>` +
-    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))"><span class="mode">${MODES[S.mode].label}</span>끌어서 네모로 묶어요<br>합이 <b>10</b>이면 사과를 따요` +
-    (drop ? '<br>딴 자리로 <b>위의 사과가 떨어져요</b>' : '') + '</div>';
+    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))"><span class="mode">${MODES[S.mode].label}</span>${t('coach.box')}` +
+    (drop ? t('coach.drop') : '') + '</div>';
   board.appendChild(el);
 }
 // 이어 긋기: show three apples that make 10, the first step corner to corner and the second straight, so one
@@ -956,8 +1102,8 @@ function pathCoach() {
     best.map(i => { const [r, c] = cell(i); return `${c + 0.5},${r + 0.5}`; }).join(' ') + '"/></svg>' +
     p.map(([x, y]) => `<div class="coach-ring" style="left: ${x}; top: ${y}"></div>`).join('') +
     `<div class="coach-dot thread" style="--x0: ${p[0][0]}; --y0: ${p[0][1]}; --x1: ${p[1][0]}; --y1: ${p[1][1]}; --x2: ${p[2][0]}; --y2: ${p[2][1]}"></div>` +
-    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))"><span class="mode">${MODES[S.mode].label}</span>사과를 이어 그어요. 대각선도 돼요<br>` +
-    `${best.map(i => g[i]).join(' + ')} = <b>10</b>이면 따요</div>`;
+    `<div class="coach-tip" style="top: calc(${tipRow} * var(--ch))"><span class="mode">${MODES[S.mode].label}</span>` +
+    t('coach.path', { sum: best.map(i => g[i]).join(' + ') }) + '</div>';
   board.appendChild(el);
 }
 function coachDone() {
@@ -1015,13 +1161,11 @@ function hud() {
   $('timer').classList.toggle('low', S.time <= 20);
   $('timer').classList.toggle('urgent', S.started && !S.over && S.time <= 10);
   // one line for how the mode plays, one for whether this game is ranked
-  $('sub').textContent = (MODES[S.mode].drop ? '사과를 따면 위의 사과가 아래로 떨어져요.\n'
-    : MODES[S.mode].path ? '대각선도, 빈칸을 건너서도 이어 그어요.\n' : '') +
-    (!lbOn() ? '드래그해서 합이 10이 되게 묶어요. 첫 드래그부터 시간이 흘러요.'
-      : '끝낸 판은 모두 순위에 올라가요. 이번 주 최고 기록으로 겨뤄요.');
+  $('sub').textContent = (MODES[S.mode].drop ? t('sub.drop') + '\n' : MODES[S.mode].path ? t('sub.path') + '\n' : '') +
+    t(lbOn() ? 'sub.ranked' : 'sub.local');
   for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', b.dataset.mode === S.mode);
   $('sound').setAttribute('aria-pressed', prefs.sound);
-  $('sound').textContent = prefs.sound ? '소리 켬' : '소리 끔';
+  $('sound').textContent = t(prefs.sound ? 'soundOn' : 'soundOff');
 }
 
 // ---------- clock ----------
@@ -1332,8 +1476,8 @@ function end(reason) {
   const first = !S.ended; // the end after the extra 30 seconds is the same game's second
   S.ended = true;
   if (!S.restored && first) askReview(before > 0 && S.score > before);
-  $('over-title').textContent = { time: '시간 종료', stuck: MODES[S.mode].path ? '더 이을 사과가 없어요' : '더 묶을 사과가 없어요', all: '완판!' }[reason];
-  $('over-score').innerHTML = S.score + '개' + (S.extra ? '<small>+30초</small>' : '');
+  $('over-title').textContent = t({ time: 'over.time', stuck: MODES[S.mode].path ? 'over.stuckPath' : 'over.stuckBox', all: 'over.all' }[reason]);
+  $('over-score').innerHTML = t('count', { n: S.score }) + (S.extra ? `<small>${t('extra')}</small>` : '');
   // every finished game goes to the board, which keeps each player's best of the day; after the extra
   // 30 seconds the same game goes again with its higher score
   const ranked = lbOn() && !S.restored;
@@ -1341,7 +1485,7 @@ function end(reason) {
   if (!S.restored && first) track('game_complete', { mode: S.mode, score: S.score, reason, ranked });
   $('timer').classList.remove('urgent');
   play('bell', 0.8);
-  $('over-best').textContent = best + '개';
+  $('over-best').textContent = t('count', { n: best });
   $('more-yes').hidden = !canExtend(reason);
   $('more-yes').disabled = false;
   $('copied').textContent = '';
@@ -1361,7 +1505,7 @@ function end(reason) {
 
 function shareText() {
   const ratio = Math.round((S.score / S.total) * 10);
-  return `사과 게임${S.mode !== MODE ? ' ' + MODES[S.mode].label : ''}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${S.total}개`;
+  return `${t('title')}${S.mode !== MODE ? ' ' + MODES[S.mode].label : ''}\n${'🍎'.repeat(ratio)}${'⬜'.repeat(10 - ratio)} ${S.score}/${t('count', { n: S.total })}`;
 }
 // Share the result: Toss's own share sheet in Toss (with a link that opens the game there), the Capacitor
 // share sheet in the Android app, the browser's (Web Share) elsewhere; with none of those, copy it.
@@ -1376,13 +1520,13 @@ async function shareResult() {
   try {
     if (window.Toss?.share) return await window.Toss.share(text);
     const cap = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.Share;
-    if (cap) return await cap.share({ text: text + '\n' + url, dialogTitle: '공유하기' });
+    if (cap) return await cap.share({ text: text + '\n' + url, dialogTitle: t('share') });
     if (navigator.share) return await navigator.share({ text, url });
   } catch (e) {
     if (e && (e.name === 'AbortError' || /cancel/i.test(e.message || ''))) return; // closed the share sheet
   }
   const all = text + '\n' + url;
-  const done = () => { $('copied').textContent = '결과를 복사했어요. 붙여 넣어 공유해요.'; };
+  const done = () => { $('copied').textContent = t('copied'); };
   try {
     navigator.clipboard.writeText(all).then(done, () => { $('copied').textContent = all; });
   } catch (e) { $('copied').textContent = all; }
@@ -1473,12 +1617,13 @@ function playerId() {
 }
 // Everyone's ranked game goes on the board. A player who never chose a name gets one like "새콤한사과0420"
 // (made once, kept on the device) and can change it from the result or the board.
-const NICK_WORDS = ['빨간', '새콤한', '달콤한', '아삭한', '탐스런', '싱싱한', '반짝이는', '말랑한'];
+
 function nickname() {
   let n = load('apple-nick', '');
   if (!n) {
     const [a, b] = crypto.getRandomValues(new Uint16Array(2));
-    n = NICK_WORDS[a % NICK_WORDS.length] + '사과' + String(b % 10000).padStart(4, '0');
+    const [words, apple] = NICKS[lang];
+    n = words[a % words.length] + apple + String(b % 10000).padStart(4, '0');
     store('apple-nick', n);
   }
   return n;
@@ -1514,6 +1659,17 @@ function weekLabel(wk) {
   const e = new Date(wk + 'T00:00:00Z');
   e.setUTCDate(e.getUTCDate() + 6);
   const end = e.toISOString().slice(0, 10);
+  const md = d => [+d.slice(5, 7), +d.slice(8)], [m1, d1] = md(wk), [m2, d2] = md(end);
+  if (lang === 'en') {
+    try {
+      return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+        .formatRange(new Date(wk + 'T00:00:00Z'), new Date(end + 'T00:00:00Z')); // "Nov 9 – 15"
+    } catch (e) { return `${m1}/${d1} – ${m2}/${d2}`; }
+  }
+  if (lang !== 'ko') { // 11月9日～15日 (Intl writes these as 11/9 – 11/15)
+    const dash = { ja: '～', zh: '–', zht: '至' }[lang];
+    return `${m1}月${d1}日${dash}${m2 === m1 ? '' : m2 + '月'}${d2}日`;
+  }
   return dayLabel(wk) + '~' + (end.slice(5, 7) === wk.slice(5, 7) ? +end.slice(8) + '일' : dayLabel(end));
 }
 
@@ -1578,7 +1734,7 @@ async function toNext(g, r) {
   try {
     const [a] = await lbFetch(`apple_weekly_scores?select=score&week=eq.${weekKey(g.day)}&mode=eq.${g.mode}` +
       `&order=score.desc,updated_at.asc&offset=${r.rank - 2}&limit=1`);
-    return a ? `<span class="next">${r.rank - 1}위까지 ${Math.max(1, a.score - r.best + 1)}개 남았어요</span>` : '';
+    return a ? `<span class="next">${t('toNext', { rank: t('rank', { n: r.rank - 1 }), n: Math.max(1, a.score - r.best + 1) })}</span>` : '';
   } catch (e) { return ''; }
 }
 // the new place counts down from the old one
@@ -1587,10 +1743,10 @@ function countRank(el, from, to) {
   const t0 = performance.now(), ms = Math.min(900, 250 + 60 * (from - to));
   const step = now => {
     const k = Math.min(1, (now - t0) / ms), e = 1 - (1 - k) ** 3;
-    el.textContent = Math.round(from - (from - to) * e) + '위';
+    el.textContent = t('rank', { n: Math.round(from - (from - to) * e) });
     if (k < 1 && el.isConnected) requestAnimationFrame(step);
   };
-  el.textContent = from + '위';
+  el.textContent = t('rank', { n: from });
   requestAnimationFrame(step);
 }
 function appleRain() {
@@ -1610,7 +1766,7 @@ function appleRain() {
   setTimeout(() => box.remove(), 3500);
 }
 async function sendGame(g) {
-  showLbResult('순위에 올리는 중…');
+  showLbResult(t('posting'));
   const el = $('lb-result');
   el.classList.remove('big');
   try {
@@ -1619,20 +1775,21 @@ async function sendGame(g) {
     const next = await toNext(g, r);
     const first = !!before && before.rank === 0, up = first || (!!before && r.rank < before.rank);
     const top10 = up && r.rank <= 10 && (first || before.rank > 10);
-    const head = !up ? `이번 주 ${r.rank}위`
-      : first ? `<span class="up">NEW</span>이번 주 첫 기록 · <b class="rk">${r.rank}위</b>`
-      : `<span class="up">${r.rank === 1 ? '1등!' : top10 ? 'TOP 10' : '▲' + (before.rank - r.rank)}</span>` +
-        `이번 주 <span class="from">${before.rank}위</span> → <b class="rk">${r.rank}위</b>`;
-    showLbResult(head + `<span class="muted">${r.total}명 중 · 이번 주 내 최고 ${r.best}개 · ${esc(nickname())}</span>` + next +
-      '<button class="linkish" type="button" data-open-lb>전체 순위 보기</button>' +
-      '<button class="linkish" type="button" data-rename>닉네임 바꾸기</button>');
+    const rk = n => t('rank', { n });
+    const head = !up ? `${t('thisWeek')} ${rk(r.rank)}`
+      : first ? `<span class="up">NEW</span>${t('firstWeek')} · <b class="rk">${rk(r.rank)}</b>`
+      : `<span class="up">${r.rank === 1 ? t('firstPlace') : top10 ? 'TOP 10' : '▲' + (before.rank - r.rank)}</span>` +
+        `${t('thisWeek')} <span class="from">${rk(before.rank)}</span> → <b class="rk">${rk(r.rank)}</b>`;
+    showLbResult(head + `<span class="muted">${t('meta', { total: r.total, best: t('count', { n: r.best }), nick: esc(nickname()) })}</span>` + next +
+      `<button class="linkish" type="button" data-open-lb>${t('seeAll')}</button>` +
+      `<button class="linkish" type="button" data-rename>${t('renameNick')}</button>`);
     el.classList.toggle('big', top10 || (up && r.rank === 1));
     if (up && !first) countRank(el.querySelector('.rk'), before.rank, r.rank);
     if (up && !first) play('harvest-big', 0.7);
     if (up && r.rank === 1 && r.total > 1) appleRain(); // not for being the week's only player
   } catch (e) {
     queueScore(g.day, g.mode, g.score, g.extra);
-    showLbResult('지금은 순위에 못 올렸어요. <span class="muted">연결되면 자동으로 올릴게요.</span>');
+    showLbResult(t('offline'));
   }
 }
 
@@ -1642,10 +1799,10 @@ async function openBoard(mode) {
   const seq = ++lbSeq;
   const wk = weekKey(todayKey());
   $('lb').hidden = false;
-  $('lb-title').textContent = `${weekLabel(wk)} 주간 순위`;
+  $('lb-title').innerHTML = t('weekTitle', { range: weekLabel(wk) });
   for (const b of document.querySelectorAll('[data-lb]')) b.setAttribute('aria-pressed', b.dataset.lb === lbMode);
   const list = $('lb-list');
-  list.innerHTML = '<li class="empty">불러오는 중…</li>';
+  list.innerHTML = `<li class="empty">${t('loading')}</li>`;
   $('lb-me').textContent = '';
   await flushPending();
   try {
@@ -1654,22 +1811,22 @@ async function openBoard(mode) {
     if (seq !== lbSeq) return;
     const me = mine[0];
     list.textContent = '';
-    if (!rows.length) list.innerHTML = '<li class="empty">아직 기록이 없어요.<br>한 판을 끝내면 여기에 올라가요.</li>';
+    if (!rows.length) list.innerHTML = `<li class="empty">${t('empty')}</li>`;
     rows.forEach((r, i) => {
       const li = document.createElement('li');
       if (me && me.rank === i + 1) li.className = 'me';
       li.innerHTML = '<span class="n"></span><span class="who"></span><span class="pts"></span>';
       li.children[0].textContent = i + 1;
       li.children[1].textContent = r.nickname;
-      li.children[2].textContent = r.score + '개';
-      if (r.extra) li.children[2].insertAdjacentHTML('afterbegin', '<em class="ext">+30초</em>');
+      li.children[2].textContent = t('count', { n: r.score });
+      if (r.extra) li.children[2].insertAdjacentHTML('afterbegin', `<em class="ext">${t('extra')}</em>`);
       list.appendChild(li);
     });
-    $('lb-me').textContent = me ? `내 순위 ${me.rank}위 / ${me.total}명 · 최고 ${me.best}개` : '이번 주 아직 기록이 없어요.';
+    $('lb-me').textContent = me ? t('myRank', { rank: t('rank', { n: me.rank }), total: me.total, best: t('count', { n: me.best }) }) : t('noRecord');
     list.querySelector('.me')?.scrollIntoView({ block: 'nearest' });
   } catch (e) {
     if (seq !== lbSeq) return;
-    list.innerHTML = '<li class="empty">순위를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</li>';
+    list.innerHTML = `<li class="empty">${t('loadFail')}</li>`;
   }
 }
 
@@ -1693,7 +1850,7 @@ $('lb-play').addEventListener('click', () => { // plays the mode of the board on
   nextGame(false);
 });
 $('lb-rename').addEventListener('click', () => {
-  const n = prompt('새 닉네임 (12자까지)', nickname());
+  const n = prompt(t('newNick'), nickname());
   if (n == null || !n.trim()) return;
   rename(n);
   openBoard();
