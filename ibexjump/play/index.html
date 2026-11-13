@@ -35,7 +35,7 @@ body.pad #cv{cursor:none}
 
 .hud{position:absolute;top:0;left:0;right:0;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
   padding-top:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  pointer-events:none;text-shadow:0 1px 12px rgba(50,20,8,.6)}
+  pointer-events:none;text-shadow:0 1px 2px rgba(40,18,8,.6),0 1px 12px rgba(50,20,8,.6)}
 .alt{font-family:var(--display);font-weight:800;font-size:clamp(42px,12vw,62px);line-height:1;color:#fff8ec;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .alt small{font-size:.38em;font-weight:600;margin-left:4px;opacity:.85;letter-spacing:0}
 .side{display:grid;gap:7px;justify-items:end;font-size:13px;font-weight:500;padding-top:6px}
@@ -72,6 +72,10 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
 .howto li::before{content:"";width:6px;height:6px;margin-top:.62em;border-radius:1px;background:var(--ember);transform:rotate(45deg)}
 .howto b{color:#fff4e2;font-weight:600}
 .keys{margin:0;font-size:12px;color:#bfa58a}
+.peaks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.peaks button{display:grid;gap:2px;font:600 13px var(--body);border-radius:10px;padding:9px 4px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--sand)}
+.peaks button small{font-weight:400;font-size:11px;color:#bfa58a}
+.peaks button.on{border-color:var(--ember);background:rgba(232,120,60,.18);color:#fff4e2}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
 .btns button{font:600 15px var(--body);border-radius:12px;padding:13px 10px;cursor:pointer}
 #startBtn{background:var(--ember);color:var(--ink);border:0}
@@ -144,6 +148,7 @@ button.padf{outline:2px solid #fff3d6;outline-offset:2px}
       <p class="eyebrow" id="ovEyebrow">프로토타입 · 정상까지 1000m</p>
       <h1 id="ovTitle">아이벡스 점프</h1>
       <p class="result" id="ovResult" hidden></p>
+      <button class="linkbtn" id="howBtn" type="button" hidden>조작법 보기</button>
       <ul class="howto" id="ovHow">
         <li><span><b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.</span></li>
         <li><span>화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.</span></li>
@@ -155,6 +160,9 @@ button.padf{outline:2px solid #fff3d6;outline-offset:2px}
       <ol class="rank" id="rankList" hidden></ol>
       <p class="keys" id="nameLbl" hidden>오늘의 절벽 랭킹에 쓸 이름</p>
       <input class="name" id="nameIn" maxlength="12" placeholder="랭킹에 쓸 이름" hidden>
+      <div class="peaks" id="peaks" hidden></div>
+      <p class="keys" id="peakInfo" hidden></p>
+      <button class="linkbtn" id="hardBtn" type="button" hidden>하드 모드: 꺼짐</button>
       <p class="keys" id="dailyInfo"></p>
       <div class="btns">
         <button id="startBtn" type="button">자유 등반</button>
@@ -227,6 +235,8 @@ const WIDE = !!window.IBEX_WIDE || /[?&]wide/.test(location.search);
 if (WIDE) document.body.classList.add('wide');
 
 // ---- tuning ----
+// The paid edition: three peaks and a hard mode. A build turns it on; ?full only works on a local test server.
+const FULL = !!window.IBEX_FULL || (/[?&]full\b/.test(location.search) && /^(localhost|127\.0\.0\.1)?$/.test(location.hostname));
 const W = WIDE ? 720 : 300;    // world width in units
 const WK = W / 300;            // how much wider than the phone cliff, for scenery density
 const VIEW_MIN = 440;          // wide edition: at least this much height in view, the sides show scenery past that
@@ -262,7 +272,7 @@ const pair = (a, b) => [hex(a), hex(b)];
 
 // The climb: sunset at the foot, night on the way up, sunrise at the 1000 m summit.
 const SUMMIT = 1000 * U;
-const SKY = [
+const SKY_DUSK = [
   [0,    hex('#d6a57c'), hex('#f5c682')],
   [150,  hex('#b97f86'), hex('#f3a86e')],
   [350,  hex('#5b3f73'), hex('#d9787a')],
@@ -271,7 +281,7 @@ const SKY = [
   [920,  hex('#25306a'), hex('#c46a5a')],
   [1000, hex('#7a9ad0'), hex('#ffc480')],
 ];
-const NIGHT = [[0, 0], [150, 0.15], [350, 0.55], [550, 0.9], [800, 1], [920, 0.6], [1000, 0.15]];
+const NIGHT_DUSK = [[0, 0], [150, 0.15], [350, 0.55], [550, 0.9], [800, 1], [920, 0.6], [1000, 0.15]];
 const nightAt = alt => {
   for (let i = 0; i < NIGHT.length - 1; i++) {
     const a = NIGHT[i], b = NIGHT[i + 1];
@@ -281,12 +291,13 @@ const nightAt = alt => {
 };
 // rock colours by zone in daylight; night pulls them toward NIGHT_TINT
 const ROCK_KEYS = ['faceLit', 'faceMid', 'faceDark', 'cap', 'under', 'moss'];
-const ZONES = [
+const zoneSet = zs => zs.map(z => { const o = { ...z }; for (const k of ROCK_KEYS) o[k] = hex(z[k]); return o; });
+const ZONES_DUSK = zoneSet([
   { from: 0,   name: '붉은 협곡',   desc: '노을 지는 사암 절벽에서 출발해요',          faceLit: '#cf6f35', faceMid: '#9c4a24', faceDark: '#5a2412', cap: '#f6b06a', under: '#8a4020', moss: '#7f9a3e' },
   { from: 150, name: '회색 바위산', desc: '단단한 화강암 절벽. 장애물이 늘어나요',   faceLit: '#a39a92', faceMid: '#756c66', faceDark: '#403a37', cap: '#ddd5cb', under: '#5e5650', moss: '#6f8a4a' },
   { from: 350, name: '설산',       desc: '눈 덮인 바위에 눈이 내려요',              faceLit: '#a9b5c7', faceMid: '#717d91', faceDark: '#3a4252', cap: '#f5f8fc', under: '#5d6779', moss: '#7d9a8a' },
   { from: 600, name: '구름 위',     desc: '구름이 길을 가려요. 정상이 멀지 않아요', faceLit: '#bcb5cf', faceMid: '#857d9e', faceDark: '#4a4462', cap: '#f0ebf8', under: '#6a6386', moss: '#8aa39a' },
-].map(z => { const o = { ...z }; for (const k of ROCK_KEYS) o[k] = hex(z[k]); return o; });
+]);
 const NIGHT_TINT = { faceLit: hex('#5c4270'), faceMid: hex('#3a2a4c'), faceDark: hex('#1c1428'), cap: hex('#a382a8'), under: hex('#3a2848'), moss: hex('#3f5d55') };
 const IBEX_COL = pair('#22130b', '#0d0811');
 const zoneIndex = alt => { let i = 0; while (i < ZONES.length - 1 && alt >= ZONES[i + 1].from) i++; return i; };
@@ -296,7 +307,55 @@ function zoneColors(alt) {
   for (const key of ROCK_KEYS) o[key] = nx ? mix(z[key], nx[key], k) : z[key];
   return o;
 }
-const FAR_ROCK = hex('#8a4632'), NEAR_ROCK = hex('#5e2a1a'), GREY = hex('#9a8c86');
+const GREY = hex('#9a8c86');
+
+// The peaks. Each has its own sky, night, rock zones and mix of obstacles; the first is the free game's cliff.
+//   slick: share of ledges that are moss or ice · ice: metres where slick ledges are ice · cloud: cloud ledges above this
+//   flakes: metres where snow falls (ember: sparks rise instead) · wind, rocks, crumble, draft: how much more than the first peak
+const PEAKS = [
+  { id: 'dusk', name: '노을 협곡', desc: '노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요',
+    sky: SKY_DUSK, night: NIGHT_DUSK, zones: ZONES_DUSK, far: hex('#8a4632'), near: hex('#5e2a1a'),
+    slick: 0.3, ice: [350, 600], cloud: 600, flakes: [340, 620], ember: false, wind: 1, rocks: 1, crumble: 1, draft: 1, lava: false },
+  { id: 'ice', name: '얼음 봉우리', desc: '발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요',
+    sky: [
+      [0,    hex('#8fc1e3'), hex('#e6f3fa')],
+      [300,  hex('#6fa5d6'), hex('#d3e8f5')],
+      [550,  hex('#3e5f9e'), hex('#b6c9e6')],
+      [750,  hex('#16224f'), hex('#3f5f8f')],
+      [900,  hex('#0a1030'), hex('#2c6a6a')],
+      [1000, hex('#27407a'), hex('#f0c8a8')],
+    ],
+    night: [[0, 0], [300, 0], [550, 0.25], [750, 0.65], [900, 0.8], [1000, 0.3]],
+    zones: zoneSet([
+      { from: 0,   name: '빙하 기슭',   desc: '얼어붙은 바위. 발판이 미끄러워요',   faceLit: '#b9cbdc', faceMid: '#8197ad', faceDark: '#46586c', cap: '#f2f8fd', under: '#6c8096', moss: '#8fb0a8' },
+      { from: 250, name: '푸른 얼음벽', desc: '바람이 세게 불어요',                 faceLit: '#9fc4e0', faceMid: '#6592b8', faceDark: '#34587c', cap: '#e9f6ff', under: '#5580a6', moss: '#8fb7c0' },
+      { from: 550, name: '눈보라 능선', desc: '눈보라 속에서 길을 찾으세요',        faceLit: '#c9d3e0', faceMid: '#95a1b4', faceDark: '#566175', cap: '#ffffff', under: '#7f8ba0', moss: '#a0b4b8' },
+      { from: 800, name: '오로라 정상', desc: '하늘빛이 길을 비춰요. 정상이 가까워요', faceLit: '#9fb0d8', faceMid: '#6b7cae', faceDark: '#39446e', cap: '#e6f0ff', under: '#56659a', moss: '#86a8b0' },
+    ]),
+    far: hex('#7f9fbc'), near: hex('#4f6f8f'),
+    slick: 0.45, ice: [20, 2000], cloud: 750, flakes: [-40, 2000], ember: false, wind: 1.45, rocks: 0.7, crumble: 0.8, draft: 0.8, lava: false },
+  { id: 'fire', name: '불의 산', desc: '아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요',
+    sky: [
+      [0,    hex('#3a1512'), hex('#c2501f')],
+      [300,  hex('#2a0f12'), hex('#a33a1a')],
+      [600,  hex('#1a0a10'), hex('#7a2416')],
+      [850,  hex('#140a14'), hex('#5a2030')],
+      [1000, hex('#3a2a4a'), hex('#f0a060')],
+    ],
+    night: [[0, 0.25], [300, 0.4], [600, 0.55], [850, 0.6], [1000, 0.2]],
+    zones: zoneSet([
+      { from: 0,   name: '검은 현무암',   desc: '용암이 차오르기 시작해요. 멈추지 마세요', faceLit: '#5a4a48', faceMid: '#3a2e2e', faceDark: '#1c1415', cap: '#c9a27e', under: '#2e2222', moss: '#7a6a3a' },
+      { from: 250, name: '불타는 균열',   desc: '금 간 발판이 많아요. 뜨거운 바람을 타세요', faceLit: '#6a4034', faceMid: '#452620', faceDark: '#22100e', cap: '#f0a060', under: '#3a1c16', moss: '#8a6a34' },
+      { from: 550, name: '재의 능선',     desc: '화산탄이 쏟아져요',                       faceLit: '#6b6564', faceMid: '#474242', faceDark: '#232021', cap: '#d8cfc6', under: '#3a3535', moss: '#77735a' },
+      { from: 800, name: '분화구 테두리', desc: '정상이 코앞이에요',                       faceLit: '#7a4a3a', faceMid: '#4f2c24', faceDark: '#281412', cap: '#ffc27a', under: '#40201a', moss: '#8a7040' },
+    ]),
+    far: hex('#5a2a22'), near: hex('#3a1612'),
+    slick: 0.22, ice: null, cloud: 1e9, flakes: [-40, 2000], ember: true, wind: 0.7, rocks: 1.5, crumble: 1.6, draft: 1.8, lava: true },
+];
+// what the menu has picked, and what the current run is on (a daily climb is always the first peak, never hard)
+let selPeak = (FULL && PEAKS.find(q => q.id === (new URLSearchParams(location.search).get('peak') || store.get('ibex.peak', 'dusk')))) || PEAKS[0];
+let selHard = FULL && !!store.get('ibex.hard', false);
+let peak = selPeak, hard = selHard, SKY, NIGHT, ZONES, FAR_ROCK, NEAR_ROCK, lava = -1e9;
 
 // distant scenery seen past the cliff edge (x in a 400-wide frame)
 const FAR = [[[-10,0],[-10,58],[22,60],[34,54],[118,55],[128,62],[236,62],[246,50],[286,49],[296,36],[410,34],[410,0]]];
@@ -346,6 +405,13 @@ let hoofUsed = false, flash = 0, lightT = 4, ghost = null, rec = [], recT = 0;
 let drafts = [], gems = [];
 let wallet = +store.get('ibex.wallet', 0) || 0, fur = store.get('ibex.fur', 'fur-default');
 const owned = new Set(store.get('ibex.owned', ['fur-default']));
+// records are kept per peak and per mode; the first peak's plain record keeps its old key
+const recKey = () => REC + (peak.id === 'dusk' ? '' : peak.id + '.') + (hard ? 'hard.' : '');
+function setPeak(q, h) {
+  peak = q; hard = h; SKY = q.sky; NIGHT = q.night; ZONES = q.zones; FAR_ROCK = q.far; NEAR_ROCK = q.near;
+  bestTime = +store.get(recKey() + 'best.time', 0) || 0;
+}
+setPeak(selPeak, selHard);
 const kstDay = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '');
 // mulberry32: the daily cliff draws its route from a seed so everyone climbs the same map
 function makeRng(seed) {
@@ -376,6 +442,7 @@ function resize() {
   s = cw / W * ZOOM; viewH = ch / s; ox0 = ox;
 }
 // the column shows W / ZOOM of the cliff; keep the ibex near its middle without showing past the cliff's ends
+const SX = x => x + ox0 - ox;   // a place in the play column on screen, as a drawing x (the world is shifted by the sideways camera)
 const camXFor = x => clamp(x - W / ZOOM / 2, 0, W - W / ZOOM);
 
 function makeLedge(x, top, w, o = {}) {
@@ -422,11 +489,11 @@ function genNext(prev) {
     const amp = Math.min(mr(18, 36), (hi - lo) / 2 - 2), cx = clamp(x, lo + amp, hi - amp);
     opts.mover = { cx, amp, sp: mr(0.8, 1.4), ph: mr(0, 6) };
     x = cx;
-  } else if (alt > 20 && roll < 0.3) {
-    if (alt > 350 && alt < 600) { opts.ice = mapRng() < 0.5 ? -1 : 1; w *= 1.2; }   // the snow zone's ledges are iced over and tilted
+  } else if (alt > 20 && roll < peak.slick) {
+    if (peak.ice && alt > peak.ice[0] && alt < peak.ice[1]) { opts.ice = mapRng() < 0.5 ? -1 : 1; w *= 1.2; }   // the snow zone's ledges are iced over and tilted
     else opts.moss = true;
-  } else if (alt > 600 && roll < 0.46) { opts.cloud = { per: mr(4.5, 5.5), ph: mr(0, 5) }; w *= 1.3; }
-  else opts.crumble = alt > 30 && mapRng() < 0.1 + 0.25 * d;
+  } else if (alt > peak.cloud && roll < peak.slick + 0.16) { opts.cloud = { per: mr(4.5, 5.5), ph: mr(0, 5) }; w *= 1.3; }
+  else opts.crumble = alt > 30 && mapRng() < (0.1 + 0.25 * d) * peak.crumble;
   if (top > nextBabyY + 45 * U) { opts.baby = true; opts.crumble = false; nextBabyY += mr(130, 190) * U; }
   const l = makeLedge(x, top, w, opts);
   ledges.push(l);
@@ -437,7 +504,7 @@ function genNext(prev) {
     gems.push({ x: gx, y: Math.max(prev.top, top) + mr(60, 110), got: false, id: l.id });
   }
   // an updraft beside this ledge: jump into it from a ledge below and it carries you up and drops you here
-  if (alt > 100 && !l.cloud && mapRng() < 0.14) {
+  if (alt > 100 && !l.cloud && mapRng() < 0.14 * peak.draft) {
     const hw = WIDE ? 22 : 18, side = mapRng() < 0.5 ? -1 : 1;
     for (const sd of [side, -side]) {
       const cx = l.x + sd * (l.w / 2 + 26 + hw), y1 = top - 20;   // tops out below the ledge, so jumping off the ledge never catches it
@@ -482,7 +549,8 @@ function reset() {
   const seed = +kstDay();
   mapRng = mode === 'daily' ? makeRng(seed) : Math.random;
   windRng = mode === 'daily' ? makeRng(seed ^ 0x2545F491) : Math.random;
-  nextBabyY = 40 * U; babies = owned.has('flute') ? 1 : 0; trail = []; hoofUsed = false; flash = 0; lightT = 4;
+  nextBabyY = 40 * U; babies = owned.has('flute') && !hard ? 1 : 0; trail = [];
+  lava = peak.lava ? -260 : -1e9; hoofUsed = false; flash = 0; lightT = 4;
   drafts = []; gems = [];
   rec = []; recT = 0; ghost = mode === 'daily' ? store.get(REC + 'ghost.' + kstDay(), null) : null;
   $('mkGh').hidden = !(ghost && ghost.p && ghost.p.length);
@@ -644,7 +712,7 @@ function land(l) {
     ib.off = o;
     ib.wob = { dir: Math.sign(o) || 1, phi: 0.22 + 0.4 * clamp((ao - hw - 2) / (REACH - 2), 0, 1), vel: 0.2, flash: 0 };
     pebbles(l, ib.wob.dir, 5);
-    if (owned.has('hoof') && !hoofUsed) {   // 든든한 발굽: the first teeter of a run steadies itself
+    if (owned.has('hoof') && !hoofUsed && !hard) {   // 든든한 발굽: the first teeter of a run steadies itself
       hoofUsed = true; ib.wob = null; ib.off = Math.sign(o) * (hw - 4);
       pops.push({ x: l.x, y: l.top + 50, text: '든든한 발굽!', t: 0 }); sfx('save');
     } else { sfx('teeter'); slowmo(0.3); }
@@ -659,9 +727,10 @@ function land(l) {
   }
   if (l.baby) {
     l.baby = false;
-    if (babies < 3) babies++;
-    pops.push({ x: l.x, y: l.top + 56, text: '아기 산양 구출!', t: 0 }); sfx('bleat');
-    if (!seen.has('baby')) { seen.add('baby'); showBanner('새 친구', '아기 산양', '크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리'); }
+    if (hard) { salt += 3; wallet += 3; store.set('ibex.wallet', wallet); }   // hard mode: no catches, the kid just thanks you
+    else if (babies < 3) babies++;
+    pops.push({ x: l.x, y: l.top + 56, text: hard ? '아기 산양 구출! 소금 +3' : '아기 산양 구출!', t: 0 }); sfx('bleat');
+    if (!hard && !seen.has('baby')) { seen.add('baby'); showBanner('새 친구', '아기 산양', '크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리'); }
   }
   if (same) { syncHud(); return; }
   jumps++;
@@ -730,7 +799,8 @@ function update(dt) {
     if (l.cloud && ib.on === l && cloudLeft(l) < 0) { ib.on = null; ib.from = l; ib.launch = null; ib.vx = 0; ib.vy = 0; ib.charging = false; ib.wob = null; combo = 0; }
   }
 
-  if (state !== 'ready') {
+  if (state === 'dead') ib.y -= 26 * dt;
+  if (state !== 'ready' && state !== 'dead') {
     if (ib.on) {
       const l = ib.on;
       ib.x = l.x + ib.off; ib.y = l.spike ? surf(l, ib.x) : l.top;
@@ -830,6 +900,12 @@ function update(dt) {
     if (nAlt > 0.85 && (lightT -= dt) <= 0) { flash = 1; lightT = rand(4.5, 8); sfx('thunder'); intro('night'); }
     const zi = zoneIndex(maxAlt);
     if (zi > zoneIdx) { zoneIdx = zi; showBanner('새 구역', ZONES[zi].name, ZONES[zi].desc); sfx('zone'); }
+    if (peak.lava) {
+      // lava climbs a little faster the higher you are, and never stays far below your best ledge: a long fall ends in it
+      if (runTime > 6) lava = Math.max(lava + (6 + 7 * clamp(maxAlt / 1000, 0, 1)) * (hard ? 1.25 : 1) * dt, maxAlt * U - 1100);
+      if (lava > cam - 40) intro('lava');
+      if (ib.y < lava + 3) burn();
+    }
   }
 
   for (const q of parts) { q.t += dt; q.vy -= G * 0.28 * dt; q.x += q.vx * dt; q.y += q.vy * dt; }
@@ -852,6 +928,7 @@ const INTRO = {
   draft: ['상승기류', '빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요', '새 지형'],
   ice: ['얼음 발판', '기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요'],
   cloud: ['구름 발판', '나타났다 사라져요. 깜빡이면 곧 사라져요'],
+  lava: ['용암', '아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요', '위험'],
 };
 const seen = new Set();
 // banners queue up so a new zone and a new obstacle never overwrite each other
@@ -873,6 +950,17 @@ function intro(kind) {
   showBanner(INTRO[kind][2] || '새 장애물', INTRO[kind][0], INTRO[kind][1]);
 }
 
+// the fire peak: the lava got you. The run ends where it is, and the height you reached is the record
+function burn() {
+  state = 'dead'; ib.charging = false; chargeKey = null; ib.on = null; ib.vx = ib.vy = 0;
+  clearBanners();
+  const key = recKey() + 'best.alt', top = Math.floor(maxAlt), prev = +store.get(key, 0) || 0;
+  if (top > prev) store.set(key, top);
+  sfx('hit'); shake(9); slowmo(0.6);
+  for (let i = 0; i < 40; i++) parts.push({ x: ib.x + rand(-14, 14), y: lava + rand(0, 10), vx: rand(-140, 140), vy: rand(120, 460), life: 1.3, t: 0, r: rand(1.2, 3), col: 'gold' });
+  setTimeout(() => { if (state === 'dead') showOverlay('dead', top > prev); }, 1500);
+}
+
 const fmtTime = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
 function finish() {
@@ -889,7 +977,7 @@ function finish() {
     submitDaily(runTime);
   } else {
     isBest = !bestTime || runTime < bestTime;
-    if (isBest) { bestTime = runTime; store.set(REC + 'best.time', bestTime); }
+    if (isBest) { bestTime = runTime; store.set(recKey() + 'best.time', bestTime); }
   }
   sfx('summit'); slowmo(0.8);
   for (let i = 0; i < 40; i++) parts.push({ x: ib.x + rand(-30, 30), y: ib.y + rand(0, 40), vx: rand(-120, 120), vy: rand(150, 420), life: 1.6, t: 0, r: rand(1.2, 2.6), col: 'salt' });
@@ -1032,7 +1120,7 @@ function updateHazards(dt) {
   ib.hurt = Math.max(0, ib.hurt - dt);
   while (bandTip < cam + viewH + 600) {
     const wr = (lo, hi) => lo + windRng() * (hi - lo);
-    if (windRng() < 0.65) bands.push({ y0: bandTip, y1: bandTip + wr(240, 340), dir: windRng() < 0.5 ? -1 : 1, str: wr(130, 230), ph: wr(0, 6) });
+    if (windRng() < Math.min(0.95, 0.65 * peak.wind)) bands.push({ y0: bandTip, y1: bandTip + wr(240, 340), dir: windRng() < 0.5 ? -1 : 1, str: wr(130, 230) * (0.8 + 0.2 * peak.wind), ph: wr(0, 6) });
     bandTip += wr(600, 900);
   }
   if (state !== 'play') return;
@@ -1050,13 +1138,13 @@ function updateHazards(dt) {
 
   // falling rocks: a warning at the top of the screen, then the rock
   if (alt > 50 && (rockT -= dt) <= 0) {
-    rockT = rand(2.6, 5.2);
+    rockT = rand(2.6, 5.2) / (peak.rocks * (hard ? 1.4 : 1));
     warns.push({ kind: 'rock', x: clamp(ib.x + rand(-55, 55), 14, edgeAt(ib.y) - 10), t: 1.1 });
     intro('rock'); sfx('rumble');
   }
   // eagles cross the screen a little above you
   if (alt > 90 && !eagle && !warns.some(w => w.kind === 'eagle') && (eagleT -= dt) <= 0) {
-    eagleT = rand(7, 12);
+    eagleT = rand(7, 12) / (hard ? 1.4 : 1);
     warns.push({ kind: 'eagle', side: Math.random() < 0.5 ? -1 : 1, y: ib.y + rand(30, 150), t: 1.3 });
     intro('eagle'); sfx('screech');
   }
@@ -1072,7 +1160,7 @@ function updateHazards(dt) {
   for (const r of rocks) {
     const py = r.y;
     r.vy = Math.max(-900, r.vy - G * 0.6 * dt); r.y += r.vy * dt; r.a += r.spin * dt;
-    if (Math.hypot(r.x - ib.x, r.y - (ib.y + 16)) < r.r + 11 && knock(Math.sign(ib.x - r.x) || 1, '낙석!')) r.dead = true;
+    if (Math.hypot(r.x - ib.x, r.y - (ib.y + 16)) < r.r + 11 && knock(Math.sign(ib.x - r.x) || 1, peak.lava ? '화산탄!' : '낙석!')) r.dead = true;
     for (const l of ledges) {
       if (r.dead || l.falling || (l.cloud && cloudLeft(l) < 0)) continue;
       const top = l.spike ? (Math.abs(r.x - l.x) <= l.w / 2 ? surf(l, r.x) : null)
@@ -1177,7 +1265,7 @@ function drawFace(p) {
   for (let wy = Math.ceil(yTop / 22) * 22; wy > yBot; wy -= 22) {
     const y = sy(wy), h = hash(wy * 0.37);
     ctx.strokeStyle = css(p.faceDark, 0.25 + h * 0.3);
-    ctx.beginPath(); ctx.moveTo(L0, y); ctx.lineTo(cw, y + (h - 0.5) * 6 * s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(L0, y); ctx.lineTo(W * s, y + (h - 0.5) * 6 * s); ctx.stroke();
   }
   // long vertical fissures
   ctx.strokeStyle = css(p.faceDark, 0.55); ctx.lineWidth = Math.max(1, s * 1.1);
@@ -1234,7 +1322,7 @@ function drawPillar(l, p) {
   for (let k = 1; k <= 4; k++) {
     const y = y0 + (y1 - y0) * (k / 5 + (hash(l.id + k * 4.1) - 0.5) * 0.08);
     ctx.strokeStyle = css(p.faceDark, 0.35 * (1 - k / 5));
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y + (hash(l.id * k) - 0.5) * 4 * s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W * s, y + (hash(l.id * k) - 0.5) * 4 * s); ctx.stroke();
   }
   ctx.restore();
 }
@@ -1393,7 +1481,7 @@ function drawCamp(l, p) {
   gr.addColorStop(0, css(mix(p.under, p.faceMid, 0.3))); gr.addColorStop(1, css(p.faceDark));
   ctx.fillStyle = gr; ctx.fill();
   for (const [x, dy, dark] of g.dots) { const [X, Y] = P([x, dy]); ctx.fillStyle = dark ? css(p.faceDark, 0.5) : css(p.cap, 0.4); ctx.fillRect(X, Y, 1.4 * s, 1.4 * s); }
-  ctx.fillStyle = css(p.cap); ctx.fillRect(0, y0 - 2 * s, cw, 4 * s);
+  ctx.fillStyle = css(p.cap); ctx.fillRect(0, y0 - 2 * s, W * s, 4 * s);
   rockPath(outline, P); ctx.closePath();
   ctx.strokeStyle = 'rgba(30,10,5,.45)'; ctx.lineWidth = Math.max(1, s); ctx.stroke();
 
@@ -1419,7 +1507,7 @@ function drawCamp(l, p) {
   ctx.save();
   ctx.font = `600 ${Math.round(11 * Math.max(1, s))}px "IBM Plex Sans KR", system-ui, sans-serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(255,240,220,.75)';
-  ctx.fillText(l.summit ? '정상 · 1000m' : `캠프 ${l.camp} · ${l.camp * 100}m`, cw * 0.5, y0 + 12 * s);
+  ctx.fillText(l.summit ? '정상 · 1000m' : `캠프 ${l.camp} · ${l.camp * 100}m`, W / 2 * s, y0 + 12 * s);
   ctx.restore();
 }
 
@@ -1565,6 +1653,37 @@ function drawDrafts() {
     ctx.strokeStyle = 'rgba(255,252,240,.6)'; ctx.lineWidth = 1.6 * s;
     ctx.beginPath(); ctx.moveTo(d.x * s, yt + 10 * s); ctx.quadraticCurveTo(d.x * s, yt - 6 * s, (d.x + dir * 14) * s, yt - 4 * s); ctx.stroke();
     ctx.beginPath(); ctx.moveTo((d.x + dir * 10) * s, yt - 8 * s); ctx.lineTo((d.x + dir * 15) * s, yt - 4 * s); ctx.lineTo((d.x + dir * 10) * s, yt); ctx.stroke();
+  }
+}
+
+// the fire peak's lava: a glowing sea that climbs after you, and how far below it is while it is out of sight
+function drawLava() {
+  if (!peak.lava) return;
+  const y = sy(lava), X0 = -ox - 40, XW = fw + 80;
+  if (y < ch + 160 * s) {
+    const gl = ctx.createLinearGradient(0, y - 160 * s, 0, y);
+    gl.addColorStop(0, 'rgba(255,120,40,0)'); gl.addColorStop(1, 'rgba(255,120,40,.42)');
+    ctx.fillStyle = gl; ctx.fillRect(X0, y - 160 * s, XW, 160 * s);
+    ctx.beginPath(); ctx.moveTo(X0, ch + 60);
+    for (let x = X0; x <= X0 + XW + 12; x += 12) ctx.lineTo(x, y + (Math.sin((x + ox) * 0.03 + time * 2) * 3 + Math.sin((x + ox) * 0.011 - time * 1.3) * 4) * s);
+    ctx.lineTo(X0 + XW, ch + 60); ctx.closePath();
+    const lg = ctx.createLinearGradient(0, y, 0, y + 90 * s);
+    lg.addColorStop(0, '#ffd66b'); lg.addColorStop(0.08, '#ff8a2a'); lg.addColorStop(0.5, '#d83a12'); lg.addColorStop(1, '#6a1408');
+    ctx.fillStyle = lg; ctx.fill();
+    for (let i = 0; i < 9; i++) {
+      const u = (time * 0.5 + i * 0.37) % 1, bx = -ox + hash(i * 4.1 + Math.floor(time * 0.5 + i * 0.37)) * fw;
+      ctx.fillStyle = `rgba(255,224,140,${0.7 * (1 - u)})`;
+      ctx.beginPath(); ctx.arc(bx, y + 7 * s, (2 + 5 * u) * s, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  if (state === 'play' && y > ch - 30) {
+    const m = Math.max(0, Math.ceil((ib.y - lava) / U)), near = m < 30;
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 14px system-ui, sans-serif';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(30,10,6,.7)';
+    ctx.fillStyle = near ? `rgba(255,${120 + 80 * Math.abs(Math.sin(time * 6))},70,1)` : 'rgba(255,170,90,.9)';
+    const label = `▲ 용암 ${m}m 아래`;
+    ctx.strokeText(label, SX(cw / 2), ch - 74); ctx.fillText(label, SX(cw / 2), ch - 74);
+    ctx.restore();
   }
 }
 
@@ -1808,12 +1927,12 @@ function drawHazards(p) {
     ctx.font = '600 14px "IBM Plex Sans KR", system-ui, sans-serif'; ctx.lineWidth = 4;
     ctx.strokeStyle = 'rgba(50,18,6,.5)'; ctx.fillStyle = '#fff3dc';
     const label = w > 0 ? '바람 ▶▶' : '◀◀ 바람';
-    ctx.strokeText(label, cw / 2, 96); ctx.fillText(label, cw / 2, 96);
+    ctx.strokeText(label, SX(cw / 2), 96); ctx.fillText(label, SX(cw / 2), 96);
   }
   for (const wn of warns) {
     ctx.globalAlpha = 0.6 + 0.4 * Math.sin(time * 20);
     if (wn.kind === 'rock') warnMark(wn.x * s, 84, '!');
-    else warnMark(wn.side < 0 ? 22 : cw - 22, clamp(sy(wn.y), 90, ch - 90), wn.side < 0 ? '▶' : '◀');
+    else warnMark(SX(wn.side < 0 ? 22 : cw - 22), clamp(sy(wn.y), 90, ch - 90), wn.side < 0 ? '▶' : '◀');
   }
   ctx.restore();
 }
@@ -1823,9 +1942,9 @@ function drawHints() {
   ctx.save();
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if (ib.wob) {
-    const side = -ib.wob.dir, x = side < 0 ? cw * 0.25 : cw * 0.75, y = ch * 0.56;
+    const side = -ib.wob.dir, x = SX(side < 0 ? cw * 0.25 : cw * 0.75), y = ch * 0.56;
     ctx.fillStyle = `rgba(255,236,210,${0.07 + ib.wob.flash * 0.6})`;
-    ctx.fillRect(side < 0 ? 0 : cw / 2, 0, cw / 2, ch);
+    ctx.fillRect(SX(side < 0 ? 0 : cw / 2), 0, cw / 2, ch);
     const pulse = 1 + 0.12 * Math.sin(time * 18);
     ctx.font = `800 ${Math.round(30 * pulse)}px Hahmlet, Georgia, serif`;
     ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(50,18,6,.55)'; ctx.fillStyle = '#fff3dc';
@@ -1844,14 +1963,14 @@ function drawHints() {
     if (spikeTips <= 4) {
       ctx.globalAlpha = 0.9; ctx.font = '600 14px "IBM Plex Sans KR", system-ui, sans-serif';
       const tipText = ib.zone ? '비탈에선 오르막 쪽으로만 뛸 수 있어요' : '꼭대기! 이제 방향을 바꿀 수 있어요';
-      ctx.strokeText(tipText, cw / 2, ch * 0.86); ctx.fillText(tipText, cw / 2, ch * 0.86);
+      ctx.strokeText(tipText, SX(cw / 2), ch * 0.86); ctx.fillText(tipText, SX(cw / 2), ch * 0.86);
     }
   } else if (!ib.charging && jumps < 2) {
     ctx.globalAlpha = 0.55 + 0.2 * Math.sin(time * 3);
     ctx.fillStyle = '#fff3dc'; ctx.font = '600 15px "IBM Plex Sans KR", system-ui, sans-serif';
-    ctx.fillText(pad.on ? '◀  L1 꾹' : '◀  왼쪽 꾹', cw * 0.22, ch * 0.8); ctx.fillText(pad.on ? 'R1 꾹  ▶' : '오른쪽 꾹  ▶', cw * 0.78, ch * 0.8);
+    ctx.fillText(pad.on ? '◀  L1 꾹' : '◀  왼쪽 꾹', SX(cw * 0.22), ch * 0.8); ctx.fillText(pad.on ? 'R1 꾹  ▶' : '오른쪽 꾹  ▶', SX(cw * 0.78), ch * 0.8);
     ctx.globalAlpha = 0.18; ctx.strokeStyle = '#fff3dc'; ctx.lineWidth = 1; ctx.setLineDash([6, 8]);
-    ctx.beginPath(); ctx.moveTo(cw / 2, ch * 0.22); ctx.lineTo(cw / 2, ch * 0.88); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(SX(cw / 2), ch * 0.22); ctx.lineTo(SX(cw / 2), ch * 0.88); ctx.stroke(); ctx.setLineDash([]);
   }
   ctx.restore();
 }
@@ -1885,7 +2004,7 @@ function render() {
   }
 
   // low sun past the cliff edge, setting as you climb
-  const sunX = cw * 0.9, sunY = ch * 0.58 + cam * s * 0.1, sunA = 1 - n;
+  const sunX = SX(cw * 0.9), sunY = ch * 0.58 + cam * s * 0.1, sunA = 1 - n;
   if (sunY < ch + 240 * s && sunA > 0) {
     const rg = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 170 * s);
     rg.addColorStop(0, `rgba(255,226,160,${0.6 * sunA})`); rg.addColorStop(1, 'rgba(255,200,140,0)');
@@ -1896,7 +2015,7 @@ function render() {
   // sunrise over the summit
   const rise = clamp((alt - 900) / 100, 0, 1);
   if (rise > 0) {
-    const rx = cw * 0.82, ry = ch * (0.92 - 0.3 * rise);
+    const rx = SX(cw * 0.82), ry = ch * (0.92 - 0.3 * rise);
     const rg = ctx.createRadialGradient(rx, ry, 0, rx, ry, 230 * s);
     rg.addColorStop(0, `rgba(255,214,150,${0.7 * rise})`); rg.addColorStop(1, 'rgba(255,190,130,0)');
     ctx.fillStyle = rg; ctx.fillRect(X0, 0, XW, ch);
@@ -1922,7 +2041,7 @@ function render() {
   drawGems();
 
   // above 600 m clouds drift across the face and a sea of cloud fills the drop below
-  const cloudK = clamp((alt - 580) / 40, 0, 1);
+  const cloudK = clamp((alt - (peak.cloud - 20)) / 40, 0, 1);
   if (cloudK > 0) {
     for (let cy = Math.floor(cam / 160) - 1; cy <= Math.ceil((cam + viewH) / 160); cy++) {
       for (let k = 0, n = Math.round(2 * WK * fw / cw); k < n; k++) {
@@ -1954,17 +2073,18 @@ function render() {
   drawGhost();
   drawBabies(css(mix(p.ibex, p.cap, 0.35)));
   drawIbex(css(p.ibex));
+  drawLava();
   drawAim();
   drawHints();
   drawHazards(p);
 
   // snow falls through the snowy-mountain zone
-  const snowK = clamp((alt - 340) / 30, 0, 1) * clamp((620 - alt) / 30, 0, 1);
+  const snowK = peak.flakes ? clamp((alt - peak.flakes[0]) / 30, 0, 1) * clamp((peak.flakes[1] - alt) / 30, 0, 1) : 0;
   if (snowK > 0) {
-    ctx.fillStyle = `rgba(255,255,255,${0.8 * snowK})`;
+    ctx.fillStyle = peak.ember ? `rgba(255,170,80,${0.75 * snowK})` : `rgba(255,255,255,${0.8 * snowK})`;
     for (let i = 0, n = Math.round(70 * WK * fw / cw); i < n; i++) {
       const x = -ox + hash(i * 1.7) * fw + Math.sin(time * 0.7 + i) * 18;
-      const y = (hash(i * 3.7) * ch + time * (30 + hash(i) * 40)) % ch;
+      const fy = (hash(i * 3.7) * ch + time * (30 + hash(i) * 40)) % ch, y = peak.ember ? ch - fy : fy;   // sparks rise, snow falls
       ctx.beginPath(); ctx.arc(x, y, 1 + hash(i * 9.1) * 1.4, 0, Math.PI * 2); ctx.fill();
     }
   }
@@ -1981,7 +2101,7 @@ function render() {
     if (flash > 0.55) {
       ctx.fillStyle = `rgba(225,232,255,${(flash - 0.55) * 0.9})`; ctx.fillRect(X0, 0, XW, ch);
       ctx.strokeStyle = `rgba(255,255,255,${flash})`; ctx.lineWidth = 2.2; ctx.lineJoin = 'miter';
-      ctx.beginPath(); let bx = cw * 0.86, by = 0; ctx.moveTo(bx, by);
+      ctx.beginPath(); let bx = SX(cw * 0.86), by = 0; ctx.moveTo(bx, by);
       for (let i = 1; i <= 7; i++) { bx += (hash(lightT * 10 + i) - 0.5) * 34; by += ch * 0.06; ctx.lineTo(bx, by); }
       ctx.stroke();
     }
@@ -1994,7 +2114,7 @@ function render() {
     ctx.font = `800 ${Math.round(17 * s)}px Hahmlet, Georgia, serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineWidth = 4 * s; ctx.strokeStyle = 'rgba(60,22,8,.55)'; ctx.fillStyle = '#fff3d6';
-    const x = clamp(q.x * s, 80, cw - 80), y = sy(q.y + k * 30);
+    const x = clamp(q.x * s, SX(80), SX(cw - 80)), y = sy(q.y + k * 30);
     ctx.strokeText(q.text, x, y); ctx.fillText(q.text, x, y);
     ctx.restore();
   }
@@ -2030,12 +2150,40 @@ function syncHud() {
 }
 const mapMark = (id, m) => put('@' + id, (m / 10).toFixed(1) + '%');
 
+// full edition: the peak picker shows each peak's record for the chosen mode
+function drawPeaks(refocus) {
+  $('peaks').hidden = $('peakInfo').hidden = $('hardBtn').hidden = !FULL;
+  if (!FULL) return;
+  const box = $('peaks'); box.textContent = '';
+  for (const q of PEAKS) {
+    const b = document.createElement('button'), k = REC + (q.id === 'dusk' ? '' : q.id + '.') + (selHard ? 'hard.' : '');
+    const t = +store.get(k + 'best.time', 0) || 0, a = +store.get(k + 'best.alt', 0) || 0;
+    b.type = 'button'; if (q === selPeak) b.className = 'on';
+    b.append(q.name, Object.assign(document.createElement('small'), { textContent: t ? fmtTime(t) : a ? a + 'm' : '기록 없음' }));
+    b.addEventListener('click', () => { selPeak = q; store.set('ibex.peak', q.id); pickPeak(); });
+    box.append(b);
+  }
+  $('peakInfo').textContent = selPeak.desc;
+  $('hardBtn').textContent = selHard ? '하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주' : '하드 모드: 꺼짐';
+  if (refocus) { const on = box.querySelector('.on'); if (on) on.focus({ preventScroll: true }); }
+}
+// on the title screen the cliff behind the menu changes to the picked peak
+function pickPeak() {
+  if (state === 'ready') { setPeak(selPeak, selHard); reset(); }
+  drawPeaks(true);
+}
+
+let howOpen = false;
 function showOverlay(kind, isBest) {
-  const done = kind === 'done', daily = mode === 'daily';
+  const done = kind === 'done', dead = kind === 'dead', daily = mode === 'daily';
   const dayBest = +store.get(REC + 'daily.' + kstDay(), 0) || 0;
-  $('ovEyebrow').textContent = done ? (isBest ? '새 최고 기록' : '정상 도착') : (WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m');
-  $('ovTitle').textContent = done ? (daily ? '오늘의 절벽 정상!' : '1000m 정상!') : '아이벡스 점프';
-  $('ovResult').hidden = !done; $('ovHow').hidden = done; $('ovKeys').hidden = done;
+  $('ovEyebrow').textContent = dead ? (isBest ? '새 최고 높이' : '용암에 삼켜졌어요') : done ? (isBest ? '새 최고 기록' : '정상 도착')
+    : FULL ? '완전판 · 산 세 곳' : WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m';
+  $('ovTitle').textContent = dead ? `${Math.floor(maxAlt)}m에서 끝` : done ? (daily ? '오늘의 절벽 정상!' : FULL ? `${peak.name} 정상!` : '1000m 정상!') : '아이벡스 점프';
+  $('ovResult').hidden = !(done || dead); $('ovHow').hidden = $('ovKeys').hidden = done || dead || (FULL && !howOpen);   // the full edition's menu is long, so the how-to folds away
+  $('howBtn').hidden = !FULL || done || dead; $('howBtn').textContent = howOpen ? '조작법 접기' : '조작법 보기';
+  if (dead) $('ovResult').textContent = `버틴 시간 ${fmtTime(runTime)} · 이 산 최고 ${+store.get(recKey() + 'best.alt', 0) || 0}m · 소금 ${salt}개`;
+  drawPeaks();
   if (done) $('ovResult').textContent = `시간 ${fmtTime(runTime)} · 최고 ${fmtTime(daily ? dayBest : bestTime)} · 추락 ${falls}번 · 소금 ${salt}개`;
   $('dailyInfo').textContent = dayBest ? `오늘의 절벽 최고 ${fmtTime(dayBest)} · 그 기록의 고스트와 함께 올라요` : '오늘의 절벽: 오늘은 모두 같은 절벽을 올라요';
   $('nameIn').hidden = $('nameLbl').hidden = !fireReady; $('nameIn').value = playerName();
@@ -2048,7 +2196,7 @@ function showOverlay(kind, isBest) {
 }
 
 function startGame(m) {
-  if (m === 'free' || m === 'daily') mode = m;
+  if (m === 'free' || m === 'daily') { mode = m; setPeak(m === 'daily' ? PEAKS[0] : selPeak, m === 'free' && selHard); }
   if (fireReady && $('nameIn').value.trim()) store.set('ibex.name', $('nameIn').value.trim().slice(0, 12));
   audioInit();
   clearBanners();
@@ -2061,6 +2209,8 @@ function startGame(m) {
 $('startBtn').addEventListener('click', () => startGame('free'));
 $('dailyBtn').addEventListener('click', () => startGame('daily'));
 $('shopBtn').addEventListener('click', openShop);
+$('howBtn').addEventListener('click', () => { howOpen = !howOpen; showOverlay(); $('howBtn').focus({ preventScroll: true }); });
+$('hardBtn').addEventListener('click', () => { selHard = !selHard; store.set('ibex.hard', selHard); pickPeak(); $('hardBtn').focus({ preventScroll: true }); });
 $('shopClose').addEventListener('click', () => showOverlay());
 $('restartBtn').addEventListener('click', e => { e.currentTarget.blur(); startGame(); });
 $('sound').checked = soundOn;
