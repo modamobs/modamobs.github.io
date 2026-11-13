@@ -379,7 +379,8 @@ const PEAKS = [
   { id: 'tour', name: '대종주', desc: '세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요', route: ['dusk', 'ice', 'fire'] },
 ];
 // what the menu has picked, and what the current run is on (a daily climb is always the first peak, never hard)
-let selPeak = (FULL && PEAKS.find(q => q.id === (new URLSearchParams(location.search).get('peak') || store.get('ibex.peak', 'dusk')))) || PEAKS[0];
+// The full edition is the tour: its menu has one start button. ?peak= still picks a single peak, for testing.
+let selPeak = FULL ? PEAKS.find(q => q.id === (new URLSearchParams(location.search).get('peak') || 'tour')) || PEAKS[0] : PEAKS[0];
 let selHard = FULL && !!store.get('ibex.hard', false);
 let peak = selPeak, hard = selHard, route = [PEAKS[0]], FAR_ROCK, NEAR_ROCK;
 let lava = -1e9, lavaT = 0, lavaRef = 0;   // lava level (none while far below), when it starts climbing, and your best ledge since it started
@@ -2216,12 +2217,17 @@ function syncHud() {
 const mapMark = (id, m) => put('@' + id, (m / (route.length * SEG) * 100).toFixed(1) + '%');
 
 // full edition: the peak picker shows each peak's record for the chosen mode
+const PEAK_PICKER = false;   // off for now: the full edition just starts the tour. The picker is kept for a later menu
 function drawPeaks(refocus) {
-  $('peaks').hidden = $('peakInfo').hidden = $('hardBtn').hidden = !FULL;
+  $('peaks').hidden = $('peakInfo').hidden = !(FULL && PEAK_PICKER); $('hardBtn').hidden = !FULL;
   if (!FULL) return;
+  const rk = q => REC + (q.id === 'dusk' ? '' : q.id + '.') + (selHard ? 'hard.' : ''), mine = +store.get(rk(selPeak) + 'best.time', 0) || 0;
+  $('dailyInfo').textContent = mine ? `${selPeak.name} 최고 기록 ${fmtTime(mine)}${selHard ? ' (하드)' : ''}` : selPeak.desc;
+  $('hardBtn').textContent = selHard ? '하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주' : '하드 모드: 꺼짐';
+  if (!PEAK_PICKER) return;
   const box = $('peaks'); box.textContent = '';
   for (const q of PEAKS) {
-    const b = document.createElement('button'), k = REC + (q.id === 'dusk' ? '' : q.id + '.') + (selHard ? 'hard.' : '');
+    const b = document.createElement('button'), k = rk(q);
     const t = +store.get(k + 'best.time', 0) || 0, a = +store.get(k + 'best.alt', 0) || 0;
     b.type = 'button'; if (q === selPeak) b.className = 'on';
     b.append(q.name, Object.assign(document.createElement('small'), { textContent: t ? fmtTime(t) : a ? a + 'm' : '기록 없음' }));
@@ -2229,7 +2235,6 @@ function drawPeaks(refocus) {
     box.append(b);
   }
   $('peakInfo').textContent = selPeak.desc;
-  $('hardBtn').textContent = selHard ? '하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주' : '하드 모드: 꺼짐';
   if (refocus) { const on = box.querySelector('.on'); if (on) on.focus({ preventScroll: true }); }
 }
 // on the title screen the cliff behind the menu changes to the picked peak
@@ -2243,17 +2248,18 @@ function showOverlay(kind, isBest) {
   const done = kind === 'done', dead = kind === 'dead', daily = mode === 'daily';
   const dayBest = +store.get(REC + 'daily.' + kstDay(), 0) || 0;
   $('ovEyebrow').textContent = dead ? (isBest ? '새 최고 높이' : '용암에 삼켜졌어요') : done ? (isBest ? '새 최고 기록' : '정상 도착')
-    : FULL ? '완전판 · 산 세 곳과 대종주' : WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m';
+    : FULL ? '완전판 · 세 산을 잇는 3000m' : WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m';
   $('ovTitle').textContent = dead ? `${Math.floor(maxAlt)}m에서 끝` : done ? (daily ? '오늘의 절벽 정상!' : FULL ? (peak.route ? '대종주 완주!' : `${peak.name} 정상!`) : '1000m 정상!') : '아이벡스 점프';
   $('ovResult').hidden = !(done || dead); $('ovHow').hidden = $('ovKeys').hidden = done || dead || (FULL && !howOpen);   // the full edition's menu is long, so the how-to folds away
   $('howBtn').hidden = !FULL || done || dead; $('howBtn').textContent = howOpen ? '조작법 접기' : '조작법 보기';
   if (dead) $('ovResult').textContent = `버틴 시간 ${fmtTime(runTime)} · 이 산 최고 ${+store.get(recKey() + 'best.alt', 0) || 0}m · 소금 ${salt}개`;
   drawPeaks();
   if (done) $('ovResult').textContent = `시간 ${fmtTime(runTime)} · 최고 ${fmtTime(daily ? dayBest : bestTime)} · 추락 ${falls}번 · 소금 ${salt}개`;
-  $('dailyInfo').textContent = dayBest ? `오늘의 절벽 최고 ${fmtTime(dayBest)} · 그 기록의 고스트와 함께 올라요` : '오늘의 절벽: 오늘은 모두 같은 절벽을 올라요';
-  $('nameIn').hidden = $('nameLbl').hidden = !fireReady; $('nameIn').value = playerName();
+  $('dailyBtn').hidden = FULL; $('startBtn').style.gridColumn = FULL ? '1 / -1' : ''; $('startBtn').textContent = FULL ? '시작하기' : '자유 등반';
+  if (!FULL) $('dailyInfo').textContent = dayBest ? `오늘의 절벽 최고 ${fmtTime(dayBest)} · 그 기록의 고스트와 함께 올라요` : '오늘의 절벽: 오늘은 모두 같은 절벽을 올라요';
+  $('nameIn').hidden = $('nameLbl').hidden = !fireReady || FULL; $('nameIn').value = playerName();   // the full edition has no daily climb, so no ranking name
   $('rankList').hidden = true;
-  if (fireReady) showRanking();
+  if (fireReady && !FULL) showRanking();
   $('wallet').textContent = wallet;
   $('shop').hidden = true; $('overlay').querySelector('.card').hidden = false;
   $('overlay').hidden = false;
