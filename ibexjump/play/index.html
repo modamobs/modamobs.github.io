@@ -72,7 +72,7 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
 .howto li::before{content:"";width:6px;height:6px;margin-top:.62em;border-radius:1px;background:var(--ember);transform:rotate(45deg)}
 .howto b{color:#fff4e2;font-weight:600}
 .keys{margin:0;font-size:12px;color:#bfa58a}
-.peaks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.peaks{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
 .peaks button{display:grid;gap:2px;font:600 13px var(--body);border-radius:10px;padding:9px 4px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--sand)}
 .peaks button small{font-weight:400;font-size:11px;color:#bfa58a}
 .peaks button.on{border-color:var(--ember);background:rgba(232,120,60,.18);color:#fff4e2}
@@ -271,7 +271,8 @@ const css = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 const pair = (a, b) => [hex(a), hex(b)];
 
 // The climb: sunset at the foot, night on the way up, sunrise at the 1000 m summit.
-const SUMMIT = 1000 * U;
+const SEG = 1000;           // metres per peak
+let SUMMIT = SEG * U;       // the tour strings three peaks into one climb, so this grows with the route
 const SKY_DUSK = [
   [0,    hex('#d6a57c'), hex('#f5c682')],
   [150,  hex('#b97f86'), hex('#f3a86e')],
@@ -282,7 +283,7 @@ const SKY_DUSK = [
   [1000, hex('#7a9ad0'), hex('#ffc480')],
 ];
 const NIGHT_DUSK = [[0, 0], [150, 0.15], [350, 0.55], [550, 0.9], [800, 1], [920, 0.6], [1000, 0.15]];
-const nightAt = alt => {
+const nightOf = (NIGHT, alt) => {
   for (let i = 0; i < NIGHT.length - 1; i++) {
     const a = NIGHT[i], b = NIGHT[i + 1];
     if (alt <= b[0]) return a[1] + (b[1] - a[1]) * clamp((alt - a[0]) / (b[0] - a[0]), 0, 1);
@@ -300,11 +301,32 @@ const ZONES_DUSK = zoneSet([
 ]);
 const NIGHT_TINT = { faceLit: hex('#5c4270'), faceMid: hex('#3a2a4c'), faceDark: hex('#1c1428'), cap: hex('#a382a8'), under: hex('#3a2848'), moss: hex('#3f5d55') };
 const IBEX_COL = pair('#22130b', '#0d0811');
-const zoneIndex = alt => { let i = 0; while (i < ZONES.length - 1 && alt >= ZONES[i + 1].from) i++; return i; };
-// colours ease into the next zone over the last 25 m below it
+// A climb is one peak, or the tour's three in a row: which peak a height is on, and how far up that peak it is.
+const segAt = alt => clamp(Math.floor(alt / SEG), 0, route.length - 1);
+const pkAt = alt => route[segAt(alt)];
+const la = alt => alt - segAt(alt) * SEG;
+const BLEND = 50;           // metres over which one peak's sky and rock turn into the next's
+const nightAt = alt => {
+  const i = segAt(alt), a = la(alt), v = nightOf(route[i].night, a);
+  if (!i || a >= BLEND) return v;
+  const u = nightOf(route[i - 1].night, SEG);
+  return u + (v - u) * a / BLEND;
+};
+function skyAt(alt) {
+  const i = segAt(alt), a = la(alt), v = skyOf(route[i].sky, a);
+  if (!i || a >= BLEND) return v;
+  const u = skyOf(route[i - 1].sky, SEG);
+  return [mix(u[0], v[0], a / BLEND), mix(u[1], v[1], a / BLEND)];
+}
+// zones are numbered along the whole route: the peak's place in it times ten, plus the zone on that peak
+const zoneNo = alt => { const z = pkAt(alt).zones, a = la(alt); let i = 0; while (i < z.length - 1 && a >= z[i + 1].from) i++; return segAt(alt) * 10 + i; };
+const zoneOf = no => route[Math.floor(no / 10)].zones[no % 10];
+// colours ease into the next zone over the last 25 m below it, and out of the last peak's over the first metres of the next
 function zoneColors(alt) {
-  const i = zoneIndex(alt), z = ZONES[i], nx = ZONES[i + 1], k = nx ? clamp((alt - (nx.from - 25)) / 25, 0, 1) : 0, o = {};
+  const zs = pkAt(alt).zones, i = zoneNo(alt) % 10, a = la(alt), z = zs[i], nx = zs[i + 1], k = nx ? clamp((a - (nx.from - 25)) / 25, 0, 1) : 0, o = {};
   for (const key of ROCK_KEYS) o[key] = nx ? mix(z[key], nx[key], k) : z[key];
+  const sg = segAt(alt);
+  if (sg && a < BLEND) { const zp = route[sg - 1].zones, pz = zp[zp.length - 1]; for (const key of ROCK_KEYS) o[key] = mix(pz[key], o[key], a / BLEND); }
   return o;
 }
 const GREY = hex('#9a8c86');
@@ -351,11 +373,14 @@ const PEAKS = [
     ]),
     far: hex('#5a2a22'), near: hex('#3a1612'),
     slick: 0.22, ice: null, cloud: 1e9, flakes: [-40, 2000], ember: true, wind: 0.7, rocks: 1.5, crumble: 1.6, draft: 1.8, lava: true },
+  // the tour: the three peaks as one climb, each one's summit the foot of the next
+  { id: 'tour', name: '대종주', desc: '세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요', route: ['dusk', 'ice', 'fire'] },
 ];
 // what the menu has picked, and what the current run is on (a daily climb is always the first peak, never hard)
 let selPeak = (FULL && PEAKS.find(q => q.id === (new URLSearchParams(location.search).get('peak') || store.get('ibex.peak', 'dusk')))) || PEAKS[0];
 let selHard = FULL && !!store.get('ibex.hard', false);
-let peak = selPeak, hard = selHard, SKY, NIGHT, ZONES, FAR_ROCK, NEAR_ROCK, lava = -1e9;
+let peak = selPeak, hard = selHard, route = [PEAKS[0]], FAR_ROCK, NEAR_ROCK;
+let lava = -1e9, lavaT = 0, lavaRef = 0;   // lava level (none while far below), when it starts climbing, and your best ledge since it started
 
 // distant scenery seen past the cliff edge (x in a 400-wide frame)
 const FAR = [[[-10,0],[-10,58],[22,60],[34,54],[118,55],[128,62],[236,62],[246,50],[286,49],[296,36],[410,34],[410,0]]];
@@ -408,7 +433,7 @@ const owned = new Set(store.get('ibex.owned', ['fur-default']));
 // records are kept per peak and per mode; the first peak's plain record keeps its old key
 const recKey = () => REC + (peak.id === 'dusk' ? '' : peak.id + '.') + (hard ? 'hard.' : '');
 function setPeak(q, h) {
-  peak = q; hard = h; SKY = q.sky; NIGHT = q.night; ZONES = q.zones; FAR_ROCK = q.far; NEAR_ROCK = q.near;
+  peak = q; hard = h; route = q.route ? q.route.map(id => PEAKS.find(x => x.id === id)) : [q]; SUMMIT = route.length * SEG * U;
   bestTime = +store.get(recKey() + 'best.time', 0) || 0;
 }
 setPeak(selPeak, selHard);
@@ -419,7 +444,7 @@ function makeRng(seed) {
   return () => { a = (a + 0x6D2B79F5) | 0; let x = Math.imul(a ^ (a >>> 15), a | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
 }
 let cw = 0, ch = 0, s = 1, viewH = 600, dpr = 1, fw = 0, ox = 0, ox0 = 0, camX = 0;   // cw: the play column, fw: the whole canvas, ox: where the column starts in it
-let skyT = SKY[0][1], skyB = SKY[0][2];
+let skyT = route[0].sky[0][1], skyB = route[0].sky[0][2];
 
 const sy = wy => ch - (wy - cam) * s;
 // height of a spike's surface at x: a small flat summit, then straight slopes
@@ -452,13 +477,15 @@ function makeLedge(x, top, w, o = {}) {
 // Main path zigzags up the face; sometimes a tiny side ledge holds salt off the path.
 function genNext(prev) {
   const mr = (lo, hi) => lo + mapRng() * (hi - lo);
-  // nothing on the way catches a fall; the only terrace is the summit
-  if (prev.top + 95 >= SUMMIT) {
-    const c = makeLedge(W / 2, Math.max(SUMMIT, prev.top + 40), W * 2, { camp: 1, summit: true, flagX: 0.5 * W });
+  // the summit is a terrace, and on the tour so is the foot of each later peak: nothing falls past one
+  const seg = segAt(prev.top / U), next = (seg + 1) * SEG * U;
+  if (prev.top + 95 >= next) {
+    const c = makeLedge(W / 2, Math.max(next, prev.top + 40), W * 2, next >= SUMMIT ? { camp: 1, summit: true, flagX: 0.5 * W } : { camp: seg + 1, flagX: 0.5 * W });
     ledges.push(c);
     return c;
   }
-  const alt = prev.top / U, d = clamp(alt / 400, 0, 1);
+  // everything below is in metres up this peak, so each peak on the tour starts gently again
+  const pk = route[seg], alt = la(prev.top / U), d = clamp(alt / 400, 0, 1);
   const px = prev.ground ? 70 : prev.camp ? mr(60, edgeAt(prev.top) - 60) : prev.x;
   let w = clamp(64 - 40 * d + mr(-6, 6), 20, 72);
   let dir = prev.dir ? (mapRng() < (WIDE ? 0.6 : 0.72) ? -prev.dir : prev.dir) : 1;   // the wide cliff turns less, so the path wanders across it
@@ -489,11 +516,11 @@ function genNext(prev) {
     const amp = Math.min(mr(18, 36), (hi - lo) / 2 - 2), cx = clamp(x, lo + amp, hi - amp);
     opts.mover = { cx, amp, sp: mr(0.8, 1.4), ph: mr(0, 6) };
     x = cx;
-  } else if (alt > 20 && roll < peak.slick) {
-    if (peak.ice && alt > peak.ice[0] && alt < peak.ice[1]) { opts.ice = mapRng() < 0.5 ? -1 : 1; w *= 1.2; }   // the snow zone's ledges are iced over and tilted
+  } else if (alt > 20 && roll < pk.slick) {
+    if (pk.ice && alt > pk.ice[0] && alt < pk.ice[1]) { opts.ice = mapRng() < 0.5 ? -1 : 1; w *= 1.2; }   // the snow zone's ledges are iced over and tilted
     else opts.moss = true;
-  } else if (alt > peak.cloud && roll < peak.slick + 0.16) { opts.cloud = { per: mr(4.5, 5.5), ph: mr(0, 5) }; w *= 1.3; }
-  else opts.crumble = alt > 30 && mapRng() < (0.1 + 0.25 * d) * peak.crumble;
+  } else if (alt > pk.cloud && roll < pk.slick + 0.16) { opts.cloud = { per: mr(4.5, 5.5), ph: mr(0, 5) }; w *= 1.3; }
+  else opts.crumble = alt > 30 && mapRng() < (0.1 + 0.25 * d) * pk.crumble;
   if (top > nextBabyY + 45 * U) { opts.baby = true; opts.crumble = false; nextBabyY += mr(130, 190) * U; }
   const l = makeLedge(x, top, w, opts);
   ledges.push(l);
@@ -504,7 +531,7 @@ function genNext(prev) {
     gems.push({ x: gx, y: Math.max(prev.top, top) + mr(60, 110), got: false, id: l.id });
   }
   // an updraft beside this ledge: jump into it from a ledge below and it carries you up and drops you here
-  if (alt > 100 && !l.cloud && mapRng() < 0.14 * peak.draft) {
+  if (alt > 100 && !l.cloud && mapRng() < 0.14 * pk.draft) {
     const hw = WIDE ? 22 : 18, side = mapRng() < 0.5 ? -1 : 1;
     for (const sd of [side, -side]) {
       const cx = l.x + sd * (l.w / 2 + 26 + hw), y1 = top - 20;   // tops out below the ledge, so jumping off the ledge never catches it
@@ -524,7 +551,7 @@ function genNext(prev) {
       { const kid = top > nextBabyY; if (kid) nextBabyY += mr(130, 190) * U; ledges.push(makeLedge(sx, st, sw, kid ? { baby: true } : { salt: true })); }
   }
   // the wide cliff has a lot more open air: stray ledges away from the path catch some falls and lead back up
-  if (WIDE && !prev.ground && mapRng() < 0.55) {
+  if (WIDE && !prev.ground && !prev.camp && mapRng() < 0.55) {
     const sw = mr(26, 46), st = top - mr(10, 50), sx = mr(sw / 2 + 12, edgeAt(st) - sw / 2 - 6);
     if (Math.abs(sx - l.x) > 110 && Math.abs(sx - prev.x) > 90 &&
         !ledges.slice(-5).some(o => Math.abs(sx - o.x) < (sw + o.w) / 2 + 24 && Math.abs(st - o.top) < 45))
@@ -550,7 +577,7 @@ function reset() {
   mapRng = mode === 'daily' ? makeRng(seed) : Math.random;
   windRng = mode === 'daily' ? makeRng(seed ^ 0x2545F491) : Math.random;
   nextBabyY = 40 * U; babies = owned.has('flute') && !hard ? 1 : 0; trail = [];
-  lava = peak.lava ? -260 : -1e9; hoofUsed = false; flash = 0; lightT = 4;
+  lava = -1e9; lavaRef = 0; hoofUsed = false; flash = 0; lightT = 4;
   drafts = []; gems = [];
   rec = []; recT = 0; ghost = mode === 'daily' ? store.get(REC + 'ghost.' + kstDay(), null) : null;
   $('mkGh').hidden = !(ghost && ghost.p && ghost.p.length);
@@ -708,6 +735,10 @@ function land(l) {
   dust(ib.x, ib.y, 10);
   sfx(fell ? 'thud' : 'land');
   if (l.summit && !l.reached) { l.reached = true; finish(); }
+  if (l.camp && !l.summit && !l.reached) {   // the tour's rest ledge at the foot of the next peak
+    l.reached = true; sfx('zone');
+    showBanner('쉼터', route[l.camp].name, '여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요');
+  }
   if (!l.ground && ao > hw + 2) {
     ib.off = o;
     ib.wob = { dir: Math.sign(o) || 1, phi: 0.22 + 0.4 * clamp((ao - hw - 2) / (REACH - 2), 0, 1), vel: 0.2, flash: 0 };
@@ -734,7 +765,7 @@ function land(l) {
   }
   if (same) { syncHud(); return; }
   jumps++;
-  maxAlt = Math.max(maxAlt, l.top / U);
+  maxAlt = Math.max(maxAlt, l.top / U); lavaRef = Math.max(lavaRef, l.top);
   if (!fell && !ib.wob && !l.ground && !l.camp && ao <= hw * 0.4) {
     combo++; perfects++; sfx('perfect');
     pops.push({ x: l.x, y: l.top + 50, text: combo > 1 ? `완벽! ×${combo}` : '완벽!', t: 0 });
@@ -757,7 +788,7 @@ function landSpike(l) {
   spikeTips++;
   if (!same) {
     jumps++;
-    maxAlt = Math.max(maxAlt, ib.y / U);
+    maxAlt = Math.max(maxAlt, ib.y / U); lavaRef = Math.max(lavaRef, ib.y);
     if (!ib.zone && !fell) { combo++; perfects++; } else combo = 0;
   }
   if (!ib.zone) pops.push({ x: l.x, y: l.top + 50, text: !same && combo > 1 ? `꼭대기! ×${combo}` : '꼭대기!', t: 0 });
@@ -898,11 +929,15 @@ function update(dt) {
     const nAlt = nightAt((cam + viewH * 0.45) / U);
     flash = Math.max(0, flash - dt * 1.2);
     if (nAlt > 0.85 && (lightT -= dt) <= 0) { flash = 1; lightT = rand(4.5, 8); sfx('thunder'); intro('night'); }
-    const zi = zoneIndex(maxAlt);
-    if (zi > zoneIdx) { zoneIdx = zi; showBanner('새 구역', ZONES[zi].name, ZONES[zi].desc); sfx('zone'); }
-    if (peak.lava) {
-      // lava climbs a little faster the higher you are, and never stays far below your best ledge: a long fall ends in it
-      if (runTime > 6) lava = Math.max(lava + (6 + 7 * clamp(maxAlt / 1000, 0, 1)) * (hard ? 1.25 : 1) * dt, maxAlt * U - 1100);
+    const zi = zoneNo(maxAlt);
+    if (zi > zoneIdx) { zoneIdx = zi; const z = zoneOf(zi); showBanner('새 구역', z.name, z.desc); sfx('zone'); }
+    if (pkAt(maxAlt).lava) {
+      // lava starts below the peak's foot, climbs a little faster the higher you are, and never stays far below your
+      // best ledge: a long fall ends in it
+      const base = lavaBase();
+      if (lava < -1e8) { lava = base - 260; lavaT = runTime + 6; lavaRef = base; }
+      if (runTime > lavaT) lava = Math.max(lava + (6 + 7 * clamp((lavaRef - base) / (SEG * U), 0, 1)) * (hard ? 1.25 : 1) * dt, lavaRef - (route.length > 1 ? 1600 : 1100));   // the tour's last peak is kinder: a long way in already
+      INTRO.lava[1] = route.length > 1 ? '아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요' : '아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요';
       if (lava > cam - 40) intro('lava');
       if (ib.y < lava + 3) burn();
     }
@@ -950,8 +985,22 @@ function intro(kind) {
   showBanner(INTRO[kind][2] || '새 장애물', INTRO[kind][0], INTRO[kind][1]);
 }
 
-// the fire peak: the lava got you. The run ends where it is, and the height you reached is the record
+// where the lava peak you are on starts: the ground, or on the tour its rest ledge
+const lavaCamp = () => { const i = segAt(maxAlt); return i ? ledges.find(l => l.camp === i && !l.summit) : null; };
+const lavaBase = () => { const c = lavaCamp(); return c ? c.top : 0; };
+// The lava got you. On the fire peak alone the run ends where it is, and the height you reached is the record;
+// on the tour it sends you back to the rest ledge and starts over from below it.
 function burn() {
+  const c = lavaCamp();
+  if (c) {
+    for (let i = 0; i < 30; i++) parts.push({ x: ib.x + rand(-14, 14), y: lava + rand(0, 10), vx: rand(-140, 140), vy: rand(120, 460), life: 1.3, t: 0, r: rand(1.2, 3), col: 'gold' });
+    falls++; combo = 0; ib.charging = false; chargeKey = null; ib.wob = null; ib.slide = 0; ib.launch = null; ib.peak = null; ib.spin = 0;
+    ib.from = null; ib.x = clamp(ib.x, 40, edgeAt(c.top) - 40); ib.y = c.top; ib.vx = ib.vy = 0;
+    land(c);
+    lava = c.top - 260; lavaT = runTime + 6; lavaRef = c.top; ib.hurt = 1.1; cam = ib.y - viewH * 0.3;
+    pops.push({ x: ib.x, y: ib.y + 56, text: '용암! 쉼터에서 다시', t: 0 }); sfx('hit'); shake(9);
+    return;
+  }
   state = 'dead'; ib.charging = false; chargeKey = null; ib.on = null; ib.vx = ib.vy = 0;
   clearBanners();
   const key = recKey() + 'best.alt', top = Math.floor(maxAlt), prev = +store.get(key, 0) || 0;
@@ -1120,11 +1169,12 @@ function updateHazards(dt) {
   ib.hurt = Math.max(0, ib.hurt - dt);
   while (bandTip < cam + viewH + 600) {
     const wr = (lo, hi) => lo + windRng() * (hi - lo);
-    if (windRng() < Math.min(0.95, 0.65 * peak.wind)) bands.push({ y0: bandTip, y1: bandTip + wr(240, 340), dir: windRng() < 0.5 ? -1 : 1, str: wr(130, 230) * (0.8 + 0.2 * peak.wind), ph: wr(0, 6) });
+    const wk = pkAt(bandTip / U).wind;
+    if (windRng() < Math.min(0.95, 0.65 * wk)) bands.push({ y0: bandTip, y1: bandTip + wr(240, 340), dir: windRng() < 0.5 ? -1 : 1, str: wr(130, 230) * (0.8 + 0.2 * wk), ph: wr(0, 6) });
     bandTip += wr(600, 900);
   }
   if (state !== 'play') return;
-  const alt = ib.y / U;
+  const pk = pkAt(ib.y / U), alt = la(ib.y / U);   // metres up this peak: each peak brings its hazards in again from its foot
   if (bands.some(b => b.y1 > cam && b.y0 < cam + viewH)) intro('wind');
   for (const l of ledges) {
     if (l.top < cam || l.top > cam + viewH) continue;
@@ -1138,7 +1188,7 @@ function updateHazards(dt) {
 
   // falling rocks: a warning at the top of the screen, then the rock
   if (alt > 50 && (rockT -= dt) <= 0) {
-    rockT = rand(2.6, 5.2) / (peak.rocks * (hard ? 1.4 : 1));
+    rockT = rand(2.6, 5.2) / (pk.rocks * (hard ? 1.4 : 1));
     warns.push({ kind: 'rock', x: clamp(ib.x + rand(-55, 55), 14, edgeAt(ib.y) - 10), t: 1.1 });
     intro('rock'); sfx('rumble');
   }
@@ -1160,7 +1210,7 @@ function updateHazards(dt) {
   for (const r of rocks) {
     const py = r.y;
     r.vy = Math.max(-900, r.vy - G * 0.6 * dt); r.y += r.vy * dt; r.a += r.spin * dt;
-    if (Math.hypot(r.x - ib.x, r.y - (ib.y + 16)) < r.r + 11 && knock(Math.sign(ib.x - r.x) || 1, peak.lava ? '화산탄!' : '낙석!')) r.dead = true;
+    if (Math.hypot(r.x - ib.x, r.y - (ib.y + 16)) < r.r + 11 && knock(Math.sign(ib.x - r.x) || 1, pk.lava ? '화산탄!' : '낙석!')) r.dead = true;
     for (const l of ledges) {
       if (r.dead || l.falling || (l.cloud && cloudLeft(l) < 0)) continue;
       const top = l.spike ? (Math.abs(r.x - l.x) <= l.w / 2 ? surf(l, r.x) : null)
@@ -1179,7 +1229,7 @@ function updateHazards(dt) {
 }
 
 // ---- rendering ----
-function skyAt(alt) {
+function skyOf(SKY, alt) {
   for (let i = 0; i < SKY.length - 1; i++) {
     const a = SKY[i], b = SKY[i + 1];
     if (alt <= b[0]) { const t = clamp((alt - a[0]) / (b[0] - a[0]), 0, 1); return [mix(a[1], b[1], t), mix(a[2], b[2], t)]; }
@@ -1507,7 +1557,7 @@ function drawCamp(l, p) {
   ctx.save();
   ctx.font = `600 ${Math.round(11 * Math.max(1, s))}px "IBM Plex Sans KR", system-ui, sans-serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(255,240,220,.75)';
-  ctx.fillText(l.summit ? '정상 · 1000m' : `캠프 ${l.camp} · ${l.camp * 100}m`, W / 2 * s, y0 + 12 * s);
+  ctx.fillText(l.summit ? `정상 · ${route.length * SEG}m` : `${route[l.camp].name} 쉼터 · ${l.camp * SEG}m`, W / 2 * s, y0 + 12 * s);
   ctx.restore();
 }
 
@@ -1658,7 +1708,7 @@ function drawDrafts() {
 
 // the fire peak's lava: a glowing sea that climbs after you, and how far below it is while it is out of sight
 function drawLava() {
-  if (!peak.lava) return;
+  if (lava < -1e8) return;
   const y = sy(lava), X0 = -ox - 40, XW = fw + 80;
   if (y < ch + 160 * s) {
     const gl = ctx.createLinearGradient(0, y - 160 * s, 0, y);
@@ -1788,15 +1838,25 @@ function drawGhost() {
 }
 
 // called with the canvas already at the ibex's feet (and tilted for slopes or a teeter)
+let rim = 0, rimCol = '#fff';
 function drawIbexSprite(col) {
   const f = spriteFrame(), k = SPR_UNITS * s, w = SPR.fw * k, h = SPR.fh * k;
-  tintCx.globalCompositeOperation = 'source-over';
-  tintCx.clearRect(0, 0, SPR.fw, SPR.fh);
-  tintCx.drawImage(SPR.img, f * SPR.fw, 0, SPR.fw, SPR.fh, 0, 0, SPR.fw, SPR.fh);
-  tintCx.globalCompositeOperation = 'source-in';   // recolour to the time-of-day silhouette colour
-  tintCx.fillStyle = col; tintCx.fillRect(0, 0, SPR.fw, SPR.fh);
+  const tint = c => {
+    tintCx.globalCompositeOperation = 'source-over';
+    tintCx.clearRect(0, 0, SPR.fw, SPR.fh);
+    tintCx.drawImage(SPR.img, f * SPR.fw, 0, SPR.fw, SPR.fh, 0, 0, SPR.fw, SPR.fh);
+    tintCx.globalCompositeOperation = 'source-in';   // recolour to the time-of-day silhouette colour
+    tintCx.fillStyle = c; tintCx.fillRect(0, 0, SPR.fw, SPR.fh);
+  };
+  const put = () => ctx.drawImage(tintCv, -w / 2, -h + (SPR_FOOT[f] + 1.6) * k, w, h);
   ctx.scale(ib.facing, 1);
-  ctx.drawImage(tintCv, -w / 2, -h + (SPR_FOOT[f] + 1.6) * k, w, h);
+  if (rim > 0.02) {   // on rock nearly as dark as the ibex, a thin light rim keeps its outline readable
+    const a = ctx.globalAlpha, r = Math.max(1, 0.9 * s), d = r * 0.7;
+    tint(rimCol); ctx.globalAlpha = a * rim;
+    for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r], [d, d], [-d, d], [d, -d], [-d, -d]]) { ctx.translate(dx, dy); put(); ctx.translate(-dx, -dy); }
+    ctx.globalAlpha = a;
+  }
+  tint(col); put();
 }
 
 function drawIbex(col) {
@@ -1985,12 +2045,15 @@ function render() {
   const X0 = -ox - 40, XW = fw + 80;   // a full-width fill, with room for the shake and the zoom
 
   const alt = (cam + viewH * 0.45) / U;
-  const n = nightAt(alt);
+  const n = nightAt(alt), pk = pkAt(alt), lalt = la(alt);
+  FAR_ROCK = pk.far; NEAR_ROCK = pk.near;
   [skyT, skyB] = skyAt(alt);
   const zc = zoneColors(alt), p = {};
   for (const k of ROCK_KEYS) p[k] = mix(zc[k], NIGHT_TINT[k], n * 0.8);
   const furCol = (SHOP.find(it => it.id === fur) || SHOP[0]).col;
   p.ibex = mix(hex(furCol[0]), hex(furCol[1]), n);
+  const lum = c => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+  rim = clamp(1.4 - Math.abs(lum(p.ibex) - lum(p.faceMid)) / 50, 0, 1); rimCol = css(mix(p.cap, [255, 236, 205], 0.35));
 
   const g = ctx.createLinearGradient(0, 0, 0, ch);
   g.addColorStop(0, css(skyT)); g.addColorStop(1, css(skyB));
@@ -2041,7 +2104,7 @@ function render() {
   drawGems();
 
   // above 600 m clouds drift across the face and a sea of cloud fills the drop below
-  const cloudK = clamp((alt - (peak.cloud - 20)) / 40, 0, 1);
+  const cloudK = clamp((lalt - (pk.cloud - 20)) / 40, 0, 1);
   if (cloudK > 0) {
     for (let cy = Math.floor(cam / 160) - 1; cy <= Math.ceil((cam + viewH) / 160); cy++) {
       for (let k = 0, n = Math.round(2 * WK * fw / cw); k < n; k++) {
@@ -2079,12 +2142,12 @@ function render() {
   drawHazards(p);
 
   // snow falls through the snowy-mountain zone
-  const snowK = peak.flakes ? clamp((alt - peak.flakes[0]) / 30, 0, 1) * clamp((peak.flakes[1] - alt) / 30, 0, 1) : 0;
+  const snowK = pk.flakes ? clamp((lalt - pk.flakes[0]) / 30, 0, 1) * clamp((pk.flakes[1] - lalt) / 30, 0, 1) : 0;
   if (snowK > 0) {
-    ctx.fillStyle = peak.ember ? `rgba(255,170,80,${0.75 * snowK})` : `rgba(255,255,255,${0.8 * snowK})`;
+    ctx.fillStyle = pk.ember ? `rgba(255,170,80,${0.75 * snowK})` : `rgba(255,255,255,${0.8 * snowK})`;
     for (let i = 0, n = Math.round(70 * WK * fw / cw); i < n; i++) {
       const x = -ox + hash(i * 1.7) * fw + Math.sin(time * 0.7 + i) * 18;
-      const fy = (hash(i * 3.7) * ch + time * (30 + hash(i) * 40)) % ch, y = peak.ember ? ch - fy : fy;   // sparks rise, snow falls
+      const fy = (hash(i * 3.7) * ch + time * (30 + hash(i) * 40)) % ch, y = pk.ember ? ch - fy : fy;   // sparks rise, snow falls
       ctx.beginPath(); ctx.arc(x, y, 1 + hash(i * 9.1) * 1.4, 0, Math.PI * 2); ctx.fill();
     }
   }
@@ -2132,7 +2195,7 @@ function syncHud() {
   put('alt', Math.max(0, Math.floor(ib.y / U)));
   put('best', Math.floor(best));
   put('salt', salt);
-  put('zone', (mode === 'daily' ? '오늘의 절벽 · ' : '') + ZONES[zoneIndex(Math.max(0, ib.y / U))].name);
+  put('zone', (mode === 'daily' ? '오늘의 절벽 · ' : '') + zoneOf(zoneNo(Math.max(0, ib.y / U))).name);
   put('kidsN', babies); $('kids').hidden = babies < 1;
   put('time', fmtTime(runTime));
   put('comboN', combo);
@@ -2144,11 +2207,11 @@ function syncHud() {
   put('wMode', mode === 'daily' ? '오늘의 절벽' : '자유 등반');
   const bt = mode === 'daily' ? +store.get(REC + 'daily.' + kstDay(), 0) || 0 : bestTime;
   put('wBest', bt ? fmtTime(bt) : '-');
-  const m = clamp(ib.y / U, 0, 1000);
-  put('mapLeft', Math.max(0, Math.ceil(1000 - m)));
-  mapMark('mkMe', m); mapMark('mkTop', clamp(best, 0, 1000));
+  const total = route.length * SEG, m = clamp(ib.y / U, 0, total);
+  put('mapLeft', Math.max(0, Math.ceil(total - m)));
+  mapMark('mkMe', m); mapMark('mkTop', clamp(best, 0, total));
 }
-const mapMark = (id, m) => put('@' + id, (m / 10).toFixed(1) + '%');
+const mapMark = (id, m) => put('@' + id, (m / (route.length * SEG) * 100).toFixed(1) + '%');
 
 // full edition: the peak picker shows each peak's record for the chosen mode
 function drawPeaks(refocus) {
@@ -2178,8 +2241,8 @@ function showOverlay(kind, isBest) {
   const done = kind === 'done', dead = kind === 'dead', daily = mode === 'daily';
   const dayBest = +store.get(REC + 'daily.' + kstDay(), 0) || 0;
   $('ovEyebrow').textContent = dead ? (isBest ? '새 최고 높이' : '용암에 삼켜졌어요') : done ? (isBest ? '새 최고 기록' : '정상 도착')
-    : FULL ? '완전판 · 산 세 곳' : WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m';
-  $('ovTitle').textContent = dead ? `${Math.floor(maxAlt)}m에서 끝` : done ? (daily ? '오늘의 절벽 정상!' : FULL ? `${peak.name} 정상!` : '1000m 정상!') : '아이벡스 점프';
+    : FULL ? '완전판 · 산 세 곳과 대종주' : WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m';
+  $('ovTitle').textContent = dead ? `${Math.floor(maxAlt)}m에서 끝` : done ? (daily ? '오늘의 절벽 정상!' : FULL ? (peak.route ? '대종주 완주!' : `${peak.name} 정상!`) : '1000m 정상!') : '아이벡스 점프';
   $('ovResult').hidden = !(done || dead); $('ovHow').hidden = $('ovKeys').hidden = done || dead || (FULL && !howOpen);   // the full edition's menu is long, so the how-to folds away
   $('howBtn').hidden = !FULL || done || dead; $('howBtn').textContent = howOpen ? '조작법 접기' : '조작법 보기';
   if (dead) $('ovResult').textContent = `버틴 시간 ${fmtTime(runTime)} · 이 산 최고 ${+store.get(recKey() + 'best.alt', 0) || 0}m · 소금 ${salt}개`;
