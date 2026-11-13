@@ -134,6 +134,21 @@ const GAMES = [
     portrait: true
   },
   {
+    slug: "feltpang",
+    title: "펠트팡",
+    desc: "펠트 조각을 떨어뜨려 같은 것끼리 합치는 물리 퍼즐. 가족·친구·반려동물 사진을 넣으면 그 얼굴끼리 합쳐집니다.",
+    genres: ["퍼즐", "캐주얼"],
+    status: "web",
+    playable: true,
+    play: "/feltpang/play/",
+    store: "https://play.google.com/store/apps/details?id=com.feltpang.app",
+    itch: "",
+    onestore: "",
+    thumb: "/assets/images/feltpang.png",
+    accent: "#e0705e",
+    portrait: true
+  },
+  {
     slug: "arrow-box",
     title: "Arrow Box",
     desc: "상자에 붙은 화살표를 눌러 모두 빼내는 3D 퍼즐. 막다른 길이 없으니 순서만 찾으면 됩니다.",
