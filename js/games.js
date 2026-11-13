@@ -142,7 +142,7 @@ const GAMES = [
     playable: true,
     play: "/feltpang/play/",
     store: "https://play.google.com/store/apps/details?id=com.feltpang.app",
-    itch: "",
+    itch: "https://yamoda.itch.io/feltpang",
     onestore: "",
     thumb: "/assets/images/feltpang.png",
     accent: "#e0705e",
