@@ -149,6 +149,12 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 :root:lang(zh-Hant) { --display: "Jua", "PingFang TC", "Microsoft JhengHei", sans-serif; --body: "Gowun Dodum", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif; }
 .modes .chip[aria-pressed="true"] { background: var(--fuzz), var(--red); color: var(--thread); box-shadow: 0 2px 0 var(--red-deep), 0 3px 6px var(--shade); }
 .modes .chip[aria-pressed="true"]::after { border-color: var(--thread); opacity: .8; }
+/* a mode not played yet (markNew): a felt NEW tag on its corner */
+.chip[data-new]::before {
+  content: "NEW"; position: absolute; top: -7px; right: -3px; z-index: 1; pointer-events: none;
+  padding: 1px 5px 2px; border-radius: 8px; background: var(--pick); color: var(--ink);
+  font-family: var(--display); font-size: .6rem; line-height: 1.2; box-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+}
 
 /* ---- the green felt tray ---- */
 .stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: start center; touch-action: none; cursor: crosshair; }
@@ -392,12 +398,25 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .sheet .row { display: flex; gap: 8px; }
 /* time is up: watch an ad for 30 more seconds on the same board (moreTime() below) */
 .btn.more { background: var(--fuzz), var(--pick); }
+/* Toss points (promoGame): a felt label on the result sheet */
+.promo {
+  margin: 0; padding: 8px 12px; border-radius: 12px; text-align: center; word-break: keep-all;
+  background: var(--fuzz), var(--card); color: var(--ink); font-family: var(--display); font-size: .95rem;
+  box-shadow: 0 2px 0 var(--card-edge);
+}
+.promo b { color: var(--red); font-weight: 400; }
+.promo small { display: block; margin-top: 2px; font-family: var(--body); font-size: .72rem; color: var(--muted); }
+.promo.got { background: var(--fuzz), var(--pick); }
 .btn.more small { display: block; margin-top: 3px; font-family: inherit; font-size: 0.72rem; color: var(--ink); opacity: .75; }
 /* a game that used the extra 30 seconds, on the receipt and the board */
 .receipt .total dd small { font-size: 0.8rem; color: var(--muted); margin-left: 4px; }
 .ext { font-style: normal; font-size: 0.7rem; color: var(--muted); margin-right: 5px; }
 /* the result sheet: which mode the next game is in */
 .pick .modes { gap: 8px; }
+/* the result sheet's nudge to a mode not played yet (modeNudge) */
+.btn.try { width: 100%; margin-top: 10px; padding: 8px 12px; font-size: .95rem; }
+.btn.try b { color: var(--red); font-weight: 400; }
+.btn.try small { display: block; margin-top: 2px; font-family: var(--body); font-size: .72rem; color: var(--muted); }
 .lb-tabs { margin-top: 10px; }
 /* switched to the other mode: same board is off. Opaque, so the apples behind do not show through */
 .btn:disabled { background: var(--fuzz), var(--card-edge); color: var(--muted); box-shadow: none; transform: none; cursor: default; }
@@ -452,7 +471,8 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .lb-sheet > .receipt > .lb-list { flex-shrink: 1; }
 .lb-list {
   list-style: none; margin: 0; padding: 0; overflow: auto; touch-action: pan-y; overscroll-behavior: none;
-  max-height: min(44vh, 400px); min-height: 3em; position: relative; z-index: 1;
+  /* a fixed height, so the sheet keeps its size while a board loads and between tabs of different lengths */
+  height: min(44vh, 400px); min-height: 3em; position: relative; z-index: 1;
 }
 .lb-list li {
   display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; align-items: baseline;
@@ -465,7 +485,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .lb-list .pts { font-family: var(--display); }
 .lb-list li.me { background: rgba(255, 211, 77, .4); border-radius: 8px; }
 .lb-list .empty { display: block; border: 0; text-align: center; padding: 14px 0; color: var(--muted); }
-.lb-me { font-size: 0.8rem; text-align: center; min-height: 1em; color: var(--muted); }
+.lb-me { font-size: 0.8rem; line-height: 1.35; text-align: center; min-height: 2.7em; color: var(--muted); display: flex; align-items: center; justify-content: center; }
 .linkish { border: 0; background: none; color: var(--thread); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 2px; }
 
 @media (max-width: 380px) {
@@ -546,6 +566,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
             <dt data-t="myBest">내 최고 기록</dt><dd id="over-best">0개</dd>
           </dl>
         </div>
+        <p class="promo" id="promo" hidden></p>
         <button class="btn more" id="more-yes" hidden data-th="more">광고 보고 이 판 30초 더 하기<small>한 판에 한 번 · 늘어난 점수도 순위에 들어가요</small></button>
         <div class="pick" role="group" aria-label="다음 판 모드" data-ta="nextMode">
           <div class="modes">
@@ -553,6 +574,7 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
             <button class="chip" data-pick="drop14" aria-pressed="false" data-t="mode.drop">떨어지기</button>
             <button class="chip" data-pick="path14" aria-pressed="false" data-t="mode.path">이어 긋기</button>
           </div>
+          <button class="btn try" id="try-mode" type="button" hidden></button>
         </div>
         <div class="row">
           <button class="btn" id="again-same" data-t="sameBoard">같은 판 다시</button>
@@ -839,6 +861,7 @@ const T = {
   'mode.path': ['이어 긋기', 'Chain', 'つなげる', '连线', '連線'],
   'rule.box': ['네모로 묶어 합 10', 'Box apples that add up to 10', '四角で囲んで合計10', '框住总和为10的苹果', '框住總和為10的蘋果'],
   'rule.drop': ['딴 자리로 위의 사과가 떨어져요', 'Apples above fall into the gaps', 'とった所に上のりんごが落ちる', '上方的苹果会落下补位', '上方的蘋果會落下補位'],
+  tryMode: ['<b>{mode}</b> 해 보기', 'Try <b>{mode}</b>', '<b>{mode}</b>で遊んでみる', '试试<b>{mode}</b>模式', '試試<b>{mode}</b>模式'],
   'rule.path': ['대각선도, 빈칸 건너서도 이어 그어요', 'Link apples, even diagonally or across gaps', 'ななめも、空きマスごしにもつなげる', '可以斜着连，也能隔着空格连', '可以斜著連，也能隔著空格連'],
   soundOn: ['소리 켬', 'Sound on', 'サウンド オン', '声音：开', '聲音：開'],
   soundOff: ['소리 끔', 'Sound off', 'サウンド オフ', '声音：关', '聲音：關'],
@@ -1112,6 +1135,7 @@ function coachDone() {
   el.remove();
   coached[S.mode] = true;
   store('apple-coach', coached);
+  markNew();
 }
 
 // ---------- art (optional) ----------
@@ -1162,7 +1186,7 @@ function hud() {
   $('timer').classList.toggle('urgent', S.started && !S.over && S.time <= 10);
   // one line for how the mode plays, one for whether this game is ranked
   $('sub').textContent = (MODES[S.mode].drop ? t('sub.drop') + '\n' : MODES[S.mode].path ? t('sub.path') + '\n' : '') +
-    t(lbOn() ? 'sub.ranked' : 'sub.local');
+    t(lbOn() ? 'sub.ranked' : 'sub.local') + (promoOn() ? '\n' + PROMO_RULE : '');
   for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', b.dataset.mode === S.mode);
   $('sound').setAttribute('aria-pressed', prefs.sound);
   $('sound').textContent = t(prefs.sound ? 'soundOn' : 'soundOff');
@@ -1433,6 +1457,8 @@ function askReview(newBest) {
   // after the receipt has settled, and not while the player is typing a new nickname
   setTimeout(() => {
     if (!S.over || !$('nick-form').hidden) return;
+    // not over a Toss points payment either: try again at the next new best
+    if (promoBusy || $('promo').classList.contains('got')) { r.at = 0; store('apple-review', r); return; }
     Promise.resolve().then(ask).catch(() => {});
   }, 1500);
 }
@@ -1466,6 +1492,92 @@ async function moreTime() {
 }
 $('more-yes').addEventListener('click', moreTime);
 
+// ---------- Toss points ----------
+// Inside Toss, every third finished game earns 1 Toss point, 3 a day at most (console promotion "사과 게임 세 판마다
+// 1원"; toss/bridge/index.js pays through window.Toss.reward). The count lives on the device, and it goes down
+// before the call, so a call cut off midway is never paid twice; a failed call puts it back for the next game.
+// The day turns over at midnight Korea time, like the promotion's daily limit.
+const PROMO_EVERY = 3, PROMO_DAY = 3, PROMO_RULE = '세 판마다 토스 포인트 1원 (하루 3원까지, 바로 지급)';
+let promoOff = false, promoBusy = false; // off: the promotion is not running (not started yet, or over)
+function promoOn() { return !!window.Toss?.reward && !promoOff; }
+function promoState() {
+  const p = load('apple-promo', { n: 0, day: '', got: 0 });
+  if (p.day !== todayKey()) { p.day = todayKey(); p.got = 0; }
+  return p;
+}
+function showPromo(html, got) {
+  const el = $('promo');
+  el.innerHTML = html;
+  el.classList.toggle('got', !!got);
+  el.hidden = false;
+}
+async function promoGame() {
+  if (!promoOn() || S.score <= 0) return;
+  const g = S, p = promoState();
+  if (p.got >= PROMO_DAY) {
+    store('apple-promo', p);
+    showPromo(`오늘 받을 포인트를 다 받았어요<small>내일 또 ${PROMO_RULE}</small>`);
+    return;
+  }
+  p.n++;
+  if (p.n < PROMO_EVERY || promoBusy) {
+    store('apple-promo', p);
+    showPromo(`토스 포인트 <b>1원</b>까지 ${Math.max(1, PROMO_EVERY - p.n)}판 남았어요<small>${PROMO_RULE}</small>`);
+    return;
+  }
+  p.n -= PROMO_EVERY;
+  store('apple-promo', p);
+  promoBusy = true;
+  showPromo('토스 포인트 받는 중…');
+  let r;
+  try { r = await window.Toss.reward(1); } catch (e) { r = { ok: false, code: 'ERROR' }; }
+  promoBusy = false;
+  const q = promoState();
+  const here = S === g && S.over; // still on this game's result sheet
+  if (r && r.ok) {
+    q.got++;
+    store('apple-promo', q);
+    if (here) showPromo(`토스 포인트 <b>1원</b>을 받았어요!<small>오늘 ${q.got}원 / ${PROMO_DAY}원</small>`, true);
+    play('harvest-big', 0.6);
+    return;
+  }
+  q.n += PROMO_EVERY; // not paid: the three games count again next time
+  store('apple-promo', q);
+  // 4100 unknown promotion, 4109 not running, 4112 out of money, 4116 over budget: stop offering it for now
+  if (['4100', '4109', '4112', '4116', 'UNSUPPORTED'].includes(String(r && r.code))) {
+    promoOff = true;
+    if (here) $('promo').hidden = true;
+    hud();
+    return;
+  }
+  if (here) showPromo(`포인트를 받지 못했어요<small>다음 판이 끝나면 다시 받아요</small>`);
+}
+
+// ---------- the other modes ----------
+// Most players stay in 기본. A mode not played yet wears a NEW tag in the menu and on the result sheet, and
+// from the second finished game on, the result sheet offers one of those by name with its rule: one tap plays it.
+// Played means its first-game coach is done (a sum picked there), or it has a best (played before the coach).
+function played(m) { return m === MODE || !!coached[m] || load(bestKey(m), 0) > 0; } // 기본 is where everyone starts
+function markNew() {
+  for (const b of document.querySelectorAll('.chip[data-mode], .chip[data-pick]')) b.toggleAttribute('data-new', !played(b.dataset.mode || b.dataset.pick));
+}
+let tryMode = null;
+function modeNudge() {
+  const games = load('apple-review', { games: 0 }).games; // finished games on this device, counted by askReview
+  const left = Object.keys(MODES).filter(m => m !== S.mode && !played(m));
+  tryMode = games >= 2 && left.length ? left[games % left.length] : null;
+  const el = $('try-mode');
+  el.hidden = !tryMode;
+  if (tryMode) el.innerHTML = t('tryMode', { mode: MODES[tryMode].label }) + `<small>${esc(MODES[tryMode].rule)}</small>`;
+}
+$('try-mode').addEventListener('click', () => {
+  if (!tryMode) return;
+  track('try_mode', { mode: tryMode, from: S.mode });
+  pickMode(tryMode);
+  nextGame(false);
+});
+markNew();
+
 // ---------- end ----------
 function end(reason) {
   stopClock();
@@ -1483,6 +1595,8 @@ function end(reason) {
   const ranked = lbOn() && !S.restored;
   if (ranked) markRanked(S.day, rankKey(S.mode), S.score, !!S.extra);
   if (!S.restored && first) track('game_complete', { mode: S.mode, score: S.score, reason, ranked });
+  $('promo').hidden = true;
+  if (!S.restored && first) promoGame();
   $('timer').classList.remove('urgent');
   play('bell', 0.8);
   $('over-best').textContent = t('count', { n: best });
@@ -1491,6 +1605,8 @@ function end(reason) {
   $('copied').textContent = '';
   $('over').hidden = false;
   pickMode(S.mode);
+  markNew();
+  modeNudge();
   $('again-new').focus();
   $('nick-form').hidden = true;
   if (ranked) lbAfterGame();
