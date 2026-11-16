@@ -359,6 +359,8 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 3px sol
 .overlay {
   position: absolute; inset: 0; display: grid; place-items: center;
   background: var(--scrim); cursor: default; padding: 8px 0; box-sizing: border-box;
+  /* each sheet is one layer: the ranking opened over the result sheet covers all of it, its stamp and NEW tags too */
+  isolation: isolate;
 }
 .sheet {
   width: min(320px, 100%); max-height: 100%; overflow: auto;
