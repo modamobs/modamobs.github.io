@@ -22,10 +22,19 @@
   --line:rgba(255,226,192,.14);
   --display:"Hahmlet","Nanum Myeongjo",Georgia,serif;
   --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --cjk:system-ui,sans-serif;
   color-scheme:dark;
 }
 html,body{height:100%;margin:0}
 [hidden]{display:none!important}
+/* Japanese and Chinese are not in the two Korean web fonts: the device's own font for that script goes first, so a line is
+   never a mix of two designs. The display font stays for the Latin title and the numbers. */
+html[lang=ja]{--cjk:"Hiragino Sans","Yu Gothic UI","Meiryo","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif}
+html[lang=zh-Hans]{--cjk:"PingFang SC","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC",system-ui,sans-serif}
+html[lang=zh-Hant]{--cjk:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Noto Sans CJK TC",system-ui,sans-serif}
+html[lang=ja],html[lang=zh-Hans],html[lang=zh-Hant]{--body:var(--cjk);--display:"Hahmlet",var(--cjk)}
+/* the Korean body font has no accented Latin letters, so these languages use the device's font for body text */
+html[lang=es],html[lang=pt],html[lang=de],html[lang=fr]{--body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 *,*::before,*::after{box-sizing:border-box}
 body{background:var(--ground);color:var(--sand);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #stage{--col:min(520px,64vh,100vw);position:relative;width:var(--col);height:100%;margin:0 auto;background:#3a2218}
@@ -78,10 +87,11 @@ button:focus-visible,.guide:focus-within{outline:2px solid #fff3d6;outline-offse
 .peaks button.on{border-color:var(--ember);background:rgba(232,120,60,.18);color:#fff4e2}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
 .btns button{font:600 15px var(--body);border-radius:12px;padding:13px 10px;cursor:pointer}
-#startBtn{background:var(--ember);color:var(--ink);border:0}
-#dailyBtn{background:transparent;color:var(--sand);border:1px solid var(--ember)}
+#startBtn,#resumeBtn{background:var(--ember);color:var(--ink);border:0}
+#dailyBtn,#quitBtn{background:transparent;color:var(--sand);border:1px solid var(--ember)}
 .btns button:hover{filter:brightness(1.08)}
 .card{max-height:calc(100% - 8px);overflow:auto}
+.lang{justify-self:start;font:500 12px var(--body);color:#c9b297;background:rgba(20,12,10,.35);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
 .linkbtn{justify-self:start;font:600 13px var(--body);color:#f3b27a;background:none;border:0;padding:4px 0;cursor:pointer}
 .shop{margin:0;padding:0;list-style:none;display:grid;gap:8px}
 .shop li{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
@@ -133,11 +143,11 @@ button.padf{outline:2px solid #fff3d6;outline-offset:2px}
       <div class="zone" id="zone">붉은 협곡</div>
     </div>
     <div class="side">
-      <div>최고 <b id="best">0</b>m</div>
-      <div>시간 <b id="time">0:00</b></div>
-      <div class="salt">소금 <b id="salt">0</b></div>
-      <div id="kids" hidden>아기 산양 <b id="kidsN">0</b></div>
-      <div class="combo" id="combo" hidden>완벽 ×<b id="comboN">0</b></div>
+      <div><span data-t>최고</span> <b id="best">0</b>m</div>
+      <div><span data-t>시간</span> <b id="time">0:00</b></div>
+      <div class="salt"><span data-t>소금</span> <b id="salt">0</b></div>
+      <div id="kids" hidden><span data-t>아기 산양</span> <b id="kidsN">0</b></div>
+      <div class="combo" id="combo" hidden><span data-t>완벽</span> ×<b id="comboN">0</b></div>
     </div>
   </header>
 
@@ -150,15 +160,15 @@ button.padf{outline:2px solid #fff3d6;outline-offset:2px}
       <p class="result" id="ovResult" hidden></p>
       <button class="linkbtn" id="howBtn" type="button" hidden>조작법 보기</button>
       <ul class="howto" id="ovHow">
-        <li><span><b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.</span></li>
-        <li><span>화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.</span></li>
-        <li><span>발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.</span></li>
-        <li><span>뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.</span></li>
-        <li><span>갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.</span></li>
+        <li><span data-t id="howGoal"><b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.</span></li>
+        <li><span data-t>화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.</span></li>
+        <li><span data-t>발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.</span></li>
+        <li><span data-t>뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.</span></li>
+        <li><span data-t>갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.</span></li>
       </ul>
-      <p class="keys" id="ovKeys">키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요</p>
+      <p class="keys" id="ovKeys" data-t>키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요</p>
       <ol class="rank" id="rankList" hidden></ol>
-      <p class="keys" id="nameLbl" hidden>오늘의 절벽 랭킹에 쓸 이름</p>
+      <p class="keys" id="nameLbl" data-t hidden>오늘의 절벽 랭킹에 쓸 이름</p>
       <input class="name" id="nameIn" maxlength="12" placeholder="랭킹에 쓸 이름" hidden>
       <div class="peaks" id="peaks" hidden></div>
       <p class="keys" id="peakInfo" hidden></p>
@@ -166,15 +176,28 @@ button.padf{outline:2px solid #fff3d6;outline-offset:2px}
       <p class="keys" id="dailyInfo"></p>
       <div class="btns">
         <button id="startBtn" type="button">자유 등반</button>
-        <button id="dailyBtn" type="button">오늘의 절벽</button>
+        <button id="dailyBtn" type="button" data-t>오늘의 절벽</button>
       </div>
-      <button class="linkbtn" id="shopBtn" type="button">소금 상점 · 가진 소금 <span id="wallet">0</span></button>
+      <button class="linkbtn" id="shopBtn" type="button"><span data-t>소금 상점 · 가진 소금</span> <span id="wallet">0</span></button>
+      <select class="lang" id="langSel" aria-label="Language"></select>
     </div>
     <div class="card" id="shop" hidden>
-      <p class="eyebrow">소금 상점</p>
-      <h1>소금 <span id="wallet2">0</span>개</h1>
+      <p class="eyebrow" data-t>소금 상점</p>
+      <h1><span data-t>소금</span> <span id="wallet2">0</span><span data-t>개</span></h1>
       <ul class="shop" id="shopList"></ul>
-      <div class="btns"><button id="shopClose" type="button" style="grid-column:1/-1;background:var(--ember);color:var(--ink);border:0">닫기</button></div>
+      <div class="btns"><button id="shopClose" type="button" style="grid-column:1/-1;background:var(--ember);color:var(--ink);border:0" data-t>닫기</button></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="pauseOv" hidden>
+    <div class="card">
+      <p class="eyebrow" data-t>일시정지</p>
+      <h1 data-t>잠깐 멈춤</h1>
+      <p class="keys" id="pauseInfo"></p>
+      <div class="btns">
+        <button id="resumeBtn" type="button" data-t>계속하기</button>
+        <button id="quitBtn" type="button" data-t>처음 화면으로</button>
+      </div>
     </div>
   </div>
 
@@ -219,9 +242,9 @@ button.padf{outline:2px solid #fff3d6;outline-offset:2px}
   </aside>
 
   <footer class="controls">
-    <button class="guide" id="restartBtn" type="button">처음부터</button>
-    <label class="guide"><input type="checkbox" id="sound"> 소리</label>
-    <label class="guide"><input type="checkbox" id="guide"> 궤적</label>
+    <button class="guide" id="restartBtn" type="button" data-t>처음부터</button>
+    <label class="guide"><input type="checkbox" id="sound"> <span data-t>소리</span></label>
+    <label class="guide"><input type="checkbox" id="guide"> <span data-t>궤적</span></label>
   </footer>
 </div>
 
@@ -260,6 +283,41 @@ const store = {
 };
 let best = +store.get('ibex.cliff.best', 0) || 0;
 let guide = !!store.get('ibex.guide', false);
+
+// ---- language ----
+// Korean is the source text. Every other language is a table from the Korean string to its translation; the table is
+// kept in i18n/strings.json and written into the next line by `npm run i18n`. tr() looks a string up and fills {0}, {1}…
+const I18N = {"en":{"최고":"Best","시간":"Time","소금":"Salt","아기 산양":"Baby ibex","완벽":"Perfect","<b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.":"Reach the <b>1000 m summit</b>. There are no checkpoints, so a fall from high up sends you <b>tumbling</b> a long way down.","화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.":"<b>Hold the left or right side</b> of the screen to build power, then let go to jump that way.","발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.":"Land on the very end of a ledge and you <b>wobble</b>. <b>Tap fast</b> on the ledge's side to hold on.","뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.":"On the <b>slope</b> of a pointed rock you can only jump uphill. Change direction at the <b>tip</b>.","갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.":"Rescue a stranded <b>baby ibex</b> and it catches you once after a long fall. Spend <b>salt</b> in the shop.","키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요":"Keyboard: hold ← / →, or hold Space and steer with ← / → · hold too long and the power drains again","오늘의 절벽 랭킹에 쓸 이름":"Name for today's ranking","오늘의 절벽":"Today's Cliff","소금 상점 · 가진 소금":"Salt shop · your salt","소금 상점":"Salt shop","개":"","닫기":"Close","일시정지":"Paused","잠깐 멈춤":"Taking a break","계속하기":"Resume","처음 화면으로":"Title screen","처음부터":"Restart","소리":"Sound","궤적":"Guide","아이벡스 점프":"Ibex Jump","랭킹에 쓸 이름":"Name for the ranking","<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.":"Reach the <b>3000 m summit</b>. Once you make it to a <b>rest ledge</b>, where one peak turns into the next, you never fall below it.","붉은 협곡":"Red Canyon","노을 지는 사암 절벽에서 출발해요":"You set out from sandstone cliffs at sunset","회색 바위산":"Grey Crags","단단한 화강암 절벽. 장애물이 늘어나요":"Hard granite cliffs. More hazards from here","설산":"Snowy Mountain","눈 덮인 바위에 눈이 내려요":"Snow falls on snow-covered rock","구름 위":"Above the Clouds","구름이 길을 가려요. 정상이 멀지 않아요":"Clouds hide the way. The summit is not far","노을 협곡":"Sunset Canyon","노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요":"From sunset to sunrise. Every kind of ledge and hazard turns up in order","얼음 봉우리":"Ice Peak","발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요":"Nearly every ledge is frozen and the wind is strong. Stand still and you slide","빙하 기슭":"Glacier Foot","얼어붙은 바위. 발판이 미끄러워요":"Frozen rock. The ledges are slippery","푸른 얼음벽":"Blue Ice Wall","바람이 세게 불어요":"The wind blows hard","눈보라 능선":"Blizzard Ridge","눈보라 속에서 길을 찾으세요":"Find your way through the blizzard","오로라 정상":"Aurora Summit","하늘빛이 길을 비춰요. 정상이 가까워요":"The lights in the sky show the way. The summit is close","불의 산":"Fire Mountain","아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요":"Lava rises from below. How high can you get before it catches you?","검은 현무암":"Black Basalt","용암이 차오르기 시작해요. 멈추지 마세요":"The lava starts to rise. Do not stop","불타는 균열":"Burning Rift","금 간 발판이 많아요. 뜨거운 바람을 타세요":"Many ledges are cracked. Ride the hot air","재의 능선":"Ash Ridge","화산탄이 쏟아져요":"Lava bombs rain down","분화구 테두리":"Crater Rim","정상이 코앞이에요":"The summit is right there","대종주":"Grand Traverse","세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요":"Climb 3000 m across three peaks. A rest ledge waits where each peak turns into the next, and you never fall below it","패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요":"Gamepad: hold L1 / R1 (or ◀ / ▶) and let go to jump · hold A and steer with the stick · hold too long and the power drains again","추락 -{0}m":"Fell -{0} m","쉼터":"Rest ledge","여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요":"You will not fall below this. The next peak begins","든든한 발굽!":"Sturdy hooves!","+소금":"+Salt","아기 산양 구출! 소금 +3":"Baby ibex rescued! Salt +3","아기 산양 구출!":"Baby ibex rescued!","새 친구":"New friend","크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리":"It catches you once after a long fall. Up to 3","완벽! ×{0}":"Perfect! ×{0}","완벽!":"Perfect!","꼭대기! ×{0}":"Tip! ×{0}","꼭대기!":"Tip!","미끄러짐":"Slipped","버텼다!":"Held on!","아기가 받쳐 줬어요!":"The kid caught you!","황금 소금 +5":"Golden salt +5","새 구역":"New zone","아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요":"It rises from below. Touch it and you start again from the rest ledge. Do not fall far","아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요":"It rises from below. Touch it and the run ends there. Do not fall far","이끼 발판":"Mossy ledge","미끄러워요. 착지한 기세대로 밀려나요":"Slippery. You slide on with the speed you landed with","움직이는 발판":"Moving ledge","좌우로 움직여요. 타이밍을 맞춰 뛰세요":"It slides left and right. Time your jump","낙석":"Falling rocks","위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요":"Rocks fall from above. A ledge over your head shields you","바람":"Wind","바람 구간에선 공중에서 옆으로 밀려요":"In a wind band you are pushed sideways in mid-air","독수리":"Eagle","부딪히면 떨어져요. 날아오는 쪽을 보세요":"It knocks you off if it hits you. Watch the side it comes from","번개 치는 밤":"Night of lightning","어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요":"It is dark and you only see what is near. Memorise the way up when lightning strikes","황금 소금":"Golden salt","공중에 떠 있어요. 몸이 닿으면 소금 5개":"It floats in mid-air. Touch it for 5 salt","새 보물":"New treasure","상승기류":"Updraft","빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요":"Jump into the glowing column of air and it carries you up and sets you down on the ledge beside it","새 지형":"New terrain","얼음 발판":"Ice ledge","기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요":"It is tilted, so you slide toward the low end while you stand. Jump quickly","구름 발판":"Cloud ledge","나타났다 사라져요. 깜빡이면 곧 사라져요":"It comes and goes. When it flickers, it is about to vanish","용암":"Lava","위험":"Danger","새 장애물":"New hazard","용암! 쉼터에서 다시":"Lava! Back to the rest ledge","화산탄!":"Lava bomb!","낙석!":"Rockfall!","독수리!":"Eagle!","정상 · {0}m":"Summit · {0} m","{0} 쉼터 · {1}m":"{0} rest ledge · {1} m","▲ 용암 {0}m 아래":"▲ Lava {0} m below","바람 ▶▶":"Wind ▶▶","◀◀ 바람":"◀◀ Wind","◀ 탭! 탭!":"◀ Tap! Tap!","탭! 탭! ▶":"Tap! Tap! ▶","비탈에선 오르막 쪽으로만 뛸 수 있어요":"On a slope you can only jump uphill","꼭대기! 이제 방향을 바꿀 수 있어요":"The tip! Now you can change direction","◀  L1 꾹":"◀  Hold L1","◀  왼쪽 꾹":"◀  Hold left","R1 꾹  ▶":"Hold R1  ▶","오른쪽 꾹  ▶":"Hold right  ▶","오늘의 절벽 · ":"Today's Cliff · ","자유 등반":"Free Climb","{0} 최고 기록 {1}":"{0} best time {1}"," (하드)":" (hard)","하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주":"Hard mode: on · no baby ibex, no perks, more hazards","하드 모드: 꺼짐":"Hard mode: off","기록 없음":"No record","새 최고 높이":"New best height","용암에 삼켜졌어요":"The lava got you","새 최고 기록":"New best time","정상 도착":"Summit reached","완전판 · 세 산을 잇는 3000m":"Full edition · 3000 m across three peaks","넓은 화면판 · 정상까지 1000m":"Wide edition · 1000 m to the summit","프로토타입 · 정상까지 1000m":"Prototype · 1000 m to the summit","{0}m에서 끝":"Ended at {0} m","오늘의 절벽 정상!":"Today's Cliff: summit!","대종주 완주!":"Grand Traverse complete!","{0} 정상!":"{0}: summit!","1000m 정상!":"1000 m summit!","조작법 접기":"Hide how to play","조작법 보기":"How to play","버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개":"Survived {0} · best on this peak {1} m · salt {2}","시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개":"Time {0} · best {1} · falls {2} · salt {3}","시작하기":"Start","오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요":"Today's best {0} · you climb alongside that run's ghost","오늘의 절벽: 오늘은 모두 같은 절벽을 올라요":"Today's Cliff: everyone climbs the same cliff today","기본 갈색 털":"Plain brown coat","처음 털 색":"The coat you start with","설산 흰 털":"Snow-white coat","눈처럼 하얀 산양":"An ibex as white as snow","검은 털":"Black coat","밤에 더 숨는 산양":"An ibex that hides even better at night","황금 털":"Golden coat","정상의 해처럼 빛나요":"It shines like the sun at the summit","든든한 발굽":"Sturdy hooves","매 판 첫 휘청임을 저절로 버텨요":"Steadies your first wobble of each run by itself","아기 산양 피리":"Kid's flute","매 판 아기 산양 1마리와 함께 출발해요":"You start each run with 1 baby ibex","소금 {0}":"Salt {0}","입는 중":"Wearing","입기":"Wear","가지고 있음":"Owned","나가기":"Leave","한 번 더 누르면 게임을 닫아요":"Press back again to close the game","산양":"Ibex"},"ja":{"최고":"ベスト","시간":"タイム","소금":"塩","아기 산양":"子アイベックス","완벽":"パーフェクト","<b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.":"<b>1000mの山頂</b>を目指します。途中に休める場所はなく、高い所から落ちると<b>ごろごろ</b>と長く転がり落ちます。","화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.":"画面の<b>左か右を長押し</b>して力をため、離すとその方向へ跳びます。","발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.":"足場の端に乗ると<b>ぐらつきます</b>。足場側の画面を<b>連打</b>してこらえましょう。","뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.":"とがった岩の<b>斜面</b>では上り側にしか跳べません。向きは<b>てっぺん</b>で変えます。","갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.":"取り残された<b>子アイベックス</b>を助けると、大きく落ちたとき一度だけ受け止めてくれます。<b>塩</b>はショップで使います。","키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요":"キーボード: ← / → を長押し、またはスペース長押し + ← / → で向き · 押しすぎると力がまた減ります","오늘의 절벽 랭킹에 쓸 이름":"今日の崖ランキングに使う名前","오늘의 절벽":"今日の崖","소금 상점 · 가진 소금":"塩ショップ · 持っている塩","소금 상점":"塩ショップ","개":"個","닫기":"閉じる","일시정지":"一時停止","잠깐 멈춤":"ひと休み","계속하기":"つづける","처음 화면으로":"タイトルへ","처음부터":"最初から","소리":"サウンド","궤적":"軌道","아이벡스 점프":"Ibex Jump","랭킹에 쓸 이름":"ランキングに使う名前","<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.":"<b>3000mの山頂</b>を目指します。山が変わる所の<b>休憩所</b>まで登れば、それより下には落ちません。","붉은 협곡":"赤い峡谷","노을 지는 사암 절벽에서 출발해요":"夕焼けの砂岩の崖から出発します","회색 바위산":"灰色の岩山","단단한 화강암 절벽. 장애물이 늘어나요":"硬い花崗岩の崖。障害物が増えます","설산":"雪山","눈 덮인 바위에 눈이 내려요":"雪をかぶった岩に雪が降ります","구름 위":"雲の上","구름이 길을 가려요. 정상이 멀지 않아요":"雲が道を隠します。山頂はもう遠くありません","노을 협곡":"夕焼けの峡谷","노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요":"夕焼けから日の出まで。いろいろな足場と障害物が順に出てきます","얼음 봉우리":"氷の峰","발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요":"足場はほとんど凍っていて風も強いです。立っていると滑ります","빙하 기슭":"氷河のふもと","얼어붙은 바위. 발판이 미끄러워요":"凍りついた岩。足場が滑ります","푸른 얼음벽":"青い氷壁","바람이 세게 불어요":"風が強く吹きます","눈보라 능선":"吹雪の尾根","눈보라 속에서 길을 찾으세요":"吹雪の中で道を探しましょう","오로라 정상":"オーロラの頂","하늘빛이 길을 비춰요. 정상이 가까워요":"空の光が道を照らします。山頂はもうすぐです","불의 산":"炎の山","아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요":"下から溶岩がせり上がります。つかまる前にどこまで登れるでしょうか","검은 현무암":"黒い玄武岩","용암이 차오르기 시작해요. 멈추지 마세요":"溶岩が上がり始めます。止まらないで","불타는 균열":"燃える裂け目","금 간 발판이 많아요. 뜨거운 바람을 타세요":"ひびの入った足場が多いです。熱い風に乗りましょう","재의 능선":"灰の尾根","화산탄이 쏟아져요":"火山弾が降ってきます","분화구 테두리":"火口の縁","정상이 코앞이에요":"山頂は目の前です","대종주":"大縦走","세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요":"三つの山をつないで3000mを登ります。山が変わる所ごとに休憩所があり、それより下には落ちません","패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요":"パッド: L1 / R1（または ◀ / ▶）を長押しして離すとジャンプ · A 長押し + スティックで向き · 押しすぎると力がまた減ります","추락 -{0}m":"転落 -{0}m","쉼터":"休憩所","여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요":"ここより下には落ちません。次の山が始まります","든든한 발굽!":"がっしりしたひづめ！","+소금":"+塩","아기 산양 구출! 소금 +3":"子アイベックスを救出！ 塩 +3","아기 산양 구출!":"子アイベックスを救出！","새 친구":"新しい仲間","크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리":"大きく落ちたとき一度受け止めてくれます。最大3匹","완벽! ×{0}":"パーフェクト！ ×{0}","완벽!":"パーフェクト！","꼭대기! ×{0}":"てっぺん！ ×{0}","꼭대기!":"てっぺん！","미끄러짐":"滑った","버텼다!":"こらえた！","아기가 받쳐 줬어요!":"子どもが受け止めてくれた！","황금 소금 +5":"金の塩 +5","새 구역":"新しいエリア","아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요":"下からせり上がります。触れると休憩所からやり直しです。大きく落ちてはいけません","아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요":"下からせり上がります。触れるとその場で終わりです。大きく落ちてはいけません","이끼 발판":"苔の足場","미끄러워요. 착지한 기세대로 밀려나요":"滑ります。着地の勢いのまま流されます","움직이는 발판":"動く足場","좌우로 움직여요. 타이밍을 맞춰 뛰세요":"左右に動きます。タイミングを合わせて跳びましょう","낙석":"落石","위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요":"上から石が落ちてきます。足場の下にいれば防いでくれます","바람":"風","바람 구간에선 공중에서 옆으로 밀려요":"風の区間では空中で横に流されます","독수리":"ワシ","부딪히면 떨어져요. 날아오는 쪽을 보세요":"ぶつかると落とされます。飛んでくる側を見ましょう","번개 치는 밤":"稲妻の夜","어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요":"暗くて周りしか見えません。稲妻が光ったときに上の道を覚えておきましょう","황금 소금":"金の塩","공중에 떠 있어요. 몸이 닿으면 소금 5개":"空中に浮いています。触れると塩5個","새 보물":"新しい宝物","상승기류":"上昇気流","빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요":"光る風の柱に飛び込むと、上へ運んで隣の足場に降ろしてくれます","새 지형":"新しい地形","얼음 발판":"氷の足場","기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요":"傾いているので、立っていると低い側へ滑ります。早く跳びましょう","구름 발판":"雲の足場","나타났다 사라져요. 깜빡이면 곧 사라져요":"現れたり消えたりします。点滅したらすぐ消えます","용암":"溶岩","위험":"危険","새 장애물":"新しい障害物","용암! 쉼터에서 다시":"溶岩！ 休憩所からやり直し","화산탄!":"火山弾！","낙석!":"落石！","독수리!":"ワシ！","정상 · {0}m":"山頂 · {0}m","{0} 쉼터 · {1}m":"{0} 休憩所 · {1}m","▲ 용암 {0}m 아래":"▲ 溶岩まで {0}m","바람 ▶▶":"風 ▶▶","◀◀ 바람":"◀◀ 風","◀ 탭! 탭!":"◀ タップ！タップ！","탭! 탭! ▶":"タップ！タップ！ ▶","비탈에선 오르막 쪽으로만 뛸 수 있어요":"斜面では上り側にしか跳べません","꼭대기! 이제 방향을 바꿀 수 있어요":"てっぺん！ ここで向きを変えられます","◀  L1 꾹":"◀  L1 長押し","◀  왼쪽 꾹":"◀  左を長押し","R1 꾹  ▶":"R1 長押し  ▶","오른쪽 꾹  ▶":"右を長押し  ▶","오늘의 절벽 · ":"今日の崖 · ","자유 등반":"フリークライム","{0} 최고 기록 {1}":"{0} ベストタイム {1}"," (하드)":"（ハード）","하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주":"ハードモード: オン · 子アイベックスも能力もなし、障害物は多め","하드 모드: 꺼짐":"ハードモード: オフ","기록 없음":"記録なし","새 최고 높이":"最高到達点を更新","용암에 삼켜졌어요":"溶岩にのまれました","새 최고 기록":"ベストタイム更新","정상 도착":"山頂に到着","완전판 · 세 산을 잇는 3000m":"完全版 · 三つの山をつなぐ3000m","넓은 화면판 · 정상까지 1000m":"ワイド版 · 山頂まで1000m","프로토타입 · 정상까지 1000m":"プロトタイプ · 山頂まで1000m","{0}m에서 끝":"{0}mで終了","오늘의 절벽 정상!":"今日の崖、登頂！","대종주 완주!":"大縦走、完走！","{0} 정상!":"{0}、登頂！","1000m 정상!":"1000m 登頂！","조작법 접기":"遊び方を閉じる","조작법 보기":"遊び方を見る","버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개":"耐えた時間 {0} · この山のベスト {1}m · 塩 {2}個","시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개":"タイム {0} · ベスト {1} · 転落 {2}回 · 塩 {3}個","시작하기":"スタート","오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요":"今日の崖ベスト {0} · その記録のゴーストと一緒に登ります","오늘의 절벽: 오늘은 모두 같은 절벽을 올라요":"今日の崖: 今日はみんな同じ崖を登ります","기본 갈색 털":"基本の茶色い毛","처음 털 색":"最初の毛色","설산 흰 털":"雪山の白い毛","눈처럼 하얀 산양":"雪のように白いアイベックス","검은 털":"黒い毛","밤에 더 숨는 산양":"夜にもっと紛れるアイベックス","황금 털":"金色の毛","정상의 해처럼 빛나요":"山頂の太陽のように輝きます","든든한 발굽":"がっしりしたひづめ","매 판 첫 휘청임을 저절로 버텨요":"毎回、最初のぐらつきを自動でこらえます","아기 산양 피리":"子アイベックスの笛","매 판 아기 산양 1마리와 함께 출발해요":"毎回、子アイベックス1匹と一緒に出発します","소금 {0}":"塩 {0}","입는 중":"着用中","입기":"着る","가지고 있음":"所持","나가기":"終了","한 번 더 누르면 게임을 닫아요":"もう一度押すとゲームを閉じます","산양":"アイベックス"},"zh-Hans":{"최고":"最高","시간":"时间","소금":"盐","아기 산양":"小羱羊","완벽":"完美","<b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.":"目标是<b>1000米山顶</b>。途中没有落脚点，从高处掉下会<b>一路翻滚</b>摔得很远。","화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.":"<b>按住屏幕左侧或右侧</b>蓄力，松开就朝那边跳。","발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.":"落在平台边缘会<b>摇晃</b>。<b>连续点击</b>平台一侧的屏幕来稳住。","뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.":"在尖岩的<b>斜坡</b>上只能朝上坡方向跳。到<b>岩顶</b>才能换方向。","갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.":"救下被困的<b>小羱羊</b>，摔得很远时它会接住你一次。<b>盐</b>可以在商店使用。","키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요":"键盘：按住 ← / →，或按住空格并用 ← / → 选方向 · 按太久力量会再次减弱","오늘의 절벽 랭킹에 쓸 이름":"今日悬崖排行榜上的名字","오늘의 절벽":"今日悬崖","소금 상점 · 가진 소금":"盐商店 · 拥有的盐","소금 상점":"盐商店","개":"个","닫기":"关闭","일시정지":"暂停","잠깐 멈춤":"休息一下","계속하기":"继续","처음 화면으로":"回到标题","처음부터":"重新开始","소리":"声音","궤적":"轨迹","아이벡스 점프":"Ibex Jump","랭킹에 쓸 이름":"排行榜上的名字","<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.":"目标是<b>3000米山顶</b>。爬到换山处的<b>休息处</b>后，就不会再掉到它下面。","붉은 협곡":"红色峡谷","노을 지는 사암 절벽에서 출발해요":"从晚霞中的砂岩峭壁出发","회색 바위산":"灰色岩山","단단한 화강암 절벽. 장애물이 늘어나요":"坚硬的花岗岩峭壁。障碍变多了","설산":"雪山","눈 덮인 바위에 눈이 내려요":"积雪的岩石上飘着雪","구름 위":"云端之上","구름이 길을 가려요. 정상이 멀지 않아요":"云遮住了路。山顶不远了","노을 협곡":"晚霞峡谷","노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요":"从晚霞到日出。各种平台和障碍依次出现","얼음 봉우리":"冰峰","발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요":"平台几乎都结了冰，风也很大。站着不动会滑下去","빙하 기슭":"冰川山脚","얼어붙은 바위. 발판이 미끄러워요":"冻住的岩石。平台很滑","푸른 얼음벽":"蓝色冰壁","바람이 세게 불어요":"风刮得很猛","눈보라 능선":"暴风雪山脊","눈보라 속에서 길을 찾으세요":"在暴风雪中找出路","오로라 정상":"极光之巅","하늘빛이 길을 비춰요. 정상이 가까워요":"天上的光照亮了路。山顶就快到了","불의 산":"火之山","아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요":"熔岩从下方涌上来。被追上之前你能爬多高？","검은 현무암":"黑色玄武岩","용암이 차오르기 시작해요. 멈추지 마세요":"熔岩开始上涨。别停下","불타는 균열":"燃烧裂隙","금 간 발판이 많아요. 뜨거운 바람을 타세요":"有裂缝的平台很多。乘着热风上去","재의 능선":"灰烬山脊","화산탄이 쏟아져요":"火山弹倾泻而下","분화구 테두리":"火山口边缘","정상이 코앞이에요":"山顶近在眼前","대종주":"大纵走","세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요":"连着三座山攀登3000米。每到换山的地方都有休息处，不会再掉到它下面","패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요":"手柄：按住 L1 / R1（或 ◀ / ▶）再松开即可跳跃 · 按住 A 并用摇杆选方向 · 按太久力量会再次减弱","추락 -{0}m":"坠落 -{0}米","쉼터":"休息处","여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요":"不会再掉到这里以下。下一座山开始了","든든한 발굽!":"稳健的蹄子！","+소금":"+盐","아기 산양 구출! 소금 +3":"救出小羱羊！盐 +3","아기 산양 구출!":"救出小羱羊！","새 친구":"新朋友","크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리":"摔得很远时会接住你一次。最多3只","완벽! ×{0}":"完美！×{0}","완벽!":"完美！","꼭대기! ×{0}":"岩顶！×{0}","꼭대기!":"岩顶！","미끄러짐":"滑落","버텼다!":"稳住了！","아기가 받쳐 줬어요!":"小羱羊接住了你！","황금 소금 +5":"金盐 +5","새 구역":"新区域","아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요":"它从下方上涨。碰到就要从休息处重新开始。千万别摔太远","아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요":"它从下方上涨。碰到就当场结束。千万别摔太远","이끼 발판":"苔藓平台","미끄러워요. 착지한 기세대로 밀려나요":"很滑。会顺着落地的势头滑出去","움직이는 발판":"移动平台","좌우로 움직여요. 타이밍을 맞춰 뛰세요":"它左右移动。看准时机再跳","낙석":"落石","위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요":"石头从上面掉下来。躲在平台下面就能挡住","바람":"风","바람 구간에선 공중에서 옆으로 밀려요":"在风带里，空中会被吹向一边","독수리":"老鹰","부딪히면 떨어져요. 날아오는 쪽을 보세요":"被撞到就会掉下去。留意它飞来的方向","번개 치는 밤":"雷电之夜","어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요":"天很黑，只看得见周围。闪电亮起时记住上面的路","황금 소금":"金盐","공중에 떠 있어요. 몸이 닿으면 소금 5개":"它浮在空中。碰到就得5个盐","새 보물":"新宝物","상승기류":"上升气流","빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요":"跳进发光的气柱，它会把你托上去，放在旁边的平台上","새 지형":"新地形","얼음 발판":"冰平台","기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요":"它是倾斜的，站着会滑向低的一边。快点跳","구름 발판":"云朵平台","나타났다 사라져요. 깜빡이면 곧 사라져요":"它时隐时现。一闪烁就快消失了","용암":"熔岩","위험":"危险","새 장애물":"新障碍","용암! 쉼터에서 다시":"熔岩！从休息处重来","화산탄!":"火山弹！","낙석!":"落石！","독수리!":"老鹰！","정상 · {0}m":"山顶 · {0}米","{0} 쉼터 · {1}m":"{0}休息处 · {1}米","▲ 용암 {0}m 아래":"▲ 熔岩在下方{0}米","바람 ▶▶":"风 ▶▶","◀◀ 바람":"◀◀ 风","◀ 탭! 탭!":"◀ 点！点！","탭! 탭! ▶":"点！点！ ▶","비탈에선 오르막 쪽으로만 뛸 수 있어요":"在斜坡上只能朝上坡方向跳","꼭대기! 이제 방향을 바꿀 수 있어요":"岩顶！现在可以换方向了","◀  L1 꾹":"◀  按住 L1","◀  왼쪽 꾹":"◀  按住左侧","R1 꾹  ▶":"按住 R1  ▶","오른쪽 꾹  ▶":"按住右侧  ▶","오늘의 절벽 · ":"今日悬崖 · ","자유 등반":"自由攀登","{0} 최고 기록 {1}":"{0}最佳纪录 {1}"," (하드)":"（困难）","하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주":"困难模式：开 · 没有小羱羊和能力，障碍更频繁","하드 모드: 꺼짐":"困难模式：关","기록 없음":"暂无纪录","새 최고 높이":"新的最高高度","용암에 삼켜졌어요":"被熔岩吞没了","새 최고 기록":"新的最佳纪录","정상 도착":"登顶","완전판 · 세 산을 잇는 3000m":"完整版 · 连接三座山的3000米","넓은 화면판 · 정상까지 1000m":"宽屏版 · 到山顶1000米","프로토타입 · 정상까지 1000m":"原型版 · 到山顶1000米","{0}m에서 끝":"止于{0}米","오늘의 절벽 정상!":"今日悬崖登顶！","대종주 완주!":"大纵走完成！","{0} 정상!":"{0}登顶！","1000m 정상!":"1000米登顶！","조작법 접기":"收起玩法","조작법 보기":"查看玩法","버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개":"坚持了 {0} · 本山最高 {1}米 · 盐 {2}个","시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개":"时间 {0} · 最佳 {1} · 坠落 {2}次 · 盐 {3}个","시작하기":"开始","오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요":"今日悬崖最佳 {0} · 和那次纪录的幽灵一起攀登","오늘의 절벽: 오늘은 모두 같은 절벽을 올라요":"今日悬崖：今天所有人爬同一面悬崖","기본 갈색 털":"基础棕色毛","처음 털 색":"初始毛色","설산 흰 털":"雪山白毛","눈처럼 하얀 산양":"像雪一样白的羱羊","검은 털":"黑毛","밤에 더 숨는 산양":"夜里更难发现的羱羊","황금 털":"金毛","정상의 해처럼 빛나요":"像山顶的太阳一样闪耀","든든한 발굽":"稳健的蹄子","매 판 첫 휘청임을 저절로 버텨요":"每局第一次摇晃会自动稳住","아기 산양 피리":"小羱羊之笛","매 판 아기 산양 1마리와 함께 출발해요":"每局带着1只小羱羊出发","소금 {0}":"盐 {0}","입는 중":"穿戴中","입기":"穿上","가지고 있음":"已拥有","나가기":"退出","한 번 더 누르면 게임을 닫아요":"再按一次关闭游戏","산양":"羱羊"},"zh-Hant":{"최고":"最高","시간":"時間","소금":"鹽","아기 산양":"小羱羊","완벽":"完美","<b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.":"目標是<b>1000公尺山頂</b>。途中沒有落腳點，從高處掉下會<b>一路翻滾</b>摔得很遠。","화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.":"<b>按住螢幕左側或右側</b>蓄力，放開就朝那邊跳。","발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.":"落在平台邊緣會<b>搖晃</b>。<b>連續點擊</b>平台一側的螢幕來穩住。","뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.":"在尖岩的<b>斜坡</b>上只能朝上坡方向跳。到<b>岩頂</b>才能換方向。","갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.":"救下被困的<b>小羱羊</b>，摔得很遠時牠會接住你一次。<b>鹽</b>可以在商店使用。","키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요":"鍵盤：按住 ← / →，或按住空白鍵並用 ← / → 選方向 · 按太久力量會再次減弱","오늘의 절벽 랭킹에 쓸 이름":"今日懸崖排行榜上的名字","오늘의 절벽":"今日懸崖","소금 상점 · 가진 소금":"鹽商店 · 擁有的鹽","소금 상점":"鹽商店","개":"個","닫기":"關閉","일시정지":"暫停","잠깐 멈춤":"休息一下","계속하기":"繼續","처음 화면으로":"回到標題","처음부터":"重新開始","소리":"聲音","궤적":"軌跡","아이벡스 점프":"Ibex Jump","랭킹에 쓸 이름":"排行榜上的名字","<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.":"目標是<b>3000公尺山頂</b>。爬到換山處的<b>休息處</b>後，就不會再掉到它下面。","붉은 협곡":"紅色峽谷","노을 지는 사암 절벽에서 출발해요":"從晚霞中的砂岩峭壁出發","회색 바위산":"灰色岩山","단단한 화강암 절벽. 장애물이 늘어나요":"堅硬的花崗岩峭壁。障礙變多了","설산":"雪山","눈 덮인 바위에 눈이 내려요":"積雪的岩石上飄著雪","구름 위":"雲端之上","구름이 길을 가려요. 정상이 멀지 않아요":"雲遮住了路。山頂不遠了","노을 협곡":"晚霞峽谷","노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요":"從晚霞到日出。各種平台和障礙依序出現","얼음 봉우리":"冰峰","발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요":"平台幾乎都結了冰，風也很大。站著不動會滑下去","빙하 기슭":"冰川山腳","얼어붙은 바위. 발판이 미끄러워요":"凍住的岩石。平台很滑","푸른 얼음벽":"藍色冰壁","바람이 세게 불어요":"風颳得很猛","눈보라 능선":"暴風雪山脊","눈보라 속에서 길을 찾으세요":"在暴風雪中找出路","오로라 정상":"極光之巔","하늘빛이 길을 비춰요. 정상이 가까워요":"天上的光照亮了路。山頂就快到了","불의 산":"火之山","아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요":"熔岩從下方湧上來。被追上之前你能爬多高？","검은 현무암":"黑色玄武岩","용암이 차오르기 시작해요. 멈추지 마세요":"熔岩開始上漲。別停下","불타는 균열":"燃燒裂隙","금 간 발판이 많아요. 뜨거운 바람을 타세요":"有裂縫的平台很多。乘著熱風上去","재의 능선":"灰燼山脊","화산탄이 쏟아져요":"火山彈傾瀉而下","분화구 테두리":"火山口邊緣","정상이 코앞이에요":"山頂近在眼前","대종주":"大縱走","세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요":"連著三座山攀登3000公尺。每到換山的地方都有休息處，不會再掉到它下面","패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요":"手把：按住 L1 / R1（或 ◀ / ▶）再放開即可跳躍 · 按住 A 並用搖桿選方向 · 按太久力量會再次減弱","추락 -{0}m":"墜落 -{0}公尺","쉼터":"休息處","여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요":"不會再掉到這裡以下。下一座山開始了","든든한 발굽!":"穩健的蹄子！","+소금":"+鹽","아기 산양 구출! 소금 +3":"救出小羱羊！鹽 +3","아기 산양 구출!":"救出小羱羊！","새 친구":"新朋友","크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리":"摔得很遠時會接住你一次。最多3隻","완벽! ×{0}":"完美！×{0}","완벽!":"完美！","꼭대기! ×{0}":"岩頂！×{0}","꼭대기!":"岩頂！","미끄러짐":"滑落","버텼다!":"穩住了！","아기가 받쳐 줬어요!":"小羱羊接住了你！","황금 소금 +5":"金鹽 +5","새 구역":"新區域","아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요":"它從下方上漲。碰到就要從休息處重新開始。千萬別摔太遠","아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요":"它從下方上漲。碰到就當場結束。千萬別摔太遠","이끼 발판":"苔蘚平台","미끄러워요. 착지한 기세대로 밀려나요":"很滑。會順著落地的勢頭滑出去","움직이는 발판":"移動平台","좌우로 움직여요. 타이밍을 맞춰 뛰세요":"它左右移動。看準時機再跳","낙석":"落石","위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요":"石頭從上面掉下來。躲在平台下面就能擋住","바람":"風","바람 구간에선 공중에서 옆으로 밀려요":"在風帶裡，空中會被吹向一邊","독수리":"老鷹","부딪히면 떨어져요. 날아오는 쪽을 보세요":"被撞到就會掉下去。留意牠飛來的方向","번개 치는 밤":"雷電之夜","어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요":"天很黑，只看得見周圍。閃電亮起時記住上面的路","황금 소금":"金鹽","공중에 떠 있어요. 몸이 닿으면 소금 5개":"它浮在空中。碰到就得5個鹽","새 보물":"新寶物","상승기류":"上升氣流","빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요":"跳進發光的氣柱，它會把你托上去，放在旁邊的平台上","새 지형":"新地形","얼음 발판":"冰平台","기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요":"它是傾斜的，站著會滑向低的一邊。快點跳","구름 발판":"雲朵平台","나타났다 사라져요. 깜빡이면 곧 사라져요":"它時隱時現。一閃爍就快消失了","용암":"熔岩","위험":"危險","새 장애물":"新障礙","용암! 쉼터에서 다시":"熔岩！從休息處重來","화산탄!":"火山彈！","낙석!":"落石！","독수리!":"老鷹！","정상 · {0}m":"山頂 · {0}公尺","{0} 쉼터 · {1}m":"{0}休息處 · {1}公尺","▲ 용암 {0}m 아래":"▲ 熔岩在下方{0}公尺","바람 ▶▶":"風 ▶▶","◀◀ 바람":"◀◀ 風","◀ 탭! 탭!":"◀ 點！點！","탭! 탭! ▶":"點！點！ ▶","비탈에선 오르막 쪽으로만 뛸 수 있어요":"在斜坡上只能朝上坡方向跳","꼭대기! 이제 방향을 바꿀 수 있어요":"岩頂！現在可以換方向了","◀  L1 꾹":"◀  按住 L1","◀  왼쪽 꾹":"◀  按住左側","R1 꾹  ▶":"按住 R1  ▶","오른쪽 꾹  ▶":"按住右側  ▶","오늘의 절벽 · ":"今日懸崖 · ","자유 등반":"自由攀登","{0} 최고 기록 {1}":"{0}最佳紀錄 {1}"," (하드)":"（困難）","하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주":"困難模式：開 · 沒有小羱羊和能力，障礙更頻繁","하드 모드: 꺼짐":"困難模式：關","기록 없음":"尚無紀錄","새 최고 높이":"新的最高高度","용암에 삼켜졌어요":"被熔岩吞沒了","새 최고 기록":"新的最佳紀錄","정상 도착":"登頂","완전판 · 세 산을 잇는 3000m":"完整版 · 連接三座山的3000公尺","넓은 화면판 · 정상까지 1000m":"寬螢幕版 · 到山頂1000公尺","프로토타입 · 정상까지 1000m":"原型版 · 到山頂1000公尺","{0}m에서 끝":"止於{0}公尺","오늘의 절벽 정상!":"今日懸崖登頂！","대종주 완주!":"大縱走完成！","{0} 정상!":"{0}登頂！","1000m 정상!":"1000公尺登頂！","조작법 접기":"收起玩法","조작법 보기":"查看玩法","버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개":"堅持了 {0} · 本山最高 {1}公尺 · 鹽 {2}個","시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개":"時間 {0} · 最佳 {1} · 墜落 {2}次 · 鹽 {3}個","시작하기":"開始","오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요":"今日懸崖最佳 {0} · 和那次紀錄的幽靈一起攀登","오늘의 절벽: 오늘은 모두 같은 절벽을 올라요":"今日懸崖：今天所有人爬同一面懸崖","기본 갈색 털":"基礎棕色毛","처음 털 색":"初始毛色","설산 흰 털":"雪山白毛","눈처럼 하얀 산양":"像雪一樣白的羱羊","검은 털":"黑毛","밤에 더 숨는 산양":"夜裡更難發現的羱羊","황금 털":"金毛","정상의 해처럼 빛나요":"像山頂的太陽一樣閃耀","든든한 발굽":"穩健的蹄子","매 판 첫 휘청임을 저절로 버텨요":"每局第一次搖晃會自動穩住","아기 산양 피리":"小羱羊之笛","매 판 아기 산양 1마리와 함께 출발해요":"每局帶著1隻小羱羊出發","소금 {0}":"鹽 {0}","입는 중":"穿戴中","입기":"穿上","가지고 있음":"已擁有","나가기":"離開","한 번 더 누르면 게임을 닫아요":"再按一次關閉遊戲","산양":"羱羊"},"es":{"최고":"Récord","시간":"Tiempo","소금":"Sal","아기 산양":"Cría de íbice","완벽":"Perfecto","<b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.":"Llega a la <b>cima de 1000 m</b>. No hay puntos de control: si caes desde lo alto, bajas <b>rodando</b> un buen trecho.","화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.":"<b>Mantén pulsado el lado izquierdo o derecho</b> de la pantalla para cargar y suelta para saltar hacia allí.","발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.":"Si caes en el borde de un saliente, <b>te tambaleas</b>. <b>Toca rápido</b> el lado del saliente para aguantar.","뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.":"En la <b>pendiente</b> de una roca puntiaguda solo puedes saltar cuesta arriba. Cambia de dirección en la <b>punta</b>.","갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.":"Rescata a una <b>cría de íbice</b> atrapada y te sujetará una vez tras una gran caída. La <b>sal</b> se gasta en la tienda.","키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요":"Teclado: mantén ← / →, o mantén Espacio y elige lado con ← / → · si aguantas demasiado, la fuerza vuelve a bajar","오늘의 절벽 랭킹에 쓸 이름":"Nombre para la clasificación de hoy","오늘의 절벽":"Risco de hoy","소금 상점 · 가진 소금":"Tienda de sal · tu sal","소금 상점":"Tienda de sal","개":"","닫기":"Cerrar","일시정지":"En pausa","잠깐 멈춤":"Un respiro","계속하기":"Continuar","처음 화면으로":"Pantalla inicial","처음부터":"Reiniciar","소리":"Sonido","궤적":"Guía","아이벡스 점프":"Ibex Jump","랭킹에 쓸 이름":"Nombre para la clasificación","<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.":"Llega a la <b>cima de 3000 m</b>. Cuando alcances un <b>refugio</b>, donde cambia la montaña, ya no caerás por debajo de él.","붉은 협곡":"Cañón Rojo","노을 지는 사암 절벽에서 출발해요":"Sales de unos riscos de arenisca al atardecer","회색 바위산":"Riscos Grises","단단한 화강암 절벽. 장애물이 늘어나요":"Riscos de granito duro. Aquí hay más peligros","설산":"Montaña Nevada","눈 덮인 바위에 눈이 내려요":"Nieva sobre la roca cubierta de nieve","구름 위":"Sobre las Nubes","구름이 길을 가려요. 정상이 멀지 않아요":"Las nubes tapan el camino. La cima no queda lejos","노을 협곡":"Cañón del Ocaso","노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요":"Del atardecer al amanecer. Aparecen por turno todo tipo de salientes y peligros","얼음 봉우리":"Pico de Hielo","발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요":"Casi todos los salientes están helados y el viento es fuerte. Si te quedas quieto, resbalas","빙하 기슭":"Pie del Glaciar","얼어붙은 바위. 발판이 미끄러워요":"Roca helada. Los salientes resbalan","푸른 얼음벽":"Muro de Hielo Azul","바람이 세게 불어요":"El viento sopla fuerte","눈보라 능선":"Cresta de la Ventisca","눈보라 속에서 길을 찾으세요":"Encuentra el camino entre la ventisca","오로라 정상":"Cima de la Aurora","하늘빛이 길을 비춰요. 정상이 가까워요":"Las luces del cielo alumbran el camino. La cima está cerca","불의 산":"Montaña de Fuego","아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요":"La lava sube desde abajo. ¿Hasta dónde llegarás antes de que te alcance?","검은 현무암":"Basalto Negro","용암이 차오르기 시작해요. 멈추지 마세요":"La lava empieza a subir. No te detengas","불타는 균열":"Grieta Ardiente","금 간 발판이 많아요. 뜨거운 바람을 타세요":"Muchos salientes están agrietados. Aprovecha el aire caliente","재의 능선":"Cresta de Ceniza","화산탄이 쏟아져요":"Llueven bombas volcánicas","분화구 테두리":"Borde del Cráter","정상이 코앞이에요":"La cima está ahí mismo","대종주":"Gran Travesía","세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요":"Sube 3000 m a través de tres montañas. Donde cambia la montaña hay un refugio, y ya no caes por debajo de él","패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요":"Mando: mantén L1 / R1 (o ◀ / ▶) y suelta para saltar · mantén A y elige lado con el stick · si aguantas demasiado, la fuerza vuelve a bajar","추락 -{0}m":"Caída -{0} m","쉼터":"Refugio","여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요":"Ya no caerás por debajo de aquí. Empieza la siguiente montaña","든든한 발굽!":"¡Pezuñas firmes!","+소금":"+Sal","아기 산양 구출! 소금 +3":"¡Cría rescatada! Sal +3","아기 산양 구출!":"¡Cría rescatada!","새 친구":"Nuevo amigo","크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리":"Te sujeta una vez tras una gran caída. Hasta 3","완벽! ×{0}":"¡Perfecto! ×{0}","완벽!":"¡Perfecto!","꼭대기! ×{0}":"¡Punta! ×{0}","꼭대기!":"¡Punta!","미끄러짐":"Resbalón","버텼다!":"¡Aguantaste!","아기가 받쳐 줬어요!":"¡La cría te sujetó!","황금 소금 +5":"Sal dorada +5","새 구역":"Nueva zona","아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요":"Sube desde abajo. Si la tocas, vuelves a empezar desde el refugio. No caigas mucho","아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요":"Sube desde abajo. Si la tocas, la partida termina ahí. No caigas mucho","이끼 발판":"Saliente con musgo","미끄러워요. 착지한 기세대로 밀려나요":"Resbala. Sigues deslizándote con el impulso del aterrizaje","움직이는 발판":"Saliente móvil","좌우로 움직여요. 타이밍을 맞춰 뛰세요":"Se mueve de lado a lado. Calcula bien el salto","낙석":"Desprendimientos","위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요":"Caen rocas desde arriba. Un saliente sobre tu cabeza te protege","바람":"Viento","바람 구간에선 공중에서 옆으로 밀려요":"En una franja de viento, el aire te empuja de lado","독수리":"Águila","부딪히면 떨어져요. 날아오는 쪽을 보세요":"Si te golpea, te tira. Fíjate por qué lado viene","번개 치는 밤":"Noche de relámpagos","어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요":"Está oscuro y solo ves lo cercano. Memoriza el camino cuando caiga un relámpago","황금 소금":"Sal dorada","공중에 떠 있어요. 몸이 닿으면 소금 5개":"Flota en el aire. Tócala y ganas 5 de sal","새 보물":"Nuevo tesoro","상승기류":"Corriente ascendente","빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요":"Salta a la columna de aire brillante: te eleva y te deja en el saliente de al lado","새 지형":"Nuevo terreno","얼음 발판":"Saliente de hielo","기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요":"Está inclinado: mientras estés de pie, resbalas hacia el lado bajo. Salta rápido","구름 발판":"Saliente de nube","나타났다 사라져요. 깜빡이면 곧 사라져요":"Aparece y desaparece. Si parpadea, está a punto de irse","용암":"Lava","위험":"Peligro","새 장애물":"Nuevo peligro","용암! 쉼터에서 다시":"¡Lava! De vuelta al refugio","화산탄!":"¡Bomba volcánica!","낙석!":"¡Roca!","독수리!":"¡Águila!","정상 · {0}m":"Cima · {0} m","{0} 쉼터 · {1}m":"Refugio de {0} · {1} m","▲ 용암 {0}m 아래":"▲ Lava a {0} m","바람 ▶▶":"Viento ▶▶","◀◀ 바람":"◀◀ Viento","◀ 탭! 탭!":"◀ ¡Toca! ¡Toca!","탭! 탭! ▶":"¡Toca! ¡Toca! ▶","비탈에선 오르막 쪽으로만 뛸 수 있어요":"En la pendiente solo puedes saltar cuesta arriba","꼭대기! 이제 방향을 바꿀 수 있어요":"¡La punta! Ahora puedes cambiar de dirección","◀  L1 꾹":"◀  Mantén L1","◀  왼쪽 꾹":"◀  Mantén izquierda","R1 꾹  ▶":"Mantén R1  ▶","오른쪽 꾹  ▶":"Mantén derecha  ▶","오늘의 절벽 · ":"Risco de hoy · ","자유 등반":"Escalada libre","{0} 최고 기록 {1}":"{0}: mejor tiempo {1}"," (하드)":" (difícil)","하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주":"Modo difícil: activado · sin crías ni ventajas, más peligros","하드 모드: 꺼짐":"Modo difícil: desactivado","기록 없음":"Sin récord","새 최고 높이":"Nueva altura máxima","용암에 삼켜졌어요":"Te alcanzó la lava","새 최고 기록":"Nuevo mejor tiempo","정상 도착":"Cima alcanzada","완전판 · 세 산을 잇는 3000m":"Edición completa · 3000 m por tres montañas","넓은 화면판 · 정상까지 1000m":"Edición panorámica · 1000 m hasta la cima","프로토타입 · 정상까지 1000m":"Prototipo · 1000 m hasta la cima","{0}m에서 끝":"Fin a {0} m","오늘의 절벽 정상!":"¡Cima del Risco de hoy!","대종주 완주!":"¡Gran Travesía completada!","{0} 정상!":"¡Cima de {0}!","1000m 정상!":"¡Cima de 1000 m!","조작법 접기":"Ocultar cómo jugar","조작법 보기":"Cómo jugar","버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개":"Aguantaste {0} · mejor en esta montaña {1} m · sal {2}","시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개":"Tiempo {0} · mejor {1} · caídas {2} · sal {3}","시작하기":"Empezar","오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요":"Mejor de hoy {0} · subes junto al fantasma de esa marca","오늘의 절벽: 오늘은 모두 같은 절벽을 올라요":"Risco de hoy: hoy todos suben el mismo risco","기본 갈색 털":"Pelaje marrón","처음 털 색":"El pelaje inicial","설산 흰 털":"Pelaje blanco nieve","눈처럼 하얀 산양":"Un íbice blanco como la nieve","검은 털":"Pelaje negro","밤에 더 숨는 산양":"Un íbice que se oculta aún más de noche","황금 털":"Pelaje dorado","정상의 해처럼 빛나요":"Brilla como el sol de la cima","든든한 발굽":"Pezuñas firmes","매 판 첫 휘청임을 저절로 버텨요":"Aguanta solo el primer tambaleo de cada partida","아기 산양 피리":"Flauta de la cría","매 판 아기 산양 1마리와 함께 출발해요":"Empiezas cada partida con 1 cría","소금 {0}":"Sal {0}","입는 중":"Puesto","입기":"Poner","가지고 있음":"Lo tienes","나가기":"Salir","한 번 더 누르면 게임을 닫아요":"Pulsa atrás otra vez para cerrar el juego","산양":"Íbice"},"pt":{"최고":"Recorde","시간":"Tempo","소금":"Sal","아기 산양":"Filhote de íbex","완벽":"Perfeito","<b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.":"Chegue ao <b>cume de 1000 m</b>. Não há pontos de controle: se cair lá do alto, você desce <b>rolando</b> um bom pedaço.","화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.":"<b>Segure o lado esquerdo ou direito</b> da tela para carregar e solte para pular para lá.","발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.":"Se pousar na ponta de uma plataforma, você <b>balança</b>. <b>Toque rápido</b> no lado da plataforma para se segurar.","뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.":"Na <b>encosta</b> de uma rocha pontuda você só pula ladeira acima. Mude de direção na <b>ponta</b>.","갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.":"Resgate um <b>filhote de íbex</b> preso e ele segura você uma vez depois de uma grande queda. O <b>sal</b> se gasta na loja.","키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요":"Teclado: segure ← / →, ou segure Espaço e escolha o lado com ← / → · se segurar demais, a força volta a cair","오늘의 절벽 랭킹에 쓸 이름":"Nome para o ranking de hoje","오늘의 절벽":"Penhasco de hoje","소금 상점 · 가진 소금":"Loja de sal · seu sal","소금 상점":"Loja de sal","개":"","닫기":"Fechar","일시정지":"Em pausa","잠깐 멈춤":"Uma pausa","계속하기":"Continuar","처음 화면으로":"Tela inicial","처음부터":"Reiniciar","소리":"Som","궤적":"Guia","아이벡스 점프":"Ibex Jump","랭킹에 쓸 이름":"Nome para o ranking","<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.":"Chegue ao <b>cume de 3000 m</b>. Quando alcançar um <b>abrigo</b>, onde a montanha muda, você não cai mais abaixo dele.","붉은 협곡":"Cânion Vermelho","노을 지는 사암 절벽에서 출발해요":"Você parte de penhascos de arenito ao pôr do sol","회색 바위산":"Penhascos Cinzentos","단단한 화강암 절벽. 장애물이 늘어나요":"Penhascos de granito duro. Aqui há mais perigos","설산":"Montanha Nevada","눈 덮인 바위에 눈이 내려요":"Neva sobre a rocha coberta de neve","구름 위":"Acima das Nuvens","구름이 길을 가려요. 정상이 멀지 않아요":"As nuvens escondem o caminho. O cume não está longe","노을 협곡":"Cânion do Poente","노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요":"Do pôr do sol ao nascer do sol. Todo tipo de plataforma e perigo aparece em ordem","얼음 봉우리":"Pico de Gelo","발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요":"Quase todas as plataformas estão congeladas e o vento é forte. Parado, você escorrega","빙하 기슭":"Pé da Geleira","얼어붙은 바위. 발판이 미끄러워요":"Rocha congelada. As plataformas escorregam","푸른 얼음벽":"Parede de Gelo Azul","바람이 세게 불어요":"O vento sopra forte","눈보라 능선":"Crista da Nevasca","눈보라 속에서 길을 찾으세요":"Encontre o caminho na nevasca","오로라 정상":"Cume da Aurora","하늘빛이 길을 비춰요. 정상이 가까워요":"As luzes do céu iluminam o caminho. O cume está perto","불의 산":"Montanha de Fogo","아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요":"A lava sobe lá de baixo. Até onde você chega antes que ela te alcance?","검은 현무암":"Basalto Negro","용암이 차오르기 시작해요. 멈추지 마세요":"A lava começa a subir. Não pare","불타는 균열":"Fenda Ardente","금 간 발판이 많아요. 뜨거운 바람을 타세요":"Muitas plataformas estão rachadas. Aproveite o ar quente","재의 능선":"Crista de Cinzas","화산탄이 쏟아져요":"Chovem bombas vulcânicas","분화구 테두리":"Borda da Cratera","정상이 코앞이에요":"O cume está logo ali","대종주":"Grande Travessia","세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요":"Suba 3000 m por três montanhas. Onde a montanha muda há um abrigo, e você não cai mais abaixo dele","패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요":"Controle: segure L1 / R1 (ou ◀ / ▶) e solte para pular · segure A e escolha o lado com o analógico · se segurar demais, a força volta a cair","추락 -{0}m":"Queda -{0} m","쉼터":"Abrigo","여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요":"Você não cai mais abaixo daqui. Começa a próxima montanha","든든한 발굽!":"Cascos firmes!","+소금":"+Sal","아기 산양 구출! 소금 +3":"Filhote resgatado! Sal +3","아기 산양 구출!":"Filhote resgatado!","새 친구":"Novo amigo","크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리":"Segura você uma vez depois de uma grande queda. Até 3","완벽! ×{0}":"Perfeito! ×{0}","완벽!":"Perfeito!","꼭대기! ×{0}":"Ponta! ×{0}","꼭대기!":"Ponta!","미끄러짐":"Escorregou","버텼다!":"Segurou!","아기가 받쳐 줬어요!":"O filhote segurou você!","황금 소금 +5":"Sal dourado +5","새 구역":"Nova zona","아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요":"Ela sobe lá de baixo. Se tocar, você recomeça do abrigo. Não caia muito","아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요":"Ela sobe lá de baixo. Se tocar, a partida acaba ali. Não caia muito","이끼 발판":"Plataforma com musgo","미끄러워요. 착지한 기세대로 밀려나요":"Escorrega. Você segue deslizando com o impulso do pouso","움직이는 발판":"Plataforma móvel","좌우로 움직여요. 타이밍을 맞춰 뛰세요":"Ela se move de um lado para o outro. Acerte o tempo do pulo","낙석":"Queda de pedras","위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요":"Caem pedras lá de cima. Uma plataforma sobre a cabeça protege você","바람":"Vento","바람 구간에선 공중에서 옆으로 밀려요":"Numa faixa de vento, o ar empurra você para o lado","독수리":"Águia","부딪히면 떨어져요. 날아오는 쪽을 보세요":"Se acertar você, derruba. Veja de que lado ela vem","번개 치는 밤":"Noite de relâmpagos","어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요":"Está escuro e você só vê o que está perto. Decore o caminho quando o relâmpago cair","황금 소금":"Sal dourado","공중에 떠 있어요. 몸이 닿으면 소금 5개":"Flutua no ar. Toque nele e ganhe 5 de sal","새 보물":"Novo tesouro","상승기류":"Corrente ascendente","빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요":"Pule na coluna de ar brilhante: ela leva você para cima e solta na plataforma ao lado","새 지형":"Novo terreno","얼음 발판":"Plataforma de gelo","기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요":"É inclinada: parado, você escorrega para o lado baixo. Pule logo","구름 발판":"Plataforma de nuvem","나타났다 사라져요. 깜빡이면 곧 사라져요":"Aparece e some. Se piscar, está prestes a sumir","용암":"Lava","위험":"Perigo","새 장애물":"Novo perigo","용암! 쉼터에서 다시":"Lava! De volta ao abrigo","화산탄!":"Bomba vulcânica!","낙석!":"Pedra!","독수리!":"Águia!","정상 · {0}m":"Cume · {0} m","{0} 쉼터 · {1}m":"Abrigo de {0} · {1} m","▲ 용암 {0}m 아래":"▲ Lava a {0} m","바람 ▶▶":"Vento ▶▶","◀◀ 바람":"◀◀ Vento","◀ 탭! 탭!":"◀ Toque! Toque!","탭! 탭! ▶":"Toque! Toque! ▶","비탈에선 오르막 쪽으로만 뛸 수 있어요":"Na encosta você só pula ladeira acima","꼭대기! 이제 방향을 바꿀 수 있어요":"A ponta! Agora você pode mudar de direção","◀  L1 꾹":"◀  Segure L1","◀  왼쪽 꾹":"◀  Segure à esquerda","R1 꾹  ▶":"Segure R1  ▶","오른쪽 꾹  ▶":"Segure à direita  ▶","오늘의 절벽 · ":"Penhasco de hoje · ","자유 등반":"Escalada livre","{0} 최고 기록 {1}":"{0}: melhor tempo {1}"," (하드)":" (difícil)","하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주":"Modo difícil: ligado · sem filhotes nem vantagens, mais perigos","하드 모드: 꺼짐":"Modo difícil: desligado","기록 없음":"Sem recorde","새 최고 높이":"Nova altura máxima","용암에 삼켜졌어요":"A lava pegou você","새 최고 기록":"Novo melhor tempo","정상 도착":"Cume alcançado","완전판 · 세 산을 잇는 3000m":"Edição completa · 3000 m por três montanhas","넓은 화면판 · 정상까지 1000m":"Edição panorâmica · 1000 m até o cume","프로토타입 · 정상까지 1000m":"Protótipo · 1000 m até o cume","{0}m에서 끝":"Fim a {0} m","오늘의 절벽 정상!":"Cume do Penhasco de hoje!","대종주 완주!":"Grande Travessia concluída!","{0} 정상!":"Cume de {0}!","1000m 정상!":"Cume de 1000 m!","조작법 접기":"Ocultar como jogar","조작법 보기":"Como jogar","버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개":"Aguentou {0} · melhor nesta montanha {1} m · sal {2}","시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개":"Tempo {0} · melhor {1} · quedas {2} · sal {3}","시작하기":"Começar","오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요":"Melhor de hoje {0} · você sobe com o fantasma dessa marca","오늘의 절벽: 오늘은 모두 같은 절벽을 올라요":"Penhasco de hoje: hoje todos sobem o mesmo penhasco","기본 갈색 털":"Pelagem marrom","처음 털 색":"A pelagem inicial","설산 흰 털":"Pelagem branca de neve","눈처럼 하얀 산양":"Um íbex branco como a neve","검은 털":"Pelagem preta","밤에 더 숨는 산양":"Um íbex que some ainda mais à noite","황금 털":"Pelagem dourada","정상의 해처럼 빛나요":"Brilha como o sol do cume","든든한 발굽":"Cascos firmes","매 판 첫 휘청임을 저절로 버텨요":"Segura sozinho o primeiro balanço de cada partida","아기 산양 피리":"Flauta do filhote","매 판 아기 산양 1마리와 함께 출발해요":"Você começa cada partida com 1 filhote","소금 {0}":"Sal {0}","입는 중":"Em uso","입기":"Usar","가지고 있음":"Você tem","나가기":"Sair","한 번 더 누르면 게임을 닫아요":"Toque em voltar de novo para fechar o jogo","산양":"Íbex"},"de":{"최고":"Rekord","시간":"Zeit","소금":"Salz","아기 산양":"Steinbockkitz","완벽":"Perfekt","<b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.":"Erreiche den <b>1000-m-Gipfel</b>. Es gibt keine Zwischenstopps: Wer von weit oben fällt, <b>purzelt</b> ein langes Stück hinab.","화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.":"<b>Halte die linke oder rechte Seite</b> des Bildschirms, um Kraft zu sammeln, und lass los, um dorthin zu springen.","발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.":"Landest du ganz am Rand eines Simses, <b>wackelst</b> du. <b>Tippe schnell</b> auf die Seite des Simses, um dich zu halten.","뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.":"Am <b>Hang</b> eines spitzen Felsens kannst du nur bergauf springen. Die Richtung wechselst du an der <b>Spitze</b>.","갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.":"Rette ein gestrandetes <b>Steinbockkitz</b>, und es fängt dich einmal nach einem tiefen Sturz auf. <b>Salz</b> gibst du im Laden aus.","키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요":"Tastatur: ← / → halten, oder Leertaste halten und mit ← / → lenken · hältst du zu lange, lässt die Kraft wieder nach","오늘의 절벽 랭킹에 쓸 이름":"Name für die heutige Rangliste","오늘의 절벽":"Klippe des Tages","소금 상점 · 가진 소금":"Salzladen · dein Salz","소금 상점":"Salzladen","개":"","닫기":"Schließen","일시정지":"Pausiert","잠깐 멈춤":"Kurze Pause","계속하기":"Weiter","처음 화면으로":"Zum Titel","처음부터":"Neustart","소리":"Ton","궤적":"Flugbahn","아이벡스 점프":"Ibex Jump","랭킹에 쓸 이름":"Name für die Rangliste","<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.":"Erreiche den <b>3000-m-Gipfel</b>. Hast du einen <b>Rastplatz</b> am Übergang zum nächsten Berg erreicht, fällst du nie mehr darunter.","붉은 협곡":"Rote Schlucht","노을 지는 사암 절벽에서 출발해요":"Du startest an Sandsteinklippen im Abendrot","회색 바위산":"Graue Felsen","단단한 화강암 절벽. 장애물이 늘어나요":"Harte Granitklippen. Ab hier gibt es mehr Gefahren","설산":"Schneeberg","눈 덮인 바위에 눈이 내려요":"Schnee fällt auf verschneiten Fels","구름 위":"Über den Wolken","구름이 길을 가려요. 정상이 멀지 않아요":"Wolken verdecken den Weg. Der Gipfel ist nicht mehr weit","노을 협곡":"Abendrot-Schlucht","노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요":"Vom Abendrot bis zum Sonnenaufgang. Alle Arten von Simsen und Gefahren kommen der Reihe nach","얼음 봉우리":"Eisgipfel","발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요":"Fast jeder Sims ist vereist und der Wind ist stark. Wer stehen bleibt, rutscht ab","빙하 기슭":"Gletscherfuß","얼어붙은 바위. 발판이 미끄러워요":"Gefrorener Fels. Die Simse sind rutschig","푸른 얼음벽":"Blaue Eiswand","바람이 세게 불어요":"Der Wind weht kräftig","눈보라 능선":"Schneesturmgrat","눈보라 속에서 길을 찾으세요":"Finde deinen Weg durch den Schneesturm","오로라 정상":"Polarlicht-Gipfel","하늘빛이 길을 비춰요. 정상이 가까워요":"Das Licht am Himmel zeigt den Weg. Der Gipfel ist nah","불의 산":"Feuerberg","아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요":"Von unten steigt Lava auf. Wie hoch kommst du, bevor sie dich einholt?","검은 현무암":"Schwarzer Basalt","용암이 차오르기 시작해요. 멈추지 마세요":"Die Lava beginnt zu steigen. Bleib nicht stehen","불타는 균열":"Brennende Spalte","금 간 발판이 많아요. 뜨거운 바람을 타세요":"Viele Simse haben Risse. Nutze die heiße Luft","재의 능선":"Aschegrat","화산탄이 쏟아져요":"Es regnet Lavabomben","분화구 테두리":"Kraterrand","정상이 코앞이에요":"Der Gipfel ist zum Greifen nah","대종주":"Große Überschreitung","세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요":"Steige 3000 m über drei Berge. An jedem Übergang wartet ein Rastplatz, unter den du nicht mehr fällst","패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요":"Gamepad: L1 / R1 (oder ◀ / ▶) halten und loslassen zum Springen · A halten und mit dem Stick lenken · hältst du zu lange, lässt die Kraft wieder nach","추락 -{0}m":"Sturz -{0} m","쉼터":"Rastplatz","여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요":"Tiefer als hier fällst du nicht mehr. Der nächste Berg beginnt","든든한 발굽!":"Feste Hufe!","+소금":"+Salz","아기 산양 구출! 소금 +3":"Kitz gerettet! Salz +3","아기 산양 구출!":"Kitz gerettet!","새 친구":"Neuer Freund","크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리":"Fängt dich einmal nach einem tiefen Sturz auf. Bis zu 3","완벽! ×{0}":"Perfekt! ×{0}","완벽!":"Perfekt!","꼭대기! ×{0}":"Spitze! ×{0}","꼭대기!":"Spitze!","미끄러짐":"Abgerutscht","버텼다!":"Gehalten!","아기가 받쳐 줬어요!":"Das Kitz hat dich aufgefangen!","황금 소금 +5":"Goldsalz +5","새 구역":"Neue Zone","아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요":"Sie steigt von unten auf. Berührst du sie, beginnst du wieder am Rastplatz. Fall nicht tief","아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요":"Sie steigt von unten auf. Berührst du sie, endet der Lauf sofort. Fall nicht tief","이끼 발판":"Moos-Sims","미끄러워요. 착지한 기세대로 밀려나요":"Rutschig. Du gleitest mit dem Schwung der Landung weiter","움직이는 발판":"Beweglicher Sims","좌우로 움직여요. 타이밍을 맞춰 뛰세요":"Er gleitet hin und her. Pass den Sprung gut ab","낙석":"Steinschlag","위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요":"Von oben fallen Steine. Ein Sims über dir schützt dich","바람":"Wind","바람 구간에선 공중에서 옆으로 밀려요":"In einer Windzone wirst du in der Luft zur Seite gedrückt","독수리":"Adler","부딪히면 떨어져요. 날아오는 쪽을 보세요":"Trifft er dich, stößt er dich herunter. Achte auf die Seite, von der er kommt","번개 치는 밤":"Gewitternacht","어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요":"Es ist dunkel und du siehst nur die Umgebung. Merk dir den Weg nach oben, wenn es blitzt","황금 소금":"Goldsalz","공중에 떠 있어요. 몸이 닿으면 소금 5개":"Es schwebt in der Luft. Berühre es für 5 Salz","새 보물":"Neuer Schatz","상승기류":"Aufwind","빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요":"Spring in die leuchtende Luftsäule: Sie trägt dich hinauf und setzt dich auf dem Sims daneben ab","새 지형":"Neues Gelände","얼음 발판":"Eis-Sims","기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요":"Er ist geneigt: Stehst du still, rutschst du zur tiefen Seite. Spring schnell","구름 발판":"Wolken-Sims","나타났다 사라져요. 깜빡이면 곧 사라져요":"Er kommt und geht. Flackert er, verschwindet er gleich","용암":"Lava","위험":"Gefahr","새 장애물":"Neue Gefahr","용암! 쉼터에서 다시":"Lava! Zurück zum Rastplatz","화산탄!":"Lavabombe!","낙석!":"Steinschlag!","독수리!":"Adler!","정상 · {0}m":"Gipfel · {0} m","{0} 쉼터 · {1}m":"Rastplatz {0} · {1} m","▲ 용암 {0}m 아래":"▲ Lava {0} m unter dir","바람 ▶▶":"Wind ▶▶","◀◀ 바람":"◀◀ Wind","◀ 탭! 탭!":"◀ Tipp! Tipp!","탭! 탭! ▶":"Tipp! Tipp! ▶","비탈에선 오르막 쪽으로만 뛸 수 있어요":"Am Hang kannst du nur bergauf springen","꼭대기! 이제 방향을 바꿀 수 있어요":"Die Spitze! Jetzt kannst du die Richtung wechseln","◀  L1 꾹":"◀  L1 halten","◀  왼쪽 꾹":"◀  Links halten","R1 꾹  ▶":"R1 halten  ▶","오른쪽 꾹  ▶":"Rechts halten  ▶","오늘의 절벽 · ":"Klippe des Tages · ","자유 등반":"Freies Klettern","{0} 최고 기록 {1}":"{0}: Bestzeit {1}"," (하드)":" (schwer)","하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주":"Schwerer Modus: an · keine Kitze, keine Vorteile, mehr Gefahren","하드 모드: 꺼짐":"Schwerer Modus: aus","기록 없음":"Kein Rekord","새 최고 높이":"Neue Bestmarke","용암에 삼켜졌어요":"Die Lava hat dich erwischt","새 최고 기록":"Neue Bestzeit","정상 도착":"Gipfel erreicht","완전판 · 세 산을 잇는 3000m":"Vollversion · 3000 m über drei Berge","넓은 화면판 · 정상까지 1000m":"Breitbild-Version · 1000 m bis zum Gipfel","프로토타입 · 정상까지 1000m":"Prototyp · 1000 m bis zum Gipfel","{0}m에서 끝":"Ende bei {0} m","오늘의 절벽 정상!":"Klippe des Tages: Gipfel!","대종주 완주!":"Große Überschreitung geschafft!","{0} 정상!":"{0}: Gipfel!","1000m 정상!":"1000-m-Gipfel!","조작법 접기":"Anleitung ausblenden","조작법 보기":"Anleitung","버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개":"Durchgehalten {0} · Bestmarke an diesem Berg {1} m · Salz {2}","시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개":"Zeit {0} · Bestzeit {1} · Stürze {2} · Salz {3}","시작하기":"Start","오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요":"Tagesbestzeit {0} · du kletterst neben dem Geist dieses Laufs","오늘의 절벽: 오늘은 모두 같은 절벽을 올라요":"Klippe des Tages: Heute klettern alle an derselben Klippe","기본 갈색 털":"Braunes Fell","처음 털 색":"Das Fell vom Anfang","설산 흰 털":"Schneeweißes Fell","눈처럼 하얀 산양":"Ein Steinbock, weiß wie Schnee","검은 털":"Schwarzes Fell","밤에 더 숨는 산양":"Ein Steinbock, der nachts noch besser verschwindet","황금 털":"Goldenes Fell","정상의 해처럼 빛나요":"Es glänzt wie die Sonne am Gipfel","든든한 발굽":"Feste Hufe","매 판 첫 휘청임을 저절로 버텨요":"Fängt den ersten Wackler jedes Laufs von selbst ab","아기 산양 피리":"Kitz-Flöte","매 판 아기 산양 1마리와 함께 출발해요":"Du startest jeden Lauf mit 1 Kitz","소금 {0}":"Salz {0}","입는 중":"Angelegt","입기":"Anlegen","가지고 있음":"Im Besitz","나가기":"Beenden","한 번 더 누르면 게임을 닫아요":"Drück noch einmal Zurück, um das Spiel zu schließen","산양":"Steinbock"},"fr":{"최고":"Record","시간":"Temps","소금":"Sel","아기 산양":"Cabri","완벽":"Parfait","<b>1000m 정상</b>이 목표예요. 중간 지점이 없어서, 높은 데서 떨어지면 <b>데굴데굴</b> 한참 굴러떨어져요.":"Atteins le <b>sommet à 1000 m</b>. Il n'y a pas de point d'étape : une chute de haut te fait <b>dégringoler</b> très loin.","화면 <b>왼쪽·오른쪽을 꾹</b> 눌러 힘을 모으고, 떼면 그쪽으로 뛰어요.":"<b>Maintiens le côté gauche ou droit</b> de l'écran pour charger, puis relâche pour sauter de ce côté.","발판 끝에 걸치면 <b>휘청거려요</b>. 발판 쪽 화면을 <b>연타</b>해서 버티세요.":"Si tu atterris au bout d'une corniche, tu <b>vacilles</b>. <b>Tape vite</b> du côté de la corniche pour tenir.","뾰족 바위 <b>비탈</b>에선 오르막 쪽으로만 뛰어요. 방향은 <b>꼭대기</b>에서 바꿔요.":"Sur la <b>pente</b> d'un rocher pointu, tu ne peux sauter que vers le haut. Change de direction à la <b>pointe</b>.","갇힌 <b>아기 산양</b>을 구하면 크게 떨어질 때 한 번 받쳐 줘요. <b>소금</b>은 상점에서 써요.":"Sauve un <b>cabri</b> coincé et il te rattrape une fois après une longue chute. Le <b>sel</b> se dépense à la boutique.","키보드: ← / → 꾹, 또는 스페이스 꾹 + ← / →로 방향 · 오래 누르면 힘이 다시 줄어요":"Clavier : maintiens ← / →, ou maintiens Espace et choisis le côté avec ← / → · si tu maintiens trop, la force retombe","오늘의 절벽 랭킹에 쓸 이름":"Nom pour le classement du jour","오늘의 절벽":"Falaise du jour","소금 상점 · 가진 소금":"Boutique de sel · ton sel","소금 상점":"Boutique de sel","개":"","닫기":"Fermer","일시정지":"En pause","잠깐 멈춤":"Petite pause","계속하기":"Reprendre","처음 화면으로":"Écran titre","처음부터":"Recommencer","소리":"Son","궤적":"Trajectoire","아이벡스 점프":"Ibex Jump","랭킹에 쓸 이름":"Nom pour le classement","<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.":"Atteins le <b>sommet à 3000 m</b>. Une fois à un <b>refuge</b>, là où la montagne change, tu ne retombes jamais plus bas.","붉은 협곡":"Canyon Rouge","노을 지는 사암 절벽에서 출발해요":"Tu pars de falaises de grès au coucher du soleil","회색 바위산":"Rochers Gris","단단한 화강암 절벽. 장애물이 늘어나요":"Falaises de granit dur. Les dangers se multiplient","설산":"Mont Enneigé","눈 덮인 바위에 눈이 내려요":"Il neige sur la roche enneigée","구름 위":"Au-dessus des Nuages","구름이 길을 가려요. 정상이 멀지 않아요":"Les nuages cachent le chemin. Le sommet n'est plus loin","노을 협곡":"Canyon du Couchant","노을에서 해돋이까지. 온갖 발판과 장애물이 차례로 나와요":"Du couchant au lever du soleil. Toutes sortes de corniches et de dangers se succèdent","얼음 봉우리":"Pic de Glace","발판이 거의 다 얼어 있고 바람이 세요. 서 있으면 미끄러져요":"Presque toutes les corniches sont gelées et le vent est fort. Immobile, tu glisses","빙하 기슭":"Pied du Glacier","얼어붙은 바위. 발판이 미끄러워요":"Roche gelée. Les corniches glissent","푸른 얼음벽":"Mur de Glace Bleue","바람이 세게 불어요":"Le vent souffle fort","눈보라 능선":"Crête du Blizzard","눈보라 속에서 길을 찾으세요":"Trouve ton chemin dans le blizzard","오로라 정상":"Sommet de l'Aurore","하늘빛이 길을 비춰요. 정상이 가까워요":"Les lueurs du ciel éclairent le chemin. Le sommet est proche","불의 산":"Mont de Feu","아래에서 용암이 차올라요. 잡히기 전에 얼마나 높이 오를 수 있을까요":"La lave monte d'en bas. Jusqu'où iras-tu avant qu'elle te rattrape ?","검은 현무암":"Basalte Noir","용암이 차오르기 시작해요. 멈추지 마세요":"La lave commence à monter. Ne t'arrête pas","불타는 균열":"Faille Ardente","금 간 발판이 많아요. 뜨거운 바람을 타세요":"Beaucoup de corniches sont fissurées. Profite de l'air chaud","재의 능선":"Crête de Cendres","화산탄이 쏟아져요":"Des bombes volcaniques pleuvent","분화구 테두리":"Bord du Cratère","정상이 코앞이에요":"Le sommet est juste là","대종주":"Grande Traversée","세 산을 이어서 3000m를 올라요. 산이 바뀌는 곳마다 쉼터가 있어서 그 아래로는 떨어지지 않아요":"Grimpe 3000 m à travers trois montagnes. Un refuge t'attend à chaque changement de montagne, et tu ne retombes jamais plus bas","패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요":"Manette : maintiens L1 / R1 (ou ◀ / ▶) puis relâche pour sauter · maintiens A et choisis le côté au stick · si tu maintiens trop, la force retombe","추락 -{0}m":"Chute -{0} m","쉼터":"Refuge","여기 아래로는 떨어지지 않아요. 다음 산이 시작돼요":"Tu ne tomberas plus en dessous d'ici. La montagne suivante commence","든든한 발굽!":"Sabots solides !","+소금":"+Sel","아기 산양 구출! 소금 +3":"Cabri sauvé ! Sel +3","아기 산양 구출!":"Cabri sauvé !","새 친구":"Nouvel ami","크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리":"Il te rattrape une fois après une longue chute. Jusqu'à 3","완벽! ×{0}":"Parfait ! ×{0}","완벽!":"Parfait !","꼭대기! ×{0}":"Pointe ! ×{0}","꼭대기!":"Pointe !","미끄러짐":"Glissade","버텼다!":"Tenu !","아기가 받쳐 줬어요!":"Le cabri t'a rattrapé !","황금 소금 +5":"Sel doré +5","새 구역":"Nouvelle zone","아래에서 차올라요. 닿으면 쉼터에서 다시 시작해요. 크게 떨어지면 안 돼요":"Elle monte d'en bas. Si tu la touches, tu repars du refuge. Ne tombe pas de haut","아래에서 차올라요. 닿으면 그 자리에서 끝나요. 크게 떨어지면 안 돼요":"Elle monte d'en bas. Si tu la touches, la partie s'arrête là. Ne tombe pas de haut","이끼 발판":"Corniche moussue","미끄러워요. 착지한 기세대로 밀려나요":"Ça glisse. Tu continues sur l'élan de l'atterrissage","움직이는 발판":"Corniche mobile","좌우로 움직여요. 타이밍을 맞춰 뛰세요":"Elle va de gauche à droite. Saute au bon moment","낙석":"Chutes de pierres","위에서 돌이 떨어져요. 발판 밑에 있으면 막아 줘요":"Des pierres tombent d'en haut. Une corniche au-dessus de toi te protège","바람":"Vent","바람 구간에선 공중에서 옆으로 밀려요":"Dans une zone de vent, tu es poussé de côté en plein saut","독수리":"Aigle","부딪히면 떨어져요. 날아오는 쪽을 보세요":"S'il te touche, il te fait tomber. Regarde de quel côté il arrive","번개 치는 밤":"Nuit d'éclairs","어두워서 주변만 보여요. 번개가 칠 때 위쪽 길을 외워 두세요":"Il fait noir et tu ne vois que les alentours. Mémorise le chemin quand un éclair frappe","황금 소금":"Sel doré","공중에 떠 있어요. 몸이 닿으면 소금 5개":"Il flotte dans les airs. Touche-le pour 5 de sel","새 보물":"Nouveau trésor","상승기류":"Courant ascendant","빛나는 바람 기둥에 뛰어들면 위로 실어 올려 옆 발판에 내려 줘요":"Saute dans la colonne d'air lumineuse : elle te soulève et te dépose sur la corniche d'à côté","새 지형":"Nouveau terrain","얼음 발판":"Corniche de glace","기울어 있어서 서 있으면 낮은 쪽으로 미끄러져요. 빨리 뛰세요":"Elle est inclinée : immobile, tu glisses vers le bas. Saute vite","구름 발판":"Corniche de nuage","나타났다 사라져요. 깜빡이면 곧 사라져요":"Elle apparaît et disparaît. Si elle clignote, elle va s'effacer","용암":"Lave","위험":"Danger","새 장애물":"Nouveau danger","용암! 쉼터에서 다시":"Lave ! Retour au refuge","화산탄!":"Bombe volcanique !","낙석!":"Pierre !","독수리!":"Aigle !","정상 · {0}m":"Sommet · {0} m","{0} 쉼터 · {1}m":"Refuge de {0} · {1} m","▲ 용암 {0}m 아래":"▲ Lave à {0} m","바람 ▶▶":"Vent ▶▶","◀◀ 바람":"◀◀ Vent","◀ 탭! 탭!":"◀ Tape ! Tape !","탭! 탭! ▶":"Tape ! Tape ! ▶","비탈에선 오르막 쪽으로만 뛸 수 있어요":"Sur une pente, tu ne peux sauter que vers le haut","꼭대기! 이제 방향을 바꿀 수 있어요":"La pointe ! Tu peux maintenant changer de direction","◀  L1 꾹":"◀  Maintiens L1","◀  왼쪽 꾹":"◀  Maintiens à gauche","R1 꾹  ▶":"Maintiens R1  ▶","오른쪽 꾹  ▶":"Maintiens à droite  ▶","오늘의 절벽 · ":"Falaise du jour · ","자유 등반":"Escalade libre","{0} 최고 기록 {1}":"{0} : meilleur temps {1}"," (하드)":" (difficile)","하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주":"Mode difficile : activé · ni cabris ni bonus, plus de dangers","하드 모드: 꺼짐":"Mode difficile : désactivé","기록 없음":"Aucun record","새 최고 높이":"Nouvelle hauteur record","용암에 삼켜졌어요":"La lave t'a rattrapé","새 최고 기록":"Nouveau meilleur temps","정상 도착":"Sommet atteint","완전판 · 세 산을 잇는 3000m":"Édition complète · 3000 m sur trois montagnes","넓은 화면판 · 정상까지 1000m":"Édition large · 1000 m jusqu'au sommet","프로토타입 · 정상까지 1000m":"Prototype · 1000 m jusqu'au sommet","{0}m에서 끝":"Fin à {0} m","오늘의 절벽 정상!":"Falaise du jour : sommet !","대종주 완주!":"Grande Traversée terminée !","{0} 정상!":"{0} : sommet !","1000m 정상!":"Sommet à 1000 m !","조작법 접기":"Masquer l'aide","조작법 보기":"Comment jouer","버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개":"Tenu {0} · record sur cette montagne {1} m · sel {2}","시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개":"Temps {0} · meilleur {1} · chutes {2} · sel {3}","시작하기":"Commencer","오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요":"Meilleur du jour {0} · tu grimpes avec le fantôme de ce record","오늘의 절벽: 오늘은 모두 같은 절벽을 올라요":"Falaise du jour : aujourd'hui, tout le monde grimpe la même falaise","기본 갈색 털":"Pelage brun","처음 털 색":"Le pelage de départ","설산 흰 털":"Pelage blanc neige","눈처럼 하얀 산양":"Un bouquetin blanc comme neige","검은 털":"Pelage noir","밤에 더 숨는 산양":"Un bouquetin encore plus discret la nuit","황금 털":"Pelage doré","정상의 해처럼 빛나요":"Il brille comme le soleil du sommet","든든한 발굽":"Sabots solides","매 판 첫 휘청임을 저절로 버텨요":"Rattrape tout seul le premier vacillement de chaque partie","아기 산양 피리":"Flûte du cabri","매 판 아기 산양 1마리와 함께 출발해요":"Tu commences chaque partie avec 1 cabri","소금 {0}":"Sel {0}","입는 중":"Porté","입기":"Porter","가지고 있음":"Acquis","나가기":"Quitter","한 번 더 누르면 게임을 닫아요":"Appuie encore sur retour pour fermer le jeu","산양":"Bouquetin"}};   // @i18n
+const LANGS = { ko: '한국어', en: 'English', ja: '日本語', 'zh-Hans': '简体中文', 'zh-Hant': '繁體中文', es: 'Español', pt: 'Português', de: 'Deutsch', fr: 'Français' };
+const LANG = (() => {
+  const saved = store.get('ibex.lang', '');
+  if (LANGS[saved]) return saved;
+  for (const raw of navigator.languages || [navigator.language || 'ko']) {
+    const l = String(raw).toLowerCase();
+    if (l.startsWith('zh')) return /tw|hk|mo|hant/.test(l) ? 'zh-Hant' : 'zh-Hans';
+    if (LANGS[l.slice(0, 2)]) return l.slice(0, 2);
+  }
+  return 'en';
+})();
+const DICT = I18N[LANG] || null;
+function tr(s, ...a) {
+  const r = DICT && DICT[s] != null ? DICT[s] : s;
+  return a.length ? r.replace(/\{(\d)\}/g, (m, i) => a[i]) : r;
+}
+// the page's own text: every element marked data-t is written in Korean and swapped here, before anything reads it
+document.documentElement.lang = LANG;
+// canvas text uses the page's own font stacks, which the stylesheet changes for Japanese and Chinese
+const FONT_BODY = getComputedStyle(document.documentElement).getPropertyValue('--body').trim() || 'system-ui, sans-serif';
+const FONT_DISPLAY = getComputedStyle(document.documentElement).getPropertyValue('--display').trim() || 'Georgia, serif';
+document.title = tr('아이벡스 점프');
+for (const el of document.querySelectorAll('[data-t]')) el.innerHTML = tr(el.innerHTML.trim());
+document.getElementById('nameIn').placeholder = tr('랭킹에 쓸 이름');
+if (FULL) document.getElementById('howGoal').innerHTML = tr('<b>3000m 정상</b>이 목표예요. 산이 바뀌는 곳의 <b>쉼터</b>까지 오르면 그 아래로는 떨어지지 않아요.');
+{
+  const sel = document.getElementById('langSel');
+  for (const [k, name] of Object.entries(LANGS)) sel.append(Object.assign(document.createElement('option'), { value: k, textContent: name, selected: k === LANG }));
+  sel.addEventListener('change', () => { store.set('ibex.lang', sel.value); location.reload(); });
+}
 
 // ---- helpers ----
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -592,8 +650,22 @@ function reset() {
 let chargeKey = null;                        // which key started the current charge, so only its release jumps
 const held = { left: false, right: false };
 
+// ---- pause: a long climb can be put down. Leaving the page or app pauses it; so do Esc, the pad's Start and Android's back ----
+let paused = false;
+function setPause(on) {
+  on = on && state === 'play';
+  if (on === paused) return;
+  paused = on; $('pauseOv').hidden = !on;
+  if (master) master.gain.value = soundOn && !on ? 0.7 : 0;
+  if (!on) return;
+  release(); held.left = held.right = false;
+  $('pauseInfo').textContent = `${Math.max(0, Math.floor(ib.y / U))}m · ${fmtTime(runTime)}`;
+  $('resumeBtn').focus({ preventScroll: true });
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) setPause(true); });
+
 function press(side) {
-  if (state !== 'play' || !ib.on) return;
+  if (state !== 'play' || paused || !ib.on) return;
   if (ib.wob) {                      // teetering: taps are for balance, not jumping
     ib.wob.vel += side === -ib.wob.dir ? -TAP : TAP * 0.45;
     ib.wob.flash = 0.15;
@@ -647,6 +719,7 @@ window.addEventListener('blur', release);
 // Keyboard: hold ←/→ to charge toward that side, or hold Space and steer with ←/→ (A/D work too).
 const KEYS = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ' ': 'space', Enter: 'enter' };
 window.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !e.repeat && (paused || state === 'play')) { setPause(!paused); return; }
   const k = KEYS[e.key];
   if (!k) return;
   if ((k === 'space' || k === 'enter') && e.target && e.target.closest && e.target.closest('button,label')) return;
@@ -656,6 +729,7 @@ window.addEventListener('keydown', e => {
 });
 // left / right / space from the keyboard or a gamepad
 function inputDown(k) {
+  if (paused) { if (k === 'space' || k === 'enter') setPause(false); return; }
   if (state !== 'play') { if (k === 'space' || k === 'enter') startGame(); return; }
   const wasCharging = ib.charging;
   if (k === 'left' || k === 'right') {
@@ -691,21 +765,22 @@ function pollPad() {
   const was = pad.was, hit = k => now[k] && !was[k];
   pad.was = now;
   if (!pad.on && Object.values(now).some(Boolean)) { pad.on = true; document.body.classList.add('pad'); padKeys(); }
-  if (state === 'play') {
+  if (state === 'play' && !paused) {
+    if (hit('start')) { setPause(true); return; }
     for (const k of ['left', 'right', 'space']) { if (hit(k)) inputDown(k); else if (was[k] && !now[k]) inputUp(k); }
     return;
   }
   // menus (a focus the page moved itself, like showOverlay's, gets the pad ring too)
   const ae = document.activeElement && document.activeElement.closest && document.activeElement.closest('button');
   if (ae && !ae.classList.contains('padf')) padFocus(ae);
-  const btns = [...$('overlay').querySelectorAll('button')].filter(el => el.offsetParent);
+  const btns = [...$(paused ? 'pauseOv' : 'overlay').querySelectorAll('button')].filter(el => el.offsetParent);
   const cur = btns.indexOf(document.activeElement);
   const go = d => { const el = btns[(Math.max(0, cur) + d + btns.length) % btns.length]; if (el) { el.focus({ preventScroll: true }); padFocus(el); } };
   if (hit('left') || hit('up')) go(cur < 0 ? 0 : -1);
   if (hit('right') || hit('down')) go(cur < 0 ? 0 : 1);
-  if (hit('space')) { if (cur >= 0) btns[cur].click(); else startGame(); }
-  if (hit('start')) startGame();
-  if (hit('back') && !$('shop').hidden) showOverlay();
+  if (hit('space')) { if (cur >= 0) btns[cur].click(); else if (paused) setPause(false); else startGame(); }
+  if (hit('start')) { if (paused) setPause(false); else startGame(); }
+  if (hit('back')) { if (paused) setPause(false); else if (!$('shop').hidden) showOverlay(); }
 }
 function padFocus(el) {
   for (const o of document.querySelectorAll('.padf')) o.classList.remove('padf');
@@ -714,7 +789,7 @@ function padFocus(el) {
 document.addEventListener('focusin', e => padFocus(e.target.closest && e.target.closest('button')));
 window.addEventListener('pointerdown', () => { padFocus(null); }, true);
 function padKeys() {
-  if (pad.on) $('ovKeys').textContent = '패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요';
+  if (pad.on) $('ovKeys').textContent = tr('패드: L1 / R1 (또는 ◀ / ▶) 꾹 누르고 떼면 점프 · A 꾹 + 스틱으로 방향 · 오래 누르면 힘이 다시 줄어요');
 }
 
 // ---- simulation ----
@@ -725,7 +800,7 @@ function fallCheck(y) {
   if (drop < 90) return false;
   falls++; combo = 0;
   shake(Math.min(9, drop / 45));
-  pops.push({ x: ib.x, y: y + 50, text: `추락 -${Math.round(drop / U)}m`, t: 0 });
+  pops.push({ x: ib.x, y: y + 50, text: tr('추락 -{0}m', Math.round(drop / U)), t: 0 });
   return true;
 }
 
@@ -749,7 +824,7 @@ function land(l) {
     pebbles(l, ib.wob.dir, 5);
     if (owned.has('hoof') && !hoofUsed && !hard) {   // 든든한 발굽: the first teeter of a run steadies itself
       hoofUsed = true; ib.wob = null; ib.off = Math.sign(o) * (hw - 4);
-      pops.push({ x: l.x, y: l.top + 50, text: '든든한 발굽!', t: 0 }); sfx('save');
+      pops.push({ x: l.x, y: l.top + 50, text: tr('든든한 발굽!'), t: 0 }); sfx('save');
     } else { sfx('teeter'); slowmo(0.3); }
   } else ib.off = clamp(o, -hw + 3, hw - 3);
   ib.slide = l.moss && !ib.wob ? vxIn * 0.55 : 0;
@@ -757,14 +832,14 @@ function land(l) {
   if (l.salt) {
     l.salt = false; salt++; sfx('salt');
     wallet++; store.set('ibex.wallet', wallet);
-    pops.push({ x: l.x, y: l.top + 50, text: '+소금', t: 0 });
+    pops.push({ x: l.x, y: l.top + 50, text: tr('+소금'), t: 0 });
     for (let i = 0; i < 12; i++) parts.push({ x: l.x + rand(-6, 6), y: l.top + rand(2, 8), vx: rand(-70, 70), vy: rand(60, 200), life: 0.7, t: 0, r: rand(1, 2), col: 'salt' });
   }
   if (l.baby) {
     l.baby = false;
     if (hard) { salt += 3; wallet += 3; store.set('ibex.wallet', wallet); }   // hard mode: no catches, the kid just thanks you
     else if (babies < 3) babies++;
-    pops.push({ x: l.x, y: l.top + 56, text: hard ? '아기 산양 구출! 소금 +3' : '아기 산양 구출!', t: 0 }); sfx('bleat');
+    pops.push({ x: l.x, y: l.top + 56, text: tr(hard ? '아기 산양 구출! 소금 +3' : '아기 산양 구출!'), t: 0 }); sfx('bleat');
     if (!hard && !seen.has('baby')) { seen.add('baby'); showBanner('새 친구', '아기 산양', '크게 떨어질 때 한 번 받쳐 줘요. 최대 3마리'); }
   }
   if (same) { syncHud(); return; }
@@ -772,7 +847,7 @@ function land(l) {
   maxAlt = Math.max(maxAlt, l.top / U); lavaRef = Math.max(lavaRef, l.top);
   if (!fell && !ib.wob && !l.ground && !l.camp && ao <= hw * 0.4) {
     combo++; perfects++; sfx('perfect');
-    pops.push({ x: l.x, y: l.top + 50, text: combo > 1 ? `완벽! ×${combo}` : '완벽!', t: 0 });
+    pops.push({ x: l.x, y: l.top + 50, text: combo > 1 ? tr('완벽! ×{0}', combo) : tr('완벽!'), t: 0 });
   } else combo = 0;
   if (l.crumble && l.crT < 0) l.crT = CR_T;
   syncHud();
@@ -795,7 +870,7 @@ function landSpike(l) {
     maxAlt = Math.max(maxAlt, ib.y / U); lavaRef = Math.max(lavaRef, ib.y);
     if (!ib.zone && !fell) { combo++; perfects++; } else combo = 0;
   }
-  if (!ib.zone) pops.push({ x: l.x, y: l.top + 50, text: !same && combo > 1 ? `꼭대기! ×${combo}` : '꼭대기!', t: 0 });
+  if (!ib.zone) pops.push({ x: l.x, y: l.top + 50, text: !same && combo > 1 ? tr('꼭대기! ×{0}', combo) : tr('꼭대기!'), t: 0 });
   syncHud();
 }
 
@@ -870,12 +945,12 @@ function update(dt) {
         if (w.phi >= 1) {
           ib.launch = { l, off: ib.off - w.dir * 6, y: ib.y };
           ib.on = null; ib.from = l; ib.wob = null; ib.vx = w.dir * 70; ib.vy = 50; combo = 0;
-          pops.push({ x: l.x, y: l.top + 50, text: '미끄러짐', t: 0 });
+          pops.push({ x: l.x, y: l.top + 50, text: tr('미끄러짐'), t: 0 });
           sfx('slip');
           pebbles(l, w.dir, 8);
         } else if (w.phi <= 0.05) {
           ib.wob = null; ib.off = w.dir * (l.w / 2 - 4); ib.iceV = 0; ib.grip = 1; saves++;
-          pops.push({ x: l.x, y: l.top + 50, text: '버텼다!', t: 0 });
+          pops.push({ x: l.x, y: l.top + 50, text: tr('버텼다!'), t: 0 });
           sfx('save'); slowmo(0.25);
           syncHud();
         }
@@ -890,7 +965,7 @@ function update(dt) {
         babies--; ib.launch = null; ib.peak = null; ib.from = L.l; ib.vx = ib.vy = 0;
         ib.x = L.l.x + clamp(L.off, -L.l.w / 2 + 3, L.l.w / 2 - 3); ib.y = L.y;
         (L.l.spike ? landSpike : land)(L.l);
-        pops.push({ x: ib.x, y: ib.y + 56, text: '아기가 받쳐 줬어요!', t: 0 }); sfx('bleat'); slowmo(0.3);
+        pops.push({ x: ib.x, y: ib.y + 56, text: tr('아기가 받쳐 줬어요!'), t: 0 }); sfx('bleat'); slowmo(0.3);
         for (let i = 0; i < 14; i++) parts.push({ x: ib.x + rand(-10, 10), y: ib.y + rand(0, 20), vx: rand(-90, 90), vy: rand(40, 180), life: 0.7, t: 0, r: rand(1, 2.2), col: 'salt' });
       }
       ib.peak = Math.max(ib.peak, ib.y);
@@ -909,7 +984,7 @@ function update(dt) {
   if (state === 'play') for (const q of gems) {
     if (q.got || Math.hypot(q.x - ib.x, q.y - (ib.y + 14)) > 16) continue;
     q.got = true; salt += 5; wallet += 5; store.set('ibex.wallet', wallet); sfx('salt');
-    pops.push({ x: q.x, y: q.y + 30, text: '황금 소금 +5', t: 0 });
+    pops.push({ x: q.x, y: q.y + 30, text: tr('황금 소금 +5'), t: 0 });
     for (let i = 0; i < 18; i++) parts.push({ x: q.x, y: q.y, vx: rand(-110, 110), vy: rand(-40, 200), life: 0.9, t: 0, r: rand(1, 2.4), col: 'gold' });
   }
 
@@ -973,7 +1048,7 @@ const seen = new Set();
 // banners queue up so a new zone and a new obstacle never overwrite each other
 const bannerQ = [];
 let bannerBusy = false;
-function showBanner(label, title, desc) { bannerQ.push([label, title, desc]); if (!bannerBusy) nextBanner(); }
+function showBanner(label, title, desc) { bannerQ.push([tr(label), tr(title), tr(desc)]); if (!bannerBusy) nextBanner(); }
 function nextBanner() {
   const b = bannerQ.shift();
   if (!b) { bannerBusy = false; $('banner').hidden = true; return; }
@@ -1002,7 +1077,7 @@ function burn() {
     ib.from = null; ib.x = clamp(ib.x, 40, edgeAt(c.top) - 40); ib.y = c.top; ib.vx = ib.vy = 0;
     land(c);
     lava = c.top - 260; lavaT = runTime + 6; lavaRef = c.top; ib.hurt = 1.1; cam = ib.y - viewH * 0.3;
-    pops.push({ x: ib.x, y: ib.y + 56, text: '용암! 쉼터에서 다시', t: 0 }); sfx('hit'); shake(9);
+    pops.push({ x: ib.x, y: ib.y + 56, text: tr('용암! 쉼터에서 다시'), t: 0 }); sfx('hit'); shake(9);
     return;
   }
   state = 'dead'; ib.charging = false; chargeKey = null; ib.on = null; ib.vx = ib.vy = 0;
@@ -1164,7 +1239,7 @@ function knock(dir, label) {
   if (ib.on) { ib.launch = { l: ib.on, off: ib.off, y: ib.y }; ib.from = ib.on; ib.on = null; }
   ib.wob = null; ib.slide = 0; ib.charging = false; chargeKey = null;
   ib.vx = dir * 140; ib.vy = 120; combo = 0;
-  pops.push({ x: ib.x, y: ib.y + 50, text: label, t: 0 });
+  pops.push({ x: ib.x, y: ib.y + 50, text: tr(label), t: 0 });
   sfx('hit'); shake(6);
   return true;
 }
@@ -1559,9 +1634,9 @@ function drawCamp(l, p) {
     ctx.beginPath(); ctx.moveTo(cx - 3 * s, y0 - s); ctx.lineTo(cx, y0 - (8 + 2 * fl) * s); ctx.lineTo(cx + 3 * s, y0 - s); ctx.closePath(); ctx.fill();
   }
   ctx.save();
-  ctx.font = `600 ${Math.round(11 * Math.max(1, s))}px "IBM Plex Sans KR", system-ui, sans-serif`;
+  ctx.font = `600 ${Math.round(11 * Math.max(1, s))}px ${FONT_BODY}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(255,240,220,.75)';
-  ctx.fillText(l.summit ? `정상 · ${route.length * SEG}m` : `${route[l.camp].name} 쉼터 · ${l.camp * SEG}m`, W / 2 * s, y0 + 12 * s);
+  ctx.fillText(l.summit ? tr('정상 · {0}m', route.length * SEG) : tr('{0} 쉼터 · {1}m', tr(route[l.camp].name), l.camp * SEG), W / 2 * s, y0 + 12 * s);
   ctx.restore();
 }
 
@@ -1732,10 +1807,10 @@ function drawLava() {
   }
   if (state === 'play' && y > ch - 30) {
     const m = Math.max(0, Math.ceil((ib.y - lava) / U)), near = m < 30;
-    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 14px system-ui, sans-serif';
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `700 14px ${FONT_BODY}`;
     ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(30,10,6,.7)';
     ctx.fillStyle = near ? `rgba(255,${120 + 80 * Math.abs(Math.sin(time * 6))},70,1)` : 'rgba(255,170,90,.9)';
-    const label = `▲ 용암 ${m}m 아래`;
+    const label = tr('▲ 용암 {0}m 아래', m);
     ctx.strokeText(label, SX(cw / 2), ch - 74); ctx.fillText(label, SX(cw / 2), ch - 74);
     ctx.restore();
   }
@@ -1952,7 +2027,7 @@ function drawEagle(e, p) {
 
 function warnMark(x, y, glyph) {
   ctx.fillStyle = '#e8572e'; ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#fff3dc'; ctx.font = '800 15px "IBM Plex Sans KR", system-ui, sans-serif';
+  ctx.fillStyle = '#fff3dc'; ctx.font = `800 15px ${FONT_BODY}`;
   ctx.fillText(glyph, x, y + 1);
 }
 
@@ -1988,9 +2063,9 @@ function drawHazards(p) {
   const w = state === 'play' ? windAt(ib.y) : 0;
   if (Math.abs(w) > 20) {
     ctx.globalAlpha = clamp(Math.abs(w) / 230, 0.35, 1);
-    ctx.font = '600 14px "IBM Plex Sans KR", system-ui, sans-serif'; ctx.lineWidth = 4;
+    ctx.font = `600 14px ${FONT_BODY}`; ctx.lineWidth = 4;
     ctx.strokeStyle = 'rgba(50,18,6,.5)'; ctx.fillStyle = '#fff3dc';
-    const label = w > 0 ? '바람 ▶▶' : '◀◀ 바람';
+    const label = tr(w > 0 ? '바람 ▶▶' : '◀◀ 바람');
     ctx.strokeText(label, SX(cw / 2), 96); ctx.fillText(label, SX(cw / 2), 96);
   }
   for (const wn of warns) {
@@ -2010,9 +2085,9 @@ function drawHints() {
     ctx.fillStyle = `rgba(255,236,210,${0.07 + ib.wob.flash * 0.6})`;
     ctx.fillRect(SX(side < 0 ? 0 : cw / 2), 0, cw / 2, ch);
     const pulse = 1 + 0.12 * Math.sin(time * 18);
-    ctx.font = `800 ${Math.round(30 * pulse)}px Hahmlet, Georgia, serif`;
+    ctx.font = `800 ${Math.round(30 * pulse)}px ${FONT_DISPLAY}`;
     ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(50,18,6,.55)'; ctx.fillStyle = '#fff3dc';
-    const label = side < 0 ? '◀ 탭! 탭!' : '탭! 탭! ▶';
+    const label = tr(side < 0 ? '◀ 탭! 탭!' : '탭! 탭! ▶');
     ctx.strokeText(label, x, y); ctx.fillText(label, x, y);
     // how close to slipping
     const gw = 70, gx = x - gw / 2, gy = y + 30, k = clamp(ib.wob.phi, 0, 1);
@@ -2021,18 +2096,18 @@ function drawHints() {
   } else if (ib.on.spike && !ib.charging) {
     const label = ib.zone ? (ib.zone < 0 ? '▶' : '◀') : '◀  ▶';
     ctx.globalAlpha = 0.75 + 0.25 * Math.sin(time * 5);
-    ctx.font = `800 ${Math.round(18 * s)}px Hahmlet, Georgia, serif`;
+    ctx.font = `800 ${Math.round(18 * s)}px ${FONT_DISPLAY}`;
     ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(50,18,6,.5)'; ctx.fillStyle = '#fff3dc';
     ctx.strokeText(label, ib.x * s, sy(ib.y + 54)); ctx.fillText(label, ib.x * s, sy(ib.y + 54));
     if (spikeTips <= 4) {
-      ctx.globalAlpha = 0.9; ctx.font = '600 14px "IBM Plex Sans KR", system-ui, sans-serif';
-      const tipText = ib.zone ? '비탈에선 오르막 쪽으로만 뛸 수 있어요' : '꼭대기! 이제 방향을 바꿀 수 있어요';
+      ctx.globalAlpha = 0.9; ctx.font = `600 14px ${FONT_BODY}`;
+      const tipText = tr(ib.zone ? '비탈에선 오르막 쪽으로만 뛸 수 있어요' : '꼭대기! 이제 방향을 바꿀 수 있어요');
       ctx.strokeText(tipText, SX(cw / 2), ch * 0.86); ctx.fillText(tipText, SX(cw / 2), ch * 0.86);
     }
   } else if (!ib.charging && jumps < 2) {
     ctx.globalAlpha = 0.55 + 0.2 * Math.sin(time * 3);
-    ctx.fillStyle = '#fff3dc'; ctx.font = '600 15px "IBM Plex Sans KR", system-ui, sans-serif';
-    ctx.fillText(pad.on ? '◀  L1 꾹' : '◀  왼쪽 꾹', SX(cw * 0.22), ch * 0.8); ctx.fillText(pad.on ? 'R1 꾹  ▶' : '오른쪽 꾹  ▶', SX(cw * 0.78), ch * 0.8);
+    ctx.fillStyle = '#fff3dc'; ctx.font = `600 15px ${FONT_BODY}`;
+    ctx.fillText(tr(pad.on ? '◀  L1 꾹' : '◀  왼쪽 꾹'), SX(cw * 0.22), ch * 0.8); ctx.fillText(tr(pad.on ? 'R1 꾹  ▶' : '오른쪽 꾹  ▶'), SX(cw * 0.78), ch * 0.8);
     ctx.globalAlpha = 0.18; ctx.strokeStyle = '#fff3dc'; ctx.lineWidth = 1; ctx.setLineDash([6, 8]);
     ctx.beginPath(); ctx.moveTo(SX(cw / 2), ch * 0.22); ctx.lineTo(SX(cw / 2), ch * 0.88); ctx.stroke(); ctx.setLineDash([]);
   }
@@ -2178,7 +2253,7 @@ function render() {
     const k = q.t;
     ctx.save();
     ctx.globalAlpha = 1 - k * k;
-    ctx.font = `800 ${Math.round(17 * s)}px Hahmlet, Georgia, serif`;
+    ctx.font = `800 ${Math.round(17 * s)}px ${FONT_DISPLAY}`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineWidth = 4 * s; ctx.strokeStyle = 'rgba(60,22,8,.55)'; ctx.fillStyle = '#fff3d6';
     const x = clamp(q.x * s, SX(80), SX(cw - 80)), y = sy(q.y + k * 30);
@@ -2199,7 +2274,7 @@ function syncHud() {
   put('alt', Math.max(0, Math.floor(ib.y / U)));
   put('best', Math.floor(best));
   put('salt', salt);
-  put('zone', (mode === 'daily' ? '오늘의 절벽 · ' : '') + zoneOf(zoneNo(Math.max(0, ib.y / U))).name);
+  put('zone', (mode === 'daily' ? tr('오늘의 절벽 · ') : '') + tr(zoneOf(zoneNo(Math.max(0, ib.y / U))).name));
   put('kidsN', babies); $('kids').hidden = babies < 1;
   put('time', fmtTime(runTime));
   put('comboN', combo);
@@ -2223,19 +2298,19 @@ function drawPeaks(refocus) {
   $('peaks').hidden = $('peakInfo').hidden = !(FULL && PEAK_PICKER); $('hardBtn').hidden = !FULL;
   if (!FULL) return;
   const rk = q => REC + (q.id === 'dusk' ? '' : q.id + '.') + (selHard ? 'hard.' : ''), mine = +store.get(rk(selPeak) + 'best.time', 0) || 0;
-  $('dailyInfo').textContent = mine ? `${selPeak.name} 최고 기록 ${fmtTime(mine)}${selHard ? ' (하드)' : ''}` : selPeak.desc;
-  $('hardBtn').textContent = selHard ? '하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주' : '하드 모드: 꺼짐';
+  $('dailyInfo').textContent = mine ? tr('{0} 최고 기록 {1}', tr(selPeak.name), fmtTime(mine)) + (selHard ? tr(' (하드)') : '') : tr(selPeak.desc);
+  $('hardBtn').textContent = tr(selHard ? '하드 모드: 켜짐 · 아기 산양과 능력 없이, 장애물이 더 자주' : '하드 모드: 꺼짐');
   if (!PEAK_PICKER) return;
   const box = $('peaks'); box.textContent = '';
   for (const q of PEAKS) {
     const b = document.createElement('button'), k = rk(q);
-    const t = +store.get(k + 'best.time', 0) || 0, a = +store.get(k + 'best.alt', 0) || 0;
+    const bt = +store.get(k + 'best.time', 0) || 0, a = +store.get(k + 'best.alt', 0) || 0;
     b.type = 'button'; if (q === selPeak) b.className = 'on';
-    b.append(q.name, Object.assign(document.createElement('small'), { textContent: t ? fmtTime(t) : a ? a + 'm' : '기록 없음' }));
+    b.append(tr(q.name), Object.assign(document.createElement('small'), { textContent: bt ? fmtTime(bt) : a ? a + 'm' : tr('기록 없음') }));
     b.addEventListener('click', () => { selPeak = q; store.set('ibex.peak', q.id); pickPeak(); });
     box.append(b);
   }
-  $('peakInfo').textContent = selPeak.desc;
+  $('peakInfo').textContent = tr(selPeak.desc);
   if (refocus) { const on = box.querySelector('.on'); if (on) on.focus({ preventScroll: true }); }
 }
 // on the title screen the cliff behind the menu changes to the picked peak
@@ -2248,16 +2323,17 @@ let howOpen = false;
 function showOverlay(kind, isBest) {
   const done = kind === 'done', dead = kind === 'dead', daily = mode === 'daily';
   const dayBest = +store.get(REC + 'daily.' + kstDay(), 0) || 0;
-  $('ovEyebrow').textContent = dead ? (isBest ? '새 최고 높이' : '용암에 삼켜졌어요') : done ? (isBest ? '새 최고 기록' : '정상 도착')
-    : FULL ? '완전판 · 세 산을 잇는 3000m' : WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m';
-  $('ovTitle').textContent = dead ? `${Math.floor(maxAlt)}m에서 끝` : done ? (daily ? '오늘의 절벽 정상!' : FULL ? (peak.route ? '대종주 완주!' : `${peak.name} 정상!`) : '1000m 정상!') : '아이벡스 점프';
+  $('ovEyebrow').textContent = tr(dead ? (isBest ? '새 최고 높이' : '용암에 삼켜졌어요') : done ? (isBest ? '새 최고 기록' : '정상 도착')
+    : FULL ? '완전판 · 세 산을 잇는 3000m' : WIDE ? '넓은 화면판 · 정상까지 1000m' : '프로토타입 · 정상까지 1000m');
+  $('ovTitle').textContent = dead ? tr('{0}m에서 끝', Math.floor(maxAlt))
+    : done ? (daily ? tr('오늘의 절벽 정상!') : FULL ? (peak.route ? tr('대종주 완주!') : tr('{0} 정상!', tr(peak.name))) : tr('1000m 정상!')) : tr('아이벡스 점프');
   $('ovResult').hidden = !(done || dead); $('ovHow').hidden = $('ovKeys').hidden = done || dead || (FULL && !howOpen);   // the full edition's menu is long, so the how-to folds away
-  $('howBtn').hidden = !FULL || done || dead; $('howBtn').textContent = howOpen ? '조작법 접기' : '조작법 보기';
-  if (dead) $('ovResult').textContent = `버틴 시간 ${fmtTime(runTime)} · 이 산 최고 ${+store.get(recKey() + 'best.alt', 0) || 0}m · 소금 ${salt}개`;
+  $('howBtn').hidden = !FULL || done || dead; $('howBtn').textContent = tr(howOpen ? '조작법 접기' : '조작법 보기');
+  if (dead) $('ovResult').textContent = tr('버틴 시간 {0} · 이 산 최고 {1}m · 소금 {2}개', fmtTime(runTime), +store.get(recKey() + 'best.alt', 0) || 0, salt);
   drawPeaks();
-  if (done) $('ovResult').textContent = `시간 ${fmtTime(runTime)} · 최고 ${fmtTime(daily ? dayBest : bestTime)} · 추락 ${falls}번 · 소금 ${salt}개`;
-  $('dailyBtn').hidden = FULL; $('startBtn').style.gridColumn = FULL ? '1 / -1' : ''; $('startBtn').textContent = FULL ? '시작하기' : '자유 등반';
-  if (!FULL) $('dailyInfo').textContent = dayBest ? `오늘의 절벽 최고 ${fmtTime(dayBest)} · 그 기록의 고스트와 함께 올라요` : '오늘의 절벽: 오늘은 모두 같은 절벽을 올라요';
+  if (done) $('ovResult').textContent = tr('시간 {0} · 최고 {1} · 추락 {2}번 · 소금 {3}개', fmtTime(runTime), fmtTime(daily ? dayBest : bestTime), falls, salt);
+  $('dailyBtn').hidden = FULL; $('startBtn').style.gridColumn = FULL ? '1 / -1' : ''; $('startBtn').textContent = tr(FULL ? '시작하기' : '자유 등반');
+  if (!FULL) $('dailyInfo').textContent = dayBest ? tr('오늘의 절벽 최고 {0} · 그 기록의 고스트와 함께 올라요', fmtTime(dayBest)) : tr('오늘의 절벽: 오늘은 모두 같은 절벽을 올라요');
   $('nameIn').hidden = $('nameLbl').hidden = !fireReady || FULL; $('nameIn').value = playerName();   // the full edition has no daily climb, so no ranking name
   $('rankList').hidden = true;
   if (fireReady && !FULL) showRanking();
@@ -2267,7 +2343,15 @@ function showOverlay(kind, isBest) {
   $('startBtn').focus({ preventScroll: true });
 }
 
+// leave a climb and go back to the title screen
+function toTitle() {
+  paused = false; $('pauseOv').hidden = true;
+  if (master) master.gain.value = soundOn ? 0.7 : 0;
+  clearBanners(); state = 'ready'; reset(); showOverlay();
+}
+
 function startGame(m) {
+  setPause(false);
   if (m === 'free' || m === 'daily') { mode = m; setPeak(m === 'daily' ? PEAKS[0] : selPeak, m === 'free' && selHard); }
   if (fireReady && $('nameIn').value.trim()) store.set('ibex.name', $('nameIn').value.trim().slice(0, 12));
   audioInit();
@@ -2281,6 +2365,8 @@ function startGame(m) {
 $('startBtn').addEventListener('click', () => startGame('free'));
 $('dailyBtn').addEventListener('click', () => startGame('daily'));
 $('shopBtn').addEventListener('click', openShop);
+$('resumeBtn').addEventListener('click', () => setPause(false));
+$('quitBtn').addEventListener('click', toTitle);
 $('howBtn').addEventListener('click', () => { howOpen = !howOpen; showOverlay(); $('howBtn').focus({ preventScroll: true }); });
 $('hardBtn').addEventListener('click', () => { selHard = !selHard; store.set('ibex.hard', selHard); pickPeak(); $('hardBtn').focus({ preventScroll: true }); });
 $('shopClose').addEventListener('click', () => showOverlay());
@@ -2309,12 +2395,12 @@ function openShop() {
   const list = $('shopList'); list.textContent = '';
   for (const it of SHOP) {
     const li = document.createElement('li'), info = document.createElement('div'), btn = document.createElement('button');
-    info.innerHTML = `<b>${it.name}</b><span>${it.desc}</span>`;
+    info.innerHTML = `<b>${tr(it.name)}</b><span>${tr(it.desc)}</span>`;
     const has = owned.has(it.id);
     btn.type = 'button';
-    if (!has) { btn.textContent = `소금 ${it.price}`; btn.className = 'buy'; btn.disabled = wallet < it.price; }
-    else if (it.kind === 'fur') { btn.textContent = fur === it.id ? '입는 중' : '입기'; btn.disabled = fur === it.id; }
-    else { btn.textContent = '가지고 있음'; btn.disabled = true; }
+    if (!has) { btn.textContent = tr('소금 {0}', it.price); btn.className = 'buy'; btn.disabled = wallet < it.price; }
+    else if (it.kind === 'fur') { btn.textContent = tr(fur === it.id ? '입는 중' : '입기'); btn.disabled = fur === it.id; }
+    else { btn.textContent = tr('가지고 있음'); btn.disabled = true; }
     btn.addEventListener('click', () => {
       if (!owned.has(it.id)) {
         if (wallet < it.price) return;
@@ -2329,6 +2415,24 @@ function openShop() {
   }
 }
 
+// ---- Android app (Capacitor): back closes the shop, pauses a climb, resumes a paused one, and from the title asks once
+// before leaving. Without this the web view has no history and one press closes the app mid-climb. ----
+(() => {
+  const cap = window.Capacitor;
+  if (!(cap && cap.isNativePlatform && cap.isNativePlatform())) return;
+  const App = cap.registerPlugin ? cap.registerPlugin('App') : cap.Plugins && cap.Plugins.App;
+  if (!App) return;
+  let asked = 0;
+  App.addListener('backButton', () => {
+    if (paused) return setPause(false);
+    if (state === 'play') return setPause(true);
+    if (!$('shop').hidden) return showOverlay();
+    if (performance.now() - asked < 2500) { try { App.exitApp(); } catch (e) {} return; }
+    asked = performance.now();
+    showBanner('나가기', '한 번 더 누르면 게임을 닫아요', '');
+  });
+})();
+
 // ---- daily ranking: Firestore REST + anonymous sign-in, the same pattern as Eraser Sums fire.js ----
 // Firebase project ibex-jump · web app "Ibex Jump Web" (2026-10-16); rules are this repo's firestore.rules.
 // The apiKey is the public web key, fine to ship in the page. Emptying FIRE hides the ranking again.
@@ -2339,7 +2443,7 @@ const RANK = WIDE ? 'ibexDailyWide' : 'ibexDaily';   // the wide edition has its
 // a default name is made once and kept, so the same player keeps the same name on the board
 function playerName() {
   let n = store.get('ibex.name', '');
-  if (!n) { n = '산양' + String(Math.floor(Math.random() * 9000) + 1000); store.set('ibex.name', n); }
+  if (!n) { n = tr('산양') + String(Math.floor(Math.random() * 9000) + 1000); store.set('ibex.name', n); }
   return n;
 }
 async function fjson(url, opt) {
@@ -2401,7 +2505,8 @@ function frame(now) {
   pollPad();
   if (!cw) { resize(); if (!cw) return; }
   if (!isFinite(cam)) cam = ib.y - viewH * 0.3;
-  update(real * (slowT > 0 ? 0.35 : 1)); audioTick(); render();
+  if (!paused) update(real * (slowT > 0 ? 0.35 : 1));
+  audioTick(); render();
 }
 
 resize();
